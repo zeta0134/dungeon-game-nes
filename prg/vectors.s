@@ -23,6 +23,16 @@ reset:
         jmp start
 
 nmi:
+        ; preserve registers
+        pha
+        ; perform sprite OAM
+        lda #$00
+        sta OAMADDR
+        lda #$02
+        sta OAM_DMA
+        ; restore registers
+        pla
+        ; all done
         rti
 
 irq:
