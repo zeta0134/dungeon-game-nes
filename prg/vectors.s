@@ -22,6 +22,7 @@ reset:
         ; Jump to main
         jmp start
 
+        .import FrameCounter
 nmi:
         ; preserve registers
         pha
@@ -30,6 +31,8 @@ nmi:
         sta OAMADDR
         lda #$02
         sta OAM_DMA
+        
+        inc FrameCounter
         ; restore registers
         pla
         ; all done

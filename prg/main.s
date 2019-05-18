@@ -58,13 +58,14 @@ initialize_palettes:
         sta PPUADDR
         lda #$00
         sta PPUADDR
-        lda #$25
+
+        lda #$3c
         sta PPUDATA
-        lda #$15
+        lda #$2b
         sta PPUDATA
-        lda #$05
+        lda #$1a
         sta PPUDATA
-        lda #$0F
+        lda #$09
         sta PPUDATA
 
         ; Sprites
@@ -116,14 +117,31 @@ demo_oam_init:
         rts
 
         .export start
+        .import FrameCounter, TestBlobbyDelay
 start:
         jsr initialize_mmc3
         jsr initialize_palettes
         jsr initialize_ppu
         jsr demo_oam_init
 
-
-loop_endlessly:
-        jmp loop_endlessly
+        lda #$00
+        sta FrameCounter
+        lda #$20
+        sta TestBlobbyDelay
+gameloop:
+        dec TestBlobbyDelay
+        bne wait_for_next_vblank
+        lda #$20
+        sta TestBlobbyDelay
+        lda $0201
+        eor #%00000010
+        sta $0201
+        sta $0205
+wait_for_next_vblank:
+        lda FrameCounter
+@loop:
+        cmp FrameCounter
+        beq @loop
+        jmp gameloop
 
 .endscope
