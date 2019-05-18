@@ -20,12 +20,18 @@ CHR_FILES := \
 	$(patsubst $(ARTDIR)/sprites/%.png,$(BUILDDIR)/sprites/%.chr,$(SPRITE_FILES)) \
 	$(patsubst $(ARTDIR)/tiles/%.png,$(BUILDDIR)/tiles/%.chr,$(TILE_FILES))
 
+# Data files (maps, game data, etc) for more complex conversions
+MAP_FILES := $(wildcard $(ARTDIR)/maps/*.tmx)
+BIN_FILES := \
+	$(patsubst $(ARTDIR)/maps/%.tmx,$(BUILDDIR)/maps/%.bin,$(MAP_FILES)) \
+
 
 all: dir $(ROM_NAME)
 
 dir:
 	@mkdir -p build/sprites
 	@mkdir -p build/tiles
+	@mkdir -p build/maps
 
 clean:
 	-@rm -rf build
@@ -37,7 +43,7 @@ run: dir $(ROM_NAME)
 $(ROM_NAME): $(SOURCEDIR)/mmc3.cfg $(O_FILES)
 	ld65 -m $(BUILDDIR)/map.txt -o $@ -C $^
 
-$(BUILDDIR)/%.o: $(SOURCEDIR)/%.s
+$(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(BIN_FILES)
 	ca65 -o $@ $<
 
 $(BUILDDIR)/%.o: $(CHRDIR)/%.s $(CHR_FILES)
@@ -48,6 +54,9 @@ $(BUILDDIR)/sprites/%.chr: $(ARTDIR)/sprites/%.png
 
 $(BUILDDIR)/tiles/%.chr: $(ARTDIR)/tiles/%.png
 	vendor/pilbmp2nes.py $< -o $@ --planes="0;1"
+
+$(BUILDDIR)/maps/%.bin: $(ARTDIR)/maps/%.tmx
+	tools/convertmap.py $< $@
 
 
 
