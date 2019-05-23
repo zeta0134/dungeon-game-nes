@@ -1,5 +1,4 @@
 .include "nes.inc"
-.include "globals.inc"
 
 .scope PRGLAST_E000
         .segment "PRGLAST_E000"
@@ -9,6 +8,7 @@ spinwait_for_vblank:
         bpl spinwait_for_vblank
         rts
 
+        .import start
 reset:
         sei            ; Disable interrupts
         cld            ; make sure decimal mode is off (not that it does anything)
