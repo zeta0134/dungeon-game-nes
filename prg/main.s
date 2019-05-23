@@ -2,6 +2,7 @@
         .include "nes.inc"
         .include "mmc3.inc"
         .include "word_util.inc"
+        .include "zeropage.inc"
 
 .scope PRGLAST_E000
         .segment "PRGLAST_E000"
@@ -159,35 +160,66 @@ demo_oam_init:
 ; Draws a run of an upper row of 16x16 metatiles
 ; Inputs:
 ;   R0: 16bit starting address (map tiles)
+;   R2: 16bit chrmap address (base)
+;   R4: 8bit tiles to copy
 ;   PPUADDR: nametable destination
-;   R2: 8bit count
-.proc draw_upper_row
+; Note: PPUCTRL should be set to VRAM+1 mode before calling
+.proc draw_row
+        clc
 column_loop:
-        lda ($00),y ; a now holds the tile index
+        ldy #$00
+        lda (R0),y ; a now holds the tile index
+        asl a
+        asl a ; a now holds an offset into the chrmap for this tile
+        tay
+        lda (R2),y ; a now holds CHR index of the top-left tile
         sta PPUDATA
         iny
-        cpy #16
+        lda (R2),y ; a now holds CHR index of the top-right tile
+        sta PPUDATA
+        inc16 R0
+        dec R4
         bne column_loop
+        rts
 .endproc
 
 .proc demo_map_init
         lda #$00
         sta PPUMASK ; disable rendering
         lda PPUSTATUS ; reset read/write latch
+        lda #$A0
+        sta PPUCTRL ; ensure VRAM increment mode is +1
+
         lda #$20
         sta PPUADDR
         lda #$00
-        sta PPUADDR ; set PPUADDR to top-left of the first nametable
-        lda $A0
-        sta PPUCTRL ; ensure VRAM increment mode is +1
-        st16 $00, test_map ; initialize pointer into map data
-        ldy #$00 ; initialize column offset
-column_loop:
-        lda ($00),y ; a now holds the tile index
-        sta PPUDATA
-        iny
-        cpy #16
-        bne column_loop
+        sta PPUADDR
+
+        st16 R0, (test_map+2) ; initialize pointer into map data
+        st16 R2, (test_tileset)
+        lda #16
+        sta R4
+        jsr draw_row ; first test row
+        st16 R0, (test_map+2)
+        st16 R2, (test_tileset+2)
+        lda #16
+        sta R4
+        jsr draw_row ; second test row
+
+        st16 R0, (test_map+2+16) ; initialize pointer into map data
+        st16 R2, (test_tileset)
+        lda #16
+        sta R4
+        jsr draw_row ; first test row
+        st16 R0, (test_map+2+16)
+        st16 R2, (test_tileset+2)
+        lda #16
+        sta R4
+        jsr draw_row ; second test row
+
+        ; re-enable graphics
+        lda #$1E
+        sta PPUMASK
         rts
 .endproc
         
