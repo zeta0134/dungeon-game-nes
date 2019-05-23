@@ -22,7 +22,7 @@ reset:
         ; Jump to main
         jmp start
 
-        .import FrameCounter
+        .importzp FrameCounter
 nmi:
         ; preserve registers
         pha
