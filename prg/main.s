@@ -1,12 +1,14 @@
         .setcpu "6502"
         .include "nes.inc"
         .include "mmc3.inc"
-        .include "globals.inc"
+        .include "word_util.inc"
 
 .scope PRGLAST_E000
         .segment "PRGLAST_E000"
         ;.org $e000
 
+test_map:
+        .incbin "build/maps/test_room.bin"
 
 initialize_mmc3:
         ; Note: the high bits of MMC3_BANK_SELECT determine the mode.
@@ -116,13 +118,50 @@ demo_oam_init:
         sta $0207 ;sprite[1].X
         rts
 
+; Draws a run of an upper row of 16x16 metatiles
+; Inputs:
+;   R0: 16bit starting address (map tiles)
+;   PPUADDR: nametable destination
+;   R2: 8bit count
+.proc draw_upper_row
+column_loop:
+        lda ($00),y ; a now holds the tile index
+        sta PPUDATA
+        iny
+        cpy #16
+        bne column_loop
+.endproc
+
+.proc demo_map_init
+        lda #$00
+        sta PPUMASK ; disable rendering
+        lda PPUSTATUS ; reset read/write latch
+        lda #$20
+        sta PPUADDR
+        lda #$00
+        sta PPUADDR ; set PPUADDR to top-left of the first nametable
+        lda $A0
+        sta PPUCTRL ; ensure VRAM increment mode is +1
+        st16 $00, test_map ; initialize pointer into map data
+        ldy #$00 ; initialize column offset
+column_loop:
+        lda ($00),y ; a now holds the tile index
+        sta PPUDATA
+        iny
+        cpy #16
+        bne column_loop
+        rts
+.endproc
+        
+
         .export start
-        .import FrameCounter, TestBlobbyDelay
+        .importzp FrameCounter, TestBlobbyDelay
 start:
         jsr initialize_mmc3
         jsr initialize_palettes
         jsr initialize_ppu
         jsr demo_oam_init
+        jsr demo_map_init
 
         lda #$00
         sta FrameCounter
