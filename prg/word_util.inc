@@ -6,12 +6,12 @@
 .endmacro
 
 .macro inc16 addr
-.proc
+.scope
         inc addr
         bne no_carry
         inc addr+1
 no_carry:
-.endproc
+.endscope
 .endmacro
 
 
