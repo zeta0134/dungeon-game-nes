@@ -9,6 +9,44 @@
 
 test_map:
         .incbin "build/maps/test_room.bin"
+test_tileset:
+        .byte $00, $00, $00, $00 ;tile 0 shouldn't exist in valid map data
+        .byte $00, $01, $02, $03
+        .byte $04, $05, $06, $07
+        .byte $08, $09, $0A, $0B
+        .byte $0C, $0D, $0E, $0F
+        .byte $10, $11, $12, $13
+        .byte $14, $15, $16, $17
+        .byte $18, $19, $1A, $1B
+        .byte $1C, $1D, $1E, $1F
+        .byte $20, $21, $22, $23
+        .byte $24, $25, $26, $27
+        .byte $28, $29, $2A, $2B
+        .byte $2C, $2D, $2E, $2F
+        .byte $30, $31, $32, $33
+        .byte $34, $35, $36, $37
+        .byte $38, $39, $3A, $3B
+        .byte $3C, $3D, $3E, $3F
+        .byte $40, $41, $42, $43
+        .byte $44, $45, $46, $47
+        .byte $48, $49, $4A, $4B
+        .byte $4C, $4D, $4E, $4F
+        .byte $50, $51, $52, $53
+        .byte $54, $55, $56, $57
+        .byte $58, $59, $5A, $5B
+        .byte $5C, $5D, $5E, $5F
+        .byte $60, $61, $62, $63
+        .byte $64, $65, $66, $67
+        .byte $68, $69, $6A, $6B
+        .byte $6C, $6D, $6E, $6F
+        .byte $70, $71, $72, $73
+        .byte $74, $75, $76, $77
+        .byte $78, $79, $7A, $7B
+        .byte $7C, $7D, $7E, $7F
+        .byte $80, $81, $82, $83
+        .byte $84, $85, $86, $87
+        .byte $88, $89, $8A, $8B
+        .byte $8C, $8D, $8E, $8F
 
 initialize_mmc3:
         ; Note: the high bits of MMC3_BANK_SELECT determine the mode.
