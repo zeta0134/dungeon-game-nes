@@ -1,6 +1,7 @@
         .setcpu "6502"
         .include "nes.inc"
         .include "mmc3.inc"
+        .include "ppu.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
 
@@ -95,10 +96,7 @@ initialize_palettes:
         ; TEST: Set the palettes up with a nice pink for everything
 
         ; Backgrounds
-        lda #$3F
-        sta PPUADDR
-        lda #$00
-        sta PPUADDR
+        set_ppuaddr $3F00
 
         lda #$3c
         sta PPUDATA
@@ -110,10 +108,7 @@ initialize_palettes:
         sta PPUDATA
 
         ; Sprites
-        lda #$3F
-        sta PPUADDR
-        lda #$11
-        sta PPUADDR
+        set_ppuaddr $3F11
         lda #$34
         sta PPUDATA
         lda #$14
@@ -190,10 +185,7 @@ column_loop:
         lda #$A0
         sta PPUCTRL ; ensure VRAM increment mode is +1
 
-        lda #$20
-        sta PPUADDR
-        lda #$00
-        sta PPUADDR
+        set_ppuaddr $2000
 
         st16 R0, (test_map+2) ; initialize pointer into map data
         st16 R2, (test_tileset)
