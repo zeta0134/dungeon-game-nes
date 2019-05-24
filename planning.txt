@@ -1,0 +1,102 @@
+### Scroll Split
+
+The overall goal is to achieve glitchless diagonal scrolling, using a fixed status
+bar and a maximum speed in one axis of 8px per frame. 
+
+To do this, we have the following basic layout using vertical mirroring:
+
+    0x2000:                          0x2400: 
+01: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP\
+02: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+03: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+04: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+05: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+06: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+07: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+08: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+09: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+10: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+11: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP | - Active playfield data
+12: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |        24 tiles high
+13: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+14: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+15: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+16: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+17: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+18: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+19: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+20: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+21: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+22: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+23: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+24: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP/
+25: pppppppppppppppppppppppppppppppp pppppppppppppppppppppppppppppppp\
+26: pppppppppppppppppppppppppppppppp pppppppppppppppppppppppppppppppp | - Vertical Scroll Seam
+27: pppppppppppppppppppppppppppppppp pppppppppppppppppppppppppppppppp |        4 tiles high
+28: pppppppppppppppppppppppppppppppp pppppppppppppppppppppppppppppppp/
+29: UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL\ - Upper and Lower halves of the status area
+29: UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL/ 
+
+This gives us easy glitchless horizontal scrolling with plenty of buffer space,
+and 24 vertical tiles of visible playfield at any one time. The 4-tile high
+scroll seam handily gives us an easy means to update the 32x32 palette byte
+without needing to do bit-manipulation to address the smaller 16x16 metatile,
+as even the large 32x32 glitch will be fully offscreen before we need to
+write changes.
+
+Visibly onscreen, the layout looks like this when the camera is scrolled to 0,0:
+
+    PPU Output:
+01: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP\
+02: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+03: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+04: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+05: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+06: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+07: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+08: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+09: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+10: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+11: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP | - Visible playfield window
+12: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+13: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+14: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+15: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+16: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+17: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+18: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+19: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+20: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+21: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+22: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+23: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP |
+24: PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP/
+25: UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\
+26: UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU | - Combined status area
+27: LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL |
+28: LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL/
+
+"But Zeta, where did the other two tiles go?"
+
+Since we need to deal with overscan anyway, we plan for two rows of hardware tiles
+to be blanked, ie, the display will be disabled and the BG color will be drawn. We
+have a couple of options with regards to their position, but the simplest would be
+to blank the lower 16 scanlines, ensuring that our status area is clearly visible.
+We may wish to experiment with placement, as I understand TVs are more likely to
+clip the top of the screen into overscan.
+
+Alternately, *if* we're willing to do bit manipulation when copying palette
+attributes into place, we could extend the visible playfield by another two tiles.
+Whether we decide to do this largely depends on if we have plans for that space, and
+decide to solve the overscan problem with some other method.
+
+This will be achieved with a combination of hblanks. In this order:
+
+- Starting vertical scroll for the playfield
+- Manual wrapping for the playfield (optional)
+- Top half of status bar
+- Bottom half of status bar
+- Disable BG for remainder of frame
+
+For ease of timing out these mid-screen writes, the game targets an MMC3 cartridge
+with an A12 scanline counter, and will work within that mapper's constraints.
