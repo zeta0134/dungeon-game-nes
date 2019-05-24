@@ -96,7 +96,7 @@ initialize_palettes:
         ; TEST: Set the palettes up with a nice pink for everything
 
         ; Backgrounds
-        set_ppuaddr $3F00
+        set_ppuaddr #$3F00
 
         lda #$3c
         sta PPUDATA
@@ -108,7 +108,7 @@ initialize_palettes:
         sta PPUDATA
 
         ; Sprites
-        set_ppuaddr $3F11
+        set_ppuaddr #$3F11
         lda #$34
         sta PPUDATA
         lda #$14
@@ -185,29 +185,43 @@ column_loop:
         lda #$A0
         sta PPUCTRL ; ensure VRAM increment mode is +1
 
-        set_ppuaddr $2000
-
-        st16 R0, (test_map+2) ; initialize pointer into map data
+        st16 R5, $2000
+        st16 R7, (test_map+2) ;skip past width and height bytes
+        lda #15
+        sta R9
+row_loop:
+        ; upper row
+        set_ppuaddr R5
+        mov16 R7, R0
         st16 R2, (test_tileset)
         lda #16
         sta R4
-        jsr draw_row ; first test row
-        st16 R0, (test_map+2)
-        st16 R2, (test_tileset+2)
-        lda #16
-        sta R4
-        jsr draw_row ; second test row
+        jsr draw_row
 
-        st16 R0, (test_map+2+16) ; initialize pointer into map data
-        st16 R2, (test_tileset)
-        lda #16
-        sta R4
-        jsr draw_row ; first test row
-        st16 R0, (test_map+2+16)
+        ; move PPUADDR to the next row
+        clc
+        add16 R5, #32
+        set_ppuaddr R5
+
+        ; lower row
+        mov16 R7, R0
         st16 R2, (test_tileset+2)
         lda #16
         sta R4
-        jsr draw_row ; second test row
+        jsr draw_row
+
+        ; move PPUADDR to the next row
+        clc
+        add16 R5, #32
+
+        ; move down one row in the tileset
+        clc
+        add16 R7, #16
+        dec R9
+        bne row_loop
+
+        ; reset PPUADDR to top-left
+        set_ppuaddr #$2000
 
         ; re-enable graphics
         lda #$1E
