@@ -50,6 +50,33 @@ test_tileset:
         .byte $88, $89, $8A, $8B
         .byte $8C, $8D, $8E, $8F
 
+.proc zero_zp
+        ldy #0
+        lda #0
+loop:
+        dey
+        sta (0),y
+        bne loop
+        rts
+.endproc
+
+; Arguments:
+; R0 - starting address (16bit)
+; R2 - length (16bit)
+.proc zero_memory
+        ldy #0
+        ; decrement once to start, since we exit when the counter reaches -1
+        dec16 R2
+loop:
+        lda #0
+        sta (R0),y
+        inc16 R0
+        dec16 R2 ; sets A to 0xFF
+        cmp R2+1 ; check if the high byte has rolled around to 0xFF; if so, terminate the loop
+        bne loop
+        rts
+.endproc
+
 initialize_mmc3:
         ; Note: the high bits of MMC3_BANK_SELECT determine the mode.
         ; We leave these at 0 on purpose, which puts CHR0 in 2k mode,
@@ -93,7 +120,11 @@ initialize_mmc3:
         rts
 
 initialize_palettes:
-        ; TEST: Set the palettes up with a nice pink for everything
+        ; TEST: Set the palettes up with a nice greyscale for everything
+
+        ; disable rendering
+        lda #$00
+        sta PPUMASK
 
         ; Backgrounds
         set_ppuaddr #$3F00
@@ -123,14 +154,38 @@ initialize_palettes:
 
         rts
 
-initialize_ppu:
+.proc initialize_ppu
+        ; disable rendering
+        lda #$00
+        sta PPUMASK
+
         ; enable NMI interrupts and 8x16 sprites
         lda #$A0
         sta PPUCTRL
+
+        ; Set PPUADDR to 0,0
+        set_ppuaddr #$2000
+
+        ; Zero out all four nametables
+        st16 R0, ($1000)
+        dec16 R0
+loop:
+        lda #0
+        sta PPUDATA
+        dec16 R0 ; sets A to 0xFF
+        cmp R0+1
+        bne loop
+
+        ; Re-Set PPUADDR to 0,0
+        lda #$00
+        sta PPUADDR
+        sta PPUADDR
+
         ; enable rendering everywhere
         lda #$1E
         sta PPUMASK
         rts
+.endproc
 
 demo_oam_init:
         lda #30
@@ -185,7 +240,7 @@ column_loop:
         lda #$A0
         sta PPUCTRL ; ensure VRAM increment mode is +1
 
-        st16 R5, $2000
+        st16 R5, $2000 ; Initialize a shadow PPUADDR to track our position onscreen
         st16 R7, (test_map+2) ;skip past width and height bytes
         lda #15
         sta R9
@@ -227,12 +282,15 @@ row_loop:
         lda #$1E
         sta PPUMASK
         rts
-.endproc
-        
+.endproc        
 
         .export start
         .importzp FrameCounter, TestBlobbyDelay
 start:
+        jsr zero_zp
+        st16 R0, ($0200) ; starting address
+        st16 R2, ($0600) ; length in bytes
+        jsr zero_memory
         jsr initialize_mmc3
         jsr initialize_palettes
         jsr initialize_ppu
