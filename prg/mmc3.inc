@@ -10,4 +10,6 @@ MMC3_IRQ_RELOAD  = $C001
 MMC3_IRQ_DISABLE = $E000
 MMC3_IRQ_ENABLE  = $E000
 
+.import initialize_mmc3
+
 .endif
