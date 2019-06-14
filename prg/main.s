@@ -2,6 +2,7 @@
         .include "nes.inc"
         .include "mmc3.inc"
         .include "ppu.inc"
+        .include "sprites.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
 
@@ -290,10 +291,11 @@ start:
         jsr zero_zp
         st16 R0, ($0200) ; starting address
         st16 R2, ($0600) ; length in bytes
-        jsr zero_memory
         jsr initialize_mmc3
+        jsr zero_memory
         jsr initialize_palettes
         jsr initialize_ppu
+        jsr initialize_oam
         jsr demo_oam_init
         jsr demo_map_init
 
