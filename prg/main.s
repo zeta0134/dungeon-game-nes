@@ -152,11 +152,11 @@ row_loop:
         .export start
         .importzp FrameCounter, TestBlobbyDelay
 start:
-        jsr zero_zp
+
         st16 R0, ($0200) ; starting address
         st16 R2, ($0600) ; length in bytes
+        jsr clear_memory
         jsr initialize_mmc3
-        jsr zero_memory
         jsr initialize_palettes
         jsr initialize_ppu
         jsr initialize_oam

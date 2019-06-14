@@ -6,23 +6,12 @@
         .segment "PRGLAST_E000"
         ;.org $e000
 
-.export zero_zp
-.export zero_memory
-
-.proc zero_zp
-        ldy #0
-        lda #0
-loop:
-        dey
-        sta $0000,y
-        bne loop
-        rts
-.endproc
+.export clear_memory
 
 ; Arguments:
 ; R0 - starting address (16bit)
 ; R2 - length (16bit)
-.proc zero_memory
+.proc clear_memory
         ldy #0
         ; decrement once to start, since we exit when the counter reaches -1
         dec16 R2

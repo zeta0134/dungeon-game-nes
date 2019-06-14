@@ -1,12 +1,16 @@
 .include "nes.inc"
+.include "memory_util.inc"
 
 .scope PRGLAST_E000
         .segment "PRGLAST_E000"
 
-spinwait_for_vblank:
+.macro spinwait_for_vblank
+.scope
+loop:
         bit PPUSTATUS
-        bpl spinwait_for_vblank
-        rts
+        bpl loop
+.endscope
+.endmacro
 
         .import start
 reset:
@@ -16,8 +20,12 @@ reset:
         txs
 
         ; Wait for the PPU to finish warming up
-        jsr spinwait_for_vblank
-        jsr spinwait_for_vblank
+        spinwait_for_vblank
+        spinwait_for_vblank
+
+        ; Initialize zero page and stack
+        clear_page $0000
+        clear_page $0100
 
         ; Jump to main
         jmp start
