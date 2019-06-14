@@ -14,7 +14,7 @@
         lda #0
 loop:
         dey
-        sta (0),y
+        sta $0000,y
         bne loop
         rts
 .endproc
