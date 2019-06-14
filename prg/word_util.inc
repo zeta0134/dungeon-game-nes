@@ -14,6 +14,18 @@ no_carry:
 .endscope
 .endmacro
 
+.macro dec16 addr
+.scope
+        bit addr 
+        dec addr
+        lda #$FF
+        cmp addr
+        bne no_carry
+        dec addr+1
+no_carry:
+.endscope
+.endmacro
+
 .macro mov16 addr1, addr2
         lda addr1
         sta addr2
