@@ -129,22 +129,22 @@ initialize_palettes:
         ; Backgrounds
         set_ppuaddr #$3F00
 
-        lda #$3c
+        lda #$20
         sta PPUDATA
-        lda #$2b
+        lda #$10
         sta PPUDATA
-        lda #$1a
+        lda #$00
         sta PPUDATA
-        lda #$09
+        lda #$0F
         sta PPUDATA
 
         ; Sprites
         set_ppuaddr #$3F11
-        lda #$34
+        lda #$20
         sta PPUDATA
-        lda #$14
+        lda #$10
         sta PPUDATA
-        lda #$04
+        lda #$0F
         sta PPUDATA
 
         ; Reset PPUADDR to 0,0
