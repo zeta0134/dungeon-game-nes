@@ -1,6 +1,7 @@
         .setcpu "6502"
         .include "nes.inc"
         .include "mmc3.inc"
+        .include "memory_util.inc"
         .include "ppu.inc"
         .include "sprites.inc"
         .include "word_util.inc"
@@ -51,32 +52,7 @@ test_tileset:
         .byte $88, $89, $8A, $8B
         .byte $8C, $8D, $8E, $8F
 
-.proc zero_zp
-        ldy #0
-        lda #0
-loop:
-        dey
-        sta (0),y
-        bne loop
-        rts
-.endproc
 
-; Arguments:
-; R0 - starting address (16bit)
-; R2 - length (16bit)
-.proc zero_memory
-        ldy #0
-        ; decrement once to start, since we exit when the counter reaches -1
-        dec16 R2
-loop:
-        lda #0
-        sta (R0),y
-        inc16 R0
-        dec16 R2 ; sets A to 0xFF
-        cmp R2+1 ; check if the high byte has rolled around to 0xFF; if so, terminate the loop
-        bne loop
-        rts
-.endproc
 
 initialize_mmc3:
         ; Note: the high bits of MMC3_BANK_SELECT determine the mode.
@@ -119,74 +95,6 @@ initialize_mmc3:
         ; Disable IRQ interrupts for init
         sta MMC3_IRQ_DISABLE
         rts
-
-initialize_palettes:
-        ; TEST: Set the palettes up with a nice greyscale for everything
-
-        ; disable rendering
-        lda #$00
-        sta PPUMASK
-
-        ; Backgrounds
-        set_ppuaddr #$3F00
-
-        lda #$20
-        sta PPUDATA
-        lda #$10
-        sta PPUDATA
-        lda #$00
-        sta PPUDATA
-        lda #$0F
-        sta PPUDATA
-
-        ; Sprites
-        set_ppuaddr #$3F11
-        lda #$20
-        sta PPUDATA
-        lda #$10
-        sta PPUDATA
-        lda #$0F
-        sta PPUDATA
-
-        ; Reset PPUADDR to 0,0
-        lda #$00
-        sta PPUADDR
-        sta PPUADDR
-
-        rts
-
-.proc initialize_ppu
-        ; disable rendering
-        lda #$00
-        sta PPUMASK
-
-        ; enable NMI interrupts and 8x16 sprites
-        lda #$A0
-        sta PPUCTRL
-
-        ; Set PPUADDR to 0,0
-        set_ppuaddr #$2000
-
-        ; Zero out all four nametables
-        st16 R0, ($1000)
-        dec16 R0
-loop:
-        lda #0
-        sta PPUDATA
-        dec16 R0 ; sets A to 0xFF
-        cmp R0+1
-        bne loop
-
-        ; Re-Set PPUADDR to 0,0
-        lda #$00
-        sta PPUADDR
-        sta PPUADDR
-
-        ; enable rendering everywhere
-        lda #$1E
-        sta PPUMASK
-        rts
-.endproc
 
 demo_oam_init:
         lda #30

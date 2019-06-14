@@ -17,3 +17,5 @@
 .endif
 .endmacro
 
+.import initialize_ppu
+.import initialize_palettes
