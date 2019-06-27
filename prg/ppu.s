@@ -54,14 +54,15 @@ loop:
         ; Backgrounds
         set_ppuaddr #$3F00
 
-        lda #$20
-        sta PPUDATA
-        lda #$10
+        lda #$0F
         sta PPUDATA
         lda #$00
         sta PPUDATA
-        lda #$0F
+        lda #$10
         sta PPUDATA
+        lda #$20
+        sta PPUDATA
+        
 
         ; Sprites
         set_ppuaddr #$3F11
