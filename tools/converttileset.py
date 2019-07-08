@@ -6,7 +6,7 @@
 from PIL import Image
 from pathlib import Path
 import xml.etree.ElementTree as ElementTree
-import sys
+import sys, os
 
 def bytes_to_palette(byte_array):
   return [(byte_array[i], byte_array[i+1], byte_array[i+2]) for i in range(0, len(byte_array), 3)]
@@ -79,12 +79,34 @@ def read_tileset(filename, nespalette):
   tiles = [read_tile(filename, nespalette) for filename in image_filenames]
   return tiles
 
+def generate_base_palettes(tiles):
+  palettes = []
+  for tile in tiles:
+    if not tile["palette"] in palettes:
+      palettes.append(tile["palette"])
+    tile["palette_index"] = palettes.index(tile["palette"])
+  assert len(palettes) <= 4, "Base tileset cannot contain more than 4 palettes!"
+  return palettes
 
+def generate_chr_tiles(metatiles):
+  chr_tiles = []
+  for tile in tiles:
+    tile["chr_indices"] = [0,0,0,0]
+    for c in range(0,4):
+      if not tile["chr"][c] in chr_tiles:
+        chr_tiles.append(tile["chr"][c])
+      tile["chr_indices"][c] = chr_tiles.index(tile["chr"][c])
+  return chr_tiles
 
-nespalette = read_nes_palette("ntscpalette.pal")
-tiles = read_tileset("../art/tilesets/Skull Tiles.tsx", nespalette)
+scriptdir = os.path.dirname(__file__)
+nespalette = read_nes_palette(os.path.join(scriptdir,"ntscpalette.pal"))
+tiles = read_tileset("art/tilesets/skull_tiles.tsx", nespalette)
         
-print("Read: ", len(tiles), " tiles!")
+print("Read:", len(tiles), "tiles!")
+palettes = generate_base_palettes(tiles)
+print("Found", len(palettes), "unique palettes!")
+chr_tiles = generate_chr_tiles(tiles)
+print("Found", len(chr_tiles), "unique 8x8 tiles!")
 #tile = read_tile("../art/tiles/hole.png", nespalette)
 #print("Tile palette: ", [hex(i) for i in tile["palette"]])
 
