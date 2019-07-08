@@ -4,6 +4,9 @@
 # the CHR data and engine metadata for display.
 
 from PIL import Image
+from pathlib import Path
+import xml.etree.ElementTree as ElementTree
+import sys
 
 def bytes_to_palette(byte_array):
   return [(byte_array[i], byte_array[i+1], byte_array[i+2]) for i in range(0, len(byte_array), 3)]
@@ -49,11 +52,11 @@ def hardware_tile_to_bitplane(index_array):
 
 def read_tile(filename, nespalette):
   im = Image.open(filename)
-  assert(im.getpalette() != None, "Non-paletted tile found! This is unsupported: " + filename)
+  assert im.getpalette() != None, "Non-paletted tile found! This is unsupported: " + filename
   rgb_palette = bytes_to_palette(im.getpalette()[0:12])
   nes_palette = [rgb_to_nes(color, nespalette) for color in rgb_palette]
-  assert(im.width == 16, "All tiles must be 16 pixels wide! Bailing. " + filename)
-  assert(im.height == 16, "All tiles must be 16 pixels tall! Bailing. " + filename)
+  assert im.width == 16, "All tiles must be 16 pixels wide! Bailing. " + filename
+  assert im.height == 16, "All tiles must be 16 pixels tall! Bailing. " + filename
   chr_tl = hardware_tile_to_bitplane(im.crop((0, 0,  8,  8)).getdata())
   chr_tr = hardware_tile_to_bitplane(im.crop((8, 0, 16,  8)).getdata())
   chr_bl = hardware_tile_to_bitplane(im.crop((0, 8,  8, 16)).getdata())
@@ -63,11 +66,28 @@ def read_tile(filename, nespalette):
     "chr": [chr_tl, chr_tr, chr_bl, chr_br]
   }
 
-nespalette = read_nes_palette("ntscpalette.pal")
-        
-tile = read_tile("../art/tiles/hole.png", nespalette)
-print("Tile palette: ", [hex(i) for i in tile["palette"]])
+def read_tileset(filename, nespalette):
+  tileset_element = ElementTree.parse(filename).getroot()
+  tile_elements = tileset_element.findall("tile")
+  image_elements = [tile.find("image") for tile in tile_elements]
+  image_filenames = [image.get("source") for image in image_elements]
+  
+  # tileset filenames are relative to the tileset file's location, so
+  # turn those into absolute paths:
+  base_path = Path(filename).parent;
+  image_filenames = [(base_path / file_path).resolve() for file_path in image_filenames]
+  tiles = [read_tile(filename, nespalette) for filename in image_filenames]
+  return tiles
 
-print("Top left corner: ")
-for byte in tile["chr"][0]: print(format(byte, '#010b')) 
+
+
+nespalette = read_nes_palette("ntscpalette.pal")
+tiles = read_tileset("../art/tilesets/Skull Tiles.tsx", nespalette)
+        
+print("Read: ", len(tiles), " tiles!")
+#tile = read_tile("../art/tiles/hole.png", nespalette)
+#print("Tile palette: ", [hex(i) for i in tile["palette"]])
+
+#print("Top left corner: ")
+#for byte in tile["chr"][0]: print(format(byte, '#010b')) 
 
