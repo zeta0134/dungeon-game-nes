@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.2" tiledversion="1.2.3" name="Skull Tiles" tilewidth="16" tileheight="16" tilecount="18" columns="4">
+<tileset version="1.2" tiledversion="1.2.3" name="Skull Tiles" tilewidth="16" tileheight="16" tilecount="23" columns="4">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image width="16" height="16" source="../tiles/bricks_inner_bl.png"/>
@@ -39,6 +39,21 @@
  </tile>
  <tile id="12">
   <image width="16" height="16" source="../tiles/grass.png"/>
+ </tile>
+ <tile id="13">
+  <image width="16" height="16" source="../tiles/solid_index_0.png"/>
+ </tile>
+ <tile id="14">
+  <image width="16" height="16" source="../tiles/solid_index_0.png"/>
+ </tile>
+ <tile id="15">
+  <image width="16" height="16" source="../tiles/solid_index_0.png"/>
+ </tile>
+ <tile id="16">
+  <image width="16" height="16" source="../tiles/solid_index_0.png"/>
+ </tile>
+ <tile id="17">
+  <image width="16" height="16" source="../tiles/solid_index_0.png"/>
  </tile>
  <tile id="18">
   <image width="16" height="16" source="../tiles/hole.png"/>
