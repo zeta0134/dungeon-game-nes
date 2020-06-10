@@ -45,7 +45,7 @@ def hardware_tile_to_bitplane(index_array):
   # Note: expects an 8x8 array of tile indices. Returns a 16-byte array of raw NES data
   # which encodes this tile's data as a bitplane for the PPU hardware
   low_bits = [x & 0x1 for x in index_array]
-  high_bits = [x & 0x1 for x in index_array]
+  high_bits = [((x & 0x2) >> 1) for x in index_array]
   low_bytes = [bits_to_byte(low_bits[i:i+8]) for i in range(0,64,8)]
   high_bytes = [bits_to_byte(high_bits[i:i+8]) for i in range(0,64,8)]
   return low_bytes + high_bytes
@@ -90,7 +90,7 @@ def generate_base_palettes(tiles):
 
 def generate_chr_tiles(metatiles):
   chr_tiles = []
-  for tile in tiles:
+  for tile in metatiles:
     tile["chr_indices"] = [0,0,0,0]
     for c in range(0,4):
       if not tile["chr"][c] in chr_tiles:
@@ -98,15 +98,43 @@ def generate_chr_tiles(metatiles):
       tile["chr_indices"][c] = chr_tiles.index(tile["chr"][c])
   return chr_tiles
 
+def write_chr_tiles(chr_tiles, filename):
+  with open(filename, "wb") as output_file:
+    for tile in chr_tiles:
+      output_file.write(bytes(tile))
+
+def write_meta_tiles(metatiles, filename):
+  with open(filename, "wb") as output_file:
+    for tile in metatiles:
+      output_file.write(bytes(tile["chr_indices"]))
+
+def write_palettes(palettes, filename):
+  with open(filename, "wb") as output_file:
+    for palette in palettes:
+      output_file.write(bytes(palette))
+
+if len(sys.argv) != 5:
+  print("Usage: convertileset.py input.tsx output.chr output.mt output.pal")
+  sys.exit(-1)
+input_tileset = sys.argv[1]
+output_chr = sys.argv[2]
+output_mt = sys.argv[3]
+output_pal = sys.argv[4]
+
 scriptdir = os.path.dirname(__file__)
 nespalette = read_nes_palette(os.path.join(scriptdir,"ntscpalette.pal"))
-tiles = read_tileset("art/tilesets/skull_tiles.tsx", nespalette)
+tiles = read_tileset(input_tileset, nespalette)
         
 print("Read:", len(tiles), "tiles!")
 palettes = generate_base_palettes(tiles)
 print("Found", len(palettes), "unique palettes!")
 chr_tiles = generate_chr_tiles(tiles)
 print("Found", len(chr_tiles), "unique 8x8 tiles!")
+
+write_chr_tiles(chr_tiles, output_chr)
+write_meta_tiles(tiles, output_mt)
+write_palettes(palettes, output_pal)
+
 #tile = read_tile("../art/tiles/hole.png", nespalette)
 #print("Tile palette: ", [hex(i) for i in tile["palette"]])
 
