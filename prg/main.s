@@ -3,6 +3,7 @@
         .include "mmc3.inc"
         .include "memory_util.inc"
         .include "ppu.inc"
+        .include "scrolling.inc"
         .include "sprites.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
@@ -37,73 +38,47 @@ demo_oam_init:
         sta $0207 ;sprite[1].X
         rts
 
-; Draws a run of an upper row of 16x16 metatiles
-; Inputs:
-;   R0: 16bit starting address (map tiles)
-;   R2: 16bit chrmap address (base)
-;   R4: 8bit tiles to copy
-;   PPUADDR: nametable destination
-; Note: PPUCTRL should be set to VRAM+1 mode before calling
-.proc draw_row
-        clc
-column_loop:
-        ldy #$00
-        lda (R0),y ; a now holds the tile index
-        asl a
-        asl a ; a now holds an offset into the chrmap for this tile
-        tay
-        lda (R2),y ; a now holds CHR index of the top-left tile
-        sta PPUDATA
-        iny
-        lda (R2),y ; a now holds CHR index of the top-right tile
-        sta PPUDATA
-        inc16 R0
-        dec R4
-        bne column_loop
-        rts
-.endproc
-
 .proc demo_map_init
         lda #$00
         sta PPUMASK ; disable rendering
         lda PPUSTATUS ; reset read/write latch
-        lda #$A0
+        lda #$A4
         sta PPUCTRL ; ensure VRAM increment mode is +1
 
         st16 R5, $2000 ; Initialize a shadow PPUADDR to track our position onscreen
         st16 R7, (test_map+2) ;skip past width and height bytes
-        lda #15
+        lda #16
         sta R9
-row_loop:
-        ; upper row
+col_loop:
+        ; left column
         set_ppuaddr R5
         mov16 R7, R0
         st16 R2, (test_tileset)
-        lda #16
+        lda #15
         sta R4
-        jsr draw_row
+        jsr draw_col
 
-        ; move PPUADDR to the next row
+        ; move PPUADDR to the next column
         clc
-        add16 R5, #32
+        add16 R5, #1
         set_ppuaddr R5
 
-        ; lower row
+        ; right column
         mov16 R7, R0
-        st16 R2, (test_tileset+2)
-        lda #16
+        st16 R2, (test_tileset+1)
+        lda #15
         sta R4
-        jsr draw_row
+        jsr draw_col
 
-        ; move PPUADDR to the next row
+        ; move PPUADDR to the next column
         clc
-        add16 R5, #32
+        add16 R5, #1
 
-        ; move down one row in the tileset
+        ; move over one column in the tileset
         clc
-        add16 R7, #64
+        add16 R7, #1
         dec R9
-        bne row_loop
+        bne col_loop
 
         ; reset PPUADDR to top-left
         set_ppuaddr #$2000
