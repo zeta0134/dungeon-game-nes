@@ -2,5 +2,5 @@
 
 .scope CHR0
         .segment "CHR0"
-        .incbin "build/tiles/skull_tiles.chr"
+        .incbin "build/tilesets/skull_tiles.chr"
 .endscope

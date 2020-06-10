@@ -15,22 +15,21 @@ O_FILES := \
 
 # Artwork files, for performing conversions to NES format bitplanes
 SPRITE_FILES := $(wildcard $(ARTDIR)/sprites/*.png)
-TILE_FILES := $(wildcard $(ARTDIR)/tiles/*.png)
-CHR_FILES := \
+RAW_CHR_FILES := \
 	$(patsubst $(ARTDIR)/sprites/%.png,$(BUILDDIR)/sprites/%.chr,$(SPRITE_FILES)) \
-	$(patsubst $(ARTDIR)/tiles/%.png,$(BUILDDIR)/tiles/%.chr,$(TILE_FILES))
-
+	
 # Data files (maps, game data, etc) for more complex conversions
 MAP_FILES := $(wildcard $(ARTDIR)/maps/*.tmx)
 BIN_FILES := \
-	$(patsubst $(ARTDIR)/maps/%.tmx,$(BUILDDIR)/maps/%.bin,$(MAP_FILES)) \
-
+	$(patsubst $(ARTDIR)/maps/%.tmx,$(BUILDDIR)/maps/%.bin,$(MAP_FILES))
+TILESET_FILES := $(wildcard $(ARTDIR)/tilesets/*.tsx)
+TILESET_CHR_FILES := $(patsubst $(ARTDIR)/tilesets/%.tsx,$(BUILDDIR)/tilesets/%.chr,$(TILESET_FILES))
 
 all: dir $(ROM_NAME)
 
 dir:
 	@mkdir -p build/sprites
-	@mkdir -p build/tiles
+	@mkdir -p build/tilesets
 	@mkdir -p build/maps
 
 clean:
@@ -46,17 +45,17 @@ $(ROM_NAME): $(SOURCEDIR)/mmc3.cfg $(O_FILES)
 $(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(BIN_FILES)
 	ca65 -o $@ $<
 
-$(BUILDDIR)/%.o: $(CHRDIR)/%.s $(CHR_FILES)
+$(BUILDDIR)/%.o: $(CHRDIR)/%.s $(RAW_CHR_FILES) $(TILESET_CHR_FILES)
 	ca65 -o $@ $<
 
 $(BUILDDIR)/sprites/%.chr: $(ARTDIR)/sprites/%.png
 	vendor/pilbmp2nes.py $< -o $@ --planes="0;1" --tile-height=16
 
-$(BUILDDIR)/tiles/%.chr: $(ARTDIR)/tiles/%.png
-	vendor/pilbmp2nes.py $< -o $@ --planes="0;1"
-
 $(BUILDDIR)/maps/%.bin: $(ARTDIR)/maps/%.tmx
 	tools/convertmap.py $< $@
+
+$(BUILDDIR)/tilesets/%.chr: $(ARTDIR)/tilesets/%.tsx
+	tools/converttileset.py $< $@ $(basename $@).mt $(basename $@).pal
 
 
 
