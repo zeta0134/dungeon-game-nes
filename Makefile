@@ -42,10 +42,10 @@ run: dir $(ROM_NAME)
 $(ROM_NAME): $(SOURCEDIR)/mmc3.cfg $(O_FILES)
 	ld65 -m $(BUILDDIR)/map.txt -o $@ -C $^
 
-$(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(BIN_FILES)
+$(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(BIN_FILES) $(TILESET_CHR_FILES)
 	ca65 -o $@ $<
 
-$(BUILDDIR)/%.o: $(CHRDIR)/%.s $(RAW_CHR_FILES) $(TILESET_CHR_FILES)
+$(BUILDDIR)/%.o: $(CHRDIR)/%.s $(RAW_CHR_FILES) 
 	ca65 -o $@ $<
 
 $(BUILDDIR)/sprites/%.chr: $(ARTDIR)/sprites/%.png
