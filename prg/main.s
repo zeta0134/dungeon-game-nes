@@ -56,7 +56,7 @@ col_loop:
         st16 R2, (test_tileset)
         lda #15
         sta R4
-        jsr draw_col
+        jsr draw_half_col
 
         ; move PPUADDR to the next column
         clc
@@ -68,7 +68,7 @@ col_loop:
         st16 R2, (test_tileset+1)
         lda #15
         sta R4
-        jsr draw_col
+        jsr draw_half_col
 
         ; move PPUADDR to the next column
         clc

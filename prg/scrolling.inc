@@ -1,2 +1,2 @@
-.import draw_row
-.import draw_col
+.import draw_half_row
+.import draw_half_col

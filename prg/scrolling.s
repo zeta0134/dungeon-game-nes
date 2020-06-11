@@ -7,10 +7,10 @@
         .segment "PRGLAST_E000"
         ;.org $e000
 
-.export draw_row
-.export draw_col
+.export draw_half_row
+.export draw_half_col
 
-; Draws a run of an upper row of 16x16 metatiles
+; Draws one half-row of 16x16 metatiles
 ; Inputs:
 ;   R0: 16bit starting address (map tiles)
 ;   R2: 16bit chrmap address (base)
@@ -20,9 +20,9 @@
 
 ; Optimization note: if we can decode tile index data into a
 ; consistent target address, we can do an absolute,y index, and save
-; 2 cycles per 8x8 tile over storing the address in zero page
+; 2 cycles per 16x16 tile over storing the address in zero page
 
-.proc draw_row
+.proc draw_half_row
         clc
 column_loop:
         ldy #$00
@@ -41,9 +41,19 @@ column_loop:
         rts
 .endproc
 
+; Draws one half-column of 16x16 metatiles
+; Inputs:
+;   R0: 16bit starting address (map tiles)
+;   R2: 16bit chrmap address (base)
+;   R4: 8bit tiles to copy
+;   PPUADDR: nametable destination
+; Note: PPUCTRL should be set to VRAM+32 mode before calling
 
+; Optimization note: if we can decode tile index data into a
+; consistent target address, we can do an absolute,y index, and save
+; 2 cycles per 16x16 tile over storing the address in zero page
 
-.proc draw_col
+.proc draw_half_col
         clc
 row_loop:
         ldy #$00
@@ -62,5 +72,8 @@ row_loop:
         bne row_loop
         rts
 .endproc
+
+
+
 
 .endscope
