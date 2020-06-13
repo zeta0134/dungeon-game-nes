@@ -25,6 +25,8 @@ BIN_FILES := \
 TILESET_FILES := $(wildcard $(ARTDIR)/tilesets/*.tsx)
 TILESET_CHR_FILES := $(patsubst $(ARTDIR)/tilesets/%.tsx,$(BUILDDIR)/tilesets/%.chr,$(TILESET_FILES))
 
+.PRECIOUS: $(BIN_FILES)
+
 all: dir $(ROM_NAME)
 
 dir:

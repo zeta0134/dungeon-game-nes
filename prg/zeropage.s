@@ -20,16 +20,6 @@ R12: .byte $00
 R13: .byte $00
 R14: .byte $00
 R15: .byte $00
-; Map dimensions
-MapWidth: .byte $00
-; Current map position
-MapUpperLeft: .byte $00, $00
-MapUpperRight: .byte $00, $00
-MapLowerLeft: .byte $00, $00
-; Hardware scroll tiles within Nametable
-HWScrollUpperLeft: .byte $00, $00
-HWScrollUpperRight: .byte $00, $00
-HWScrollLowerLeft: .byte $00, $00
 ; Gameplay and graphics globals
 FrameCounter: .byte $00
 TestBlobbyDelay: .byte $00

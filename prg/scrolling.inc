@@ -1,19 +1,20 @@
-.import draw_half_row
-.import draw_half_col
+.import load_map
+.import load_tileset
+.import init_map
 
 .macro incColumn addr
         clc
         lda addr
-        adc 1
-        and %00011111
+        adc #1
+        and #%00011111
         tax ; preserve low 5 bits for later
         bne no_overflow ; taken if A != 0 after mask
         lda addr+1
-        eor %00000100 ; flip nametable bit, from base 0x20 <-> 0x24
+        eor #%00000100 ; flip nametable bit, from base 0x20 <-> 0x24
         sta addr+1
 no_overflow:
         lda addr
-        and %11100000 ; mask off lower 5 bits
+        and #%11100000 ; mask off lower 5 bits
         sta addr
         txa
         clc 
@@ -24,17 +25,17 @@ no_overflow:
 .macro decColumn addr
         clc
         lda addr
-        sbc 1
-        and %00011111
+        sbc #1
+        and #%00011111
         tax ; preserve low 5 bits for later
-        cmp %00011111
+        cmp #%00011111
         bne no_overflow ; taken if A != 31 after mask
         lda addr+1
-        eor %00000100 ; flip nametable bit, from base 0x20 <-> 0x24
+        eor #%00000100 ; flip nametable bit, from base 0x20 <-> 0x24
         sta addr+1
 no_overflow:
         lda addr
-        and %11100000 ; mask off lower 5 bits
+        and #%11100000 ; mask off lower 5 bits
         sta addr
         txa
         clc 
@@ -46,27 +47,27 @@ no_overflow:
 .macro incRow addr
         clc
         lda addr
-        adc %00100000
+        adc #%00100000
         sta addr
         bvs overflow
         ; check to see if we've reached the magic value 28
         ; lower 3 bits
-        and %11100000
-        cmp %10000000
+        and #%11100000
+        cmp #%10000000
         bne done
         ; upper 2 bits
         lda addr+1
-        and %00000011
-        cmp %00000011
+        and #%00000011
+        cmp #%00000011
         bne done
         ; we've overflowed into the status area
         ; first zero the lower 3 bits
         lda addr
-        and %00011111
+        and #%00011111
         sta addr
         ; then the upper 2 bits
         lda addr+1
-        and %11111100
+        and #%11111100
         sta addr+1
         jmp done
 overflow:
@@ -77,26 +78,26 @@ done:
 .macro decRow addr
         clc
         lda addr
-        adc %11100000 ;"subtract" 1 from the upper 3 bits
+        adc #%11100000 ;"subtract" 1 from the upper 3 bits
         sta addr
         ; if we *did* overflow the addition in hardware, then we *did not* overflow the 3-bit subtraction: 0x000 -> 0x111
         bvs done
         ; subtract 1 from the upper 2 bits
         lda addr+1
-        sbc 1
+        sbc #1
         ; stash the result in x (it might be wrong)
         tax
         ; check for overflow in *just these two bits*
-        and %00000011
-        cmp %00000011
+        and #%00000011
+        cmp #%00000011
         bne no_overflow
         ; for the high byte we need to now *set* the lower 2 bits to 11, without affecting the rest of it
         lda addr+1
-        ora %00000011
+        ora #%00000011
         sta addr+1
         ; for the low byte, we need to *clear* the high bit; we previously set the upper 3 bits to 111
         lda addr
-        eor %10000000
+        eor #%10000000
         sta addr
         ; after these operations, the combined Y coordinate should be: 11011, or 27
         jmp done
