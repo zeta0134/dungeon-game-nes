@@ -2,6 +2,8 @@
         .exportzp FrameCounter, TestBlobbyDelay
         .exportzp R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15
         .zeropage
+; General purpose registers, used as sort of a quick stack alternative.
+; Clobbered frequently.
 R0: .byte $00
 R1: .byte $00
 R2: .byte $00
@@ -18,6 +20,17 @@ R12: .byte $00
 R13: .byte $00
 R14: .byte $00
 R15: .byte $00
+; Map dimensions
+MapWidth: .byte $00
+; Current map position
+MapUpperLeft: .byte $00, $00
+MapUpperRight: .byte $00, $00
+MapLowerLeft: .byte $00, $00
+; Hardware scroll tiles within Nametable
+HWScrollUpperLeft: .byte $00, $00
+HWScrollUpperRight: .byte $00, $00
+HWScrollLowerLeft: .byte $00, $00
+; Gameplay and graphics globals
 FrameCounter: .byte $00
 TestBlobbyDelay: .byte $00
 
