@@ -2,6 +2,7 @@
 
 .include "input.inc"
 .include "memory_util.inc"
+.include "scrolling.inc"
 
 .scope PRGLAST_E000
         .segment "PRGLAST_E000"
@@ -43,6 +44,10 @@ nmi:
         sta OAM_DMA
 
         ; Tasks dependent on PPU not rendering
+        jsr scroll_camera
+
+        ; Cleanup PPU tasks, set registers for next frame
+        jsr set_scroll_for_frame
 
         ; Other tasks that should run once per frame with consistent-ish timing
         jsr poll_input

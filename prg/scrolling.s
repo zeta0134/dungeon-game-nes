@@ -36,7 +36,7 @@ CameraYScrollTarget: .word $00
         .segment "PRGLAST_E000"
         ;.org $e000
 
-.export load_map, load_tileset, init_map
+.export load_map, load_tileset, init_map, scroll_camera, set_scroll_for_frame
 
 ; Loads a map into memory, in preparation for drawing, scrolling, and eventually
 ; maybe gameplay stuff
@@ -232,6 +232,68 @@ row_loop:
         add16 R0, #64
         dec R4
         bne row_loop
+        rts
+.endproc
+
+; Based on the current hardware scroll position, write the appropriate PPU registers
+; in advance of the next frame to draw. Typically meant to be called once at the tail
+; end of NMI, but could potentially be useful for mid-frame shenanigans.
+; Clobbers: R0
+
+.proc scroll_camera
+        ; lol for testing just copy
+        lda CameraXScrollTarget
+        sta CameraXScrollCurrent
+        lda CameraXTileTarget
+        sta CameraXTileCurrent
+        lda CameraXTileTarget+1
+        sta CameraXTileCurrent+1
+        ; continued lol
+        lda CameraYScrollTarget
+        sta CameraYScrollCurrent
+        lda CameraYTileTarget
+        sta CameraYTileCurrent
+        lda CameraYTileTarget+1
+        sta CameraYTileCurrent+1
+        ; continued lol
+        rts
+.endproc
+
+.proc set_scroll_for_frame
+        ; First, set the nametable based on the 6th bit of the X tile position
+        lda #%00100000
+        bit CameraXTileCurrent
+        beq left_nametable
+right_nametable:
+        lda #$A1
+        sta PPUCTRL
+        jmp done_with_nametables
+left_nametable:
+        lda #$A0
+        sta PPUCTRL
+done_with_nametables:
+        ; Reset PPU write latch
+        lda PPUSTATUS
+        lda CameraXScrollCurrent
+        sta R0
+        lda CameraXTileCurrent
+        .repeat 3
+        rol R0
+        rol a
+        .endrep
+        ; a now contains low 5 bits of scroll tile, and upper 3 bits of sub-tile scroll
+        ; (lower 5 bits of that are sub-pixels, and discarted)
+        sta PPUSCROLL
+        ; now do the same for Y scroll
+        lda CameraYScrollCurrent
+        sta R0
+        lda CameraYTileCurrent
+        .repeat 3
+        rol R0
+        rol a
+        .endrep
+        sta PPUSCROLL
+done:
         rts
 .endproc
 

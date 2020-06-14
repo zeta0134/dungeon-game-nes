@@ -30,7 +30,7 @@ test_tileset:
         bit ButtonsHeld
         beq right_not_held
         clc
-        lda #$08
+        lda #$10
         adc CameraXScrollTarget
         sta CameraXScrollTarget
         lda #$00
@@ -45,7 +45,7 @@ right_not_held:
         beq left_not_held
         clc
         lda CameraXScrollTarget
-        sbc #$08
+        sbc #$10
         sta CameraXScrollTarget
         lda CameraXTileTarget
         sbc #$00
@@ -54,6 +54,35 @@ right_not_held:
         sbc #$00
         sta CameraXTileTarget+1
 left_not_held:
+        lda #KEY_DOWN
+        bit ButtonsHeld
+        beq down_not_held
+        clc
+        lda #$10
+        adc CameraYScrollTarget
+        sta CameraYScrollTarget
+        lda #$00
+        adc CameraYTileTarget
+        sta CameraYTileTarget
+        lda #$00
+        adc CameraYTileTarget+1
+        sta CameraYTileTarget+1
+down_not_held:
+        lda #KEY_UP
+        bit ButtonsHeld
+        beq up_not_held
+        clc
+        lda CameraYScrollTarget
+        sbc #$10
+        sta CameraYScrollTarget
+        lda CameraYTileTarget
+        sbc #$00
+        sta CameraYTileTarget
+        lda CameraYTileTarget+1
+        sbc #$00
+        sta CameraYTileTarget+1
+up_not_held:
+
         rts
 .endproc
 
