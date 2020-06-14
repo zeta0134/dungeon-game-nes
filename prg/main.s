@@ -12,7 +12,7 @@
 
 .scope PRGLAST_E000
         .export start
-        .importzp FrameCounter
+        .importzp FrameCounter, CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget
         .zeropage
 TestBlobbyDelay: .byte $00
         .segment "PRGLAST_E000"
@@ -24,8 +24,40 @@ test_map:
 test_tileset:
         .byte $00, $00, $00, $00 ;tile 0 shouldn't exist in valid map data
         .incbin "build/tilesets/skull_tiles.mt"
-        
-demo_oam_init:
+
+.proc demo_scroll_camera
+        lda #KEY_RIGHT
+        bit ButtonsHeld
+        beq right_not_held
+        clc
+        lda #$08
+        adc CameraXScrollTarget
+        sta CameraXScrollTarget
+        lda #$00
+        adc CameraXTileTarget
+        sta CameraXTileTarget
+        lda #$00
+        adc CameraXTileTarget+1
+        sta CameraXTileTarget+1
+right_not_held:
+        lda #KEY_LEFT
+        bit ButtonsHeld
+        beq left_not_held
+        clc
+        lda CameraXScrollTarget
+        sbc #$08
+        sta CameraXScrollTarget
+        lda CameraXTileTarget
+        sbc #$00
+        sta CameraXTileTarget
+        lda CameraXTileTarget+1
+        sbc #$00
+        sta CameraXTileTarget+1
+left_not_held:
+        rts
+.endproc
+
+.proc demo_oam_init
         lda #30
         sta $0200 ;sprite[0].Y
         lda #01
@@ -44,6 +76,8 @@ demo_oam_init:
         lda #38
         sta $0207 ;sprite[1].X
         rts  
+.endproc
+
 start:
 
         st16 R0, ($0200) ; starting address
@@ -80,6 +114,7 @@ start:
         lda #$20
         sta TestBlobbyDelay
 gameloop:
+        jsr demo_scroll_camera
         dec TestBlobbyDelay
         bne wait_for_next_vblank
         lda #$20

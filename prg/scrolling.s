@@ -22,6 +22,16 @@ MapLowerLeft: .word $0000
 HWScrollUpperLeft: .word $0000
 HWScrollUpperRight: .word $0000
 HWScrollLowerLeft: .word $0000
+; Camera-tracking
+CameraXTileCurrent: .word $0000
+CameraXScrollCurrent: .byte $00
+CameraYTileCurrent: .word $0000
+CameraYScrollCurrent: .byte $00
+.exportzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget
+CameraXTileTarget: .word $0000
+CameraXScrollTarget: .word $00
+CameraYTileTarget: .word $0000
+CameraYScrollTarget: .word $00
 
         .segment "PRGLAST_E000"
         ;.org $e000
