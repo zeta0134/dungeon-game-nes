@@ -1,5 +1,6 @@
         .setcpu "6502"
         .include "nes.inc"
+        .include "input.inc"
         .include "mmc3.inc"
         .include "memory_util.inc"
         .include "ppu.inc"
@@ -10,8 +11,13 @@
         .include "input.inc"
 
 .scope PRGLAST_E000
+        .export start
+        .importzp FrameCounter
+        .zeropage
+TestBlobbyDelay: .byte $00
         .segment "PRGLAST_E000"
         ;.org $e000
+
 
 test_map:
         .incbin "build/maps/large_test_room.bin"
@@ -38,9 +44,6 @@ demo_oam_init:
         lda #38
         sta $0207 ;sprite[1].X
         rts  
-
-        .export start
-        .importzp FrameCounter, TestBlobbyDelay
 start:
 
         st16 R0, ($0200) ; starting address
