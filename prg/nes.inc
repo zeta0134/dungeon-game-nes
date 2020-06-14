@@ -7,6 +7,7 @@
 ; the copyright notice and this notice are preserved in all source
 ; code copies.  This file is offered as-is, without any warranty.
 ;
+;
 
 .ifndef NES_INC
 .define NES_INC 1
@@ -38,15 +39,15 @@ TINT_B = $80
 
 PPUSTATUS = $2002
 OAMADDR = $2003
-; Don't worry about $2004; let OAM_DMA do the work for you.
+OAMDATA = $2004
 PPUSCROLL = $2005
 PPUADDR = $2006
 PPUDATA = $2007
 
 OAM_DMA = $4014
 SNDCHN = $4015
-P1 = $4016
-P2 = $4017
+CONTROLLER_P1 = $4016
+CONTROLLER_P2 = $4017
 
 KEY_A      = %10000000
 KEY_B      = %01000000

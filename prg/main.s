@@ -7,6 +7,7 @@
         .include "sprites.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
+        .include "input.inc"
 
 .scope PRGLAST_E000
         .segment "PRGLAST_E000"

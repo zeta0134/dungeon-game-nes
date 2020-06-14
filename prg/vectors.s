@@ -1,4 +1,6 @@
 .include "nes.inc"
+
+.include "input.inc"
 .include "memory_util.inc"
 
 .scope PRGLAST_E000
@@ -39,8 +41,15 @@ nmi:
         sta OAMADDR
         lda #$02
         sta OAM_DMA
+
+        ; Tasks dependent on PPU not rendering
+
+        ; Other tasks that should run once per frame with consistent-ish timing
+        jsr poll_input
         
+        ; This signals to the gameloop that it may continue
         inc FrameCounter
+
         ; restore registers
         pla
         ; all done
