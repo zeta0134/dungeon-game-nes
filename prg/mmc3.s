@@ -46,6 +46,10 @@
         lda #$00
         sta MMC3_MIRRORING
 
+        ; Enable PRG RAM
+        lda #$80
+        sta MMC3_RAM_PROTECT
+
         ; Disable IRQ interrupts for init
         sta MMC3_IRQ_DISABLE
         rts
