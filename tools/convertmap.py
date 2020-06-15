@@ -18,10 +18,17 @@ width = int(map_element.get("width"))
 height = int(map_element.get("height"))
 
 layer = map_element.find("layer")
+tileset = map_element.find("tileset")
+tileset_base = int(tileset.get("firstgid"))
 data = layer.find("data")
 
+def tileset_index_to_metatile_index(tile_index, tileset_base):
+  zero_based_tile_index = tile_index - tileset_base
+  premultiplied_tile_index = zero_based_tile_index * 4
+  return premultiplied_tile_index
+
 if data.get("encoding") == "csv":
-    cell_values = [int(x) for x in data.text.split(",")]
+    cell_values = [tileset_index_to_metatile_index(int(x), tileset_base) for x in data.text.split(",")]
     # encode!
     with open(output_file, "wb") as output:
       output.write(bytes([width,height]))
