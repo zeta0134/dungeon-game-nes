@@ -288,8 +288,6 @@ TilesRemaining := R2
 column_loop:
         ldy #$00
         lda (MapAddr),y ; a now holds the tile index
-        asl a
-        asl a ; a now holds an offset into the chrmap for this tile
         tay
         lda TilesetData,y ; a now holds CHR index of the top-left tile
         sta PPUDATA
@@ -309,8 +307,6 @@ TilesRemaining := R2
 column_loop:
         ldy #$00
         lda (MapAddr),y ; a now holds the tile index
-        asl a
-        asl a ; a now holds an offset into the chrmap for this tile
         tay
         lda TilesetData+2,y ; a now holds CHR index of the bottom-left tile
         sta PPUDATA
@@ -337,8 +333,6 @@ TilesRemaining := R2
 row_loop:
         ldy #$00
         lda (MapAddr),y ; a now holds the tile index
-        asl a
-        asl a ; a now holds an offset into the chrmap for this tile
         tay 
         lda TilesetData, y
         sta PPUDATA
@@ -359,8 +353,6 @@ TilesRemaining := R2
 row_loop:
         ldy #$00
         lda (MapAddr),y ; a now holds the tile index
-        asl a
-        asl a ; a now holds an offset into the chrmap for this tile
         tay 
         lda TilesetData+1, y
         sta PPUDATA
