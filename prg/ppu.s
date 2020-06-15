@@ -15,9 +15,6 @@
         ; disable rendering
         lda #$00
         sta PPUMASK
-
-        ; enable NMI interrupts and 8x16 sprites
-        lda #$A0
         sta PPUCTRL
 
         ; Set PPUADDR to 0,0
@@ -37,6 +34,10 @@ loop:
         lda #$00
         sta PPUADDR
         sta PPUADDR
+
+        ; enable NMI interrupts and 8x16 sprites
+        lda #$A0
+        sta PPUCTRL
 
         ; enable rendering everywhere
         lda #$1E

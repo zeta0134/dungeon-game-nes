@@ -30,7 +30,7 @@ test_tileset:
         bit ButtonsHeld
         beq right_not_held
         clc
-        lda #$10
+        lda #$80
         adc CameraXScrollTarget
         sta CameraXScrollTarget
         lda #$00
@@ -45,7 +45,7 @@ right_not_held:
         beq left_not_held
         clc
         lda CameraXScrollTarget
-        sbc #$10
+        sbc #$80
         sta CameraXScrollTarget
         lda CameraXTileTarget
         sbc #$00
@@ -108,26 +108,25 @@ up_not_held:
 .endproc
 
 start:
-
-        st16 R0, ($0200) ; starting address
-        st16 R2, ($0600) ; length in bytes
         jsr clear_memory
         jsr initialize_mmc3
         jsr initialize_palettes
-        jsr initialize_ppu
         jsr initialize_oam
         jsr demo_oam_init
+        jsr initialize_ppu
 
         lda #$00
         sta PPUMASK ; disable rendering
+        sta PPUCTRL ; and NMI
 
         ; less demo map init
         st16 R4, (test_map)
         jsr load_map
         st16 R0, (test_tileset)
         jsr load_tileset
-        lda #8
+        lda #0
         sta R0
+        lda #8
         sta R1
         jsr init_map
 
@@ -137,6 +136,8 @@ start:
         ; re-enable graphics
         lda #$1E
         sta PPUMASK
+        lda #$A0
+        sta PPUCTRL
 
         lda #$00
         sta FrameCounter
