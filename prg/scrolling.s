@@ -395,12 +395,7 @@ row_loop:
         ; if the result is zero, we did not scroll
         beq no_horizontal_scroll
         ; if the subtract here needed to borrow, the result is negative; we moved LEFT
-        bcc scroll_right
-        jmp scroll_left
-        ; if the result is not zero, the result is positive; we moved RIGHT
-        ;bne scroll_right
-        ; otherwise, we didn't leave the current tile boundary, so make no horizontal change
-        ;jmp no_horizontal_scroll
+        bcs scroll_left
 scroll_right:
         ; switch to +32 mode
         lda #$A4

@@ -30,7 +30,7 @@ test_tileset:
         bit ButtonsHeld
         beq right_not_held
         clc
-        lda #$80
+        lda #$40
         adc CameraXScrollTarget
         sta CameraXScrollTarget
         lda #$00
@@ -45,7 +45,7 @@ right_not_held:
         beq left_not_held
         clc
         lda CameraXScrollTarget
-        sbc #$80
+        sbc #$40
         sta CameraXScrollTarget
         lda CameraXTileTarget
         sbc #$00
