@@ -22,7 +22,7 @@ TestBlobbyDelay: .byte $00
 test_map:
         .incbin "build/maps/large_test_room.bin"
 test_tileset:
-        .byte $00, $00, $00, $00 ;tile 0 shouldn't exist in valid map data
+        ;.byte $00, $00, $00, $00 ;tile 0 shouldn't exist in valid map data
         .incbin "build/tilesets/skull_tiles.mt"
 
 .proc demo_scroll_camera
