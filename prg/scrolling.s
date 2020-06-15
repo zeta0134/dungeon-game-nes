@@ -18,21 +18,22 @@ MapHeight: .byte $00
 MapUpperLeft: .word $0000
 MapUpperRight: .word $0000
 MapLowerLeft: .word $0000
+MapXOffset: .byte $00
 MapYOffset: .byte $00
 ; Hardware scroll tiles within Nametable
 HWScrollUpperLeft: .word $0000
 HWScrollUpperRight: .word $0000
 HWScrollLowerLeft: .word $0000
 ; Camera-tracking
-CameraXTileCurrent: .word $0000
+CameraXTileCurrent: .byte $00
 CameraXScrollCurrent: .byte $00
-CameraYTileCurrent: .word $0000
+CameraYTileCurrent: .byte $00
 CameraYScrollCurrent: .byte $00
 .exportzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget
-CameraXTileTarget: .word $0000
-CameraXScrollTarget: .word $00
-CameraYTileTarget: .word $0000
-CameraYScrollTarget: .word $00
+CameraXTileTarget: .byte $00
+CameraXScrollTarget: .byte $00
+CameraYTileTarget: .byte $00
+CameraYScrollTarget: .byte $00
 
         .segment "PRGLAST_E000"
         ;.org $e000
@@ -453,14 +454,10 @@ no_horizontal_scroll:
         sta CameraXScrollCurrent
         lda CameraXTileTarget
         sta CameraXTileCurrent
-        lda CameraXTileTarget+1
-        sta CameraXTileCurrent+1
         lda CameraYScrollTarget
         sta CameraYScrollCurrent
         lda CameraYTileTarget
         sta CameraYTileCurrent
-        lda CameraYTileTarget+1
-        sta CameraYTileCurrent+1
         rts
 .endproc
 

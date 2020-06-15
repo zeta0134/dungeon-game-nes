@@ -36,9 +36,6 @@ test_tileset:
         lda #$00
         adc CameraXTileTarget
         sta CameraXTileTarget
-        lda #$00
-        adc CameraXTileTarget+1
-        sta CameraXTileTarget+1
 right_not_held:
         lda #KEY_LEFT
         bit ButtonsHeld
@@ -50,9 +47,6 @@ right_not_held:
         lda CameraXTileTarget
         sbc #$00
         sta CameraXTileTarget
-        lda CameraXTileTarget+1
-        sbc #$00
-        sta CameraXTileTarget+1
 left_not_held:
         lda #KEY_DOWN
         bit ButtonsHeld
@@ -64,9 +58,6 @@ left_not_held:
         lda #$00
         adc CameraYTileTarget
         sta CameraYTileTarget
-        lda #$00
-        adc CameraYTileTarget+1
-        sta CameraYTileTarget+1
 down_not_held:
         lda #KEY_UP
         bit ButtonsHeld
@@ -78,9 +69,6 @@ down_not_held:
         lda CameraYTileTarget
         sbc #$00
         sta CameraYTileTarget
-        lda CameraYTileTarget+1
-        sbc #$00
-        sta CameraYTileTarget+1
 up_not_held:
 
         rts
