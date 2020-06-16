@@ -235,7 +235,7 @@ done_with_y_offset:
         lda PPUSTATUS ; reset read/write latch
         lda #$A0
         sta PPUCTRL ; ensure VRAM increment mode is +1
-        ldx #12
+        ldx #13
 height_loop:
         ; draw the upper row
         mov16 MapLowerLeft, R0
