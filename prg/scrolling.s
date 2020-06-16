@@ -15,15 +15,17 @@ TilesetData: .res 256
 MapWidth: .byte $00
 MapHeight: .byte $00
 ; Current map position
-MapUpperLeft: .word $0000
-MapUpperRight: .word $0000
-MapLowerLeft: .word $0000
+MapUpperLeftRow: .word $0000
+MapUpperLeftColumn: .word $0000
+MapUpperRightColumn: .word $0000
+MapLowerLeftRow: .word $0000
 MapXOffset: .byte $00
 MapYOffset: .byte $00
 ; Hardware scroll tiles within Nametable
-HWScrollUpperLeft: .word $0000
-HWScrollUpperRight: .word $0000
-HWScrollLowerLeft: .word $0000
+HWScrollUpperLeftRow: .word $0000
+HWScrollUpperLeftColumn: .word $0000
+HWScrollUpperRightColumn: .word $0000
+HWScrollLowerLeftRow: .word $0000
 ; Camera-tracking
 CameraXTileCurrent: .byte $00
 CameraXScrollCurrent: .byte $00
@@ -217,20 +219,20 @@ loop:
 TileOffsetX := R0
 TileOffsetY := R1
         ; first, use the Y position to calculate the row offset into MapData
-        st16 MapUpperLeft, (MapData)
+        st16 MapUpperLeftRow, (MapData)
         lda TileOffsetY
         beq done_with_y_offset
 y_offset_loop:
-        add16 MapUpperLeft, MapWidth
+        add16 MapUpperLeftRow, MapWidth
         dec TileOffsetY
         bne y_offset_loop
 done_with_y_offset:
-        add16 MapUpperLeft, TileOffsetX
+        add16 MapUpperLeftRow, TileOffsetX
         ; At this point MapUpperLeft is correct, so use it as the base for
         ; lower left, which needs to advance an extra 24 tiles downwards.
-        mov16 MapUpperLeft, MapLowerLeft
+        mov16 MapUpperLeftRow, MapLowerLeftRow
         ; While we're at it, we can use the same loop to initialize the nametable
-        st16 HWScrollLowerLeft, $2000
+        st16 HWScrollLowerLeftRow, $2000
         lda #$00
         lda PPUSTATUS ; reset read/write latch
         lda #$A0
@@ -238,30 +240,32 @@ done_with_y_offset:
         ldx #13
 height_loop:
         ; draw the upper row
-        mov16 MapLowerLeft, R0
+        mov16 MapLowerLeftRow, R0
         lda #16
         sta R2
-        set_ppuaddr HWScrollLowerLeft
+        set_ppuaddr HWScrollLowerLeftRow
         jsr draw_upper_half_row ; a, y clobbered, x preserved
-        add16 HWScrollLowerLeft, #32
+        add16 HWScrollLowerLeftRow, #32
 
         ; draw the lower row
-        mov16 MapLowerLeft, R0
+        mov16 MapLowerLeftRow, R0
         lda #16
         sta R2
-        set_ppuaddr HWScrollLowerLeft
+        set_ppuaddr HWScrollLowerLeftRow
         jsr draw_lower_half_row ; a, y clobbered, x preserved
-        add16 HWScrollLowerLeft, #32
+        add16 HWScrollLowerLeftRow, #32
         ; increment the row counter and continue
-        add16 MapLowerLeft, MapWidth
+        add16 MapLowerLeftRow, MapWidth
         dex
         bne height_loop
-        ; Now we just need MapUpperRight:
-        mov16 MapUpperLeft, MapUpperRight
-        add16 MapUpperRight, #16
+        ; Now initialize the remaining Map variables:
+        mov16 MapUpperLeftRow, MapUpperLeftColumn
+        mov16 MapUpperLeftRow, MapUpperRightColumn
+        add16 MapUpperRightColumn, #16
         ; Initialize the remaining hardware scroll registers
-        st16 HWScrollUpperLeft, $2000
-        st16 HWScrollUpperRight, $2400
+        st16 HWScrollUpperLeftRow, $2000
+        st16 HWScrollUpperLeftColumn, $2000
+        st16 HWScrollUpperRightColumn, $2400
         ; done?
         rts
 .endproc
@@ -366,31 +370,51 @@ row_loop:
         rts
 .endproc
 
-.proc shift_hwscroll_right
-        incColumn HWScrollUpperRight
-        incColumn HWScrollUpperLeft
-        incColumn HWScrollLowerLeft
+.proc shift_hwrows_right
+        incColumn HWScrollUpperLeftRow
+        incColumn HWScrollLowerLeftRow
         rts
 .endproc
 
-.proc shift_hwscroll_left
-        decColumn HWScrollUpperRight
-        decColumn HWScrollUpperLeft
-        decColumn HWScrollLowerLeft
+.proc shift_hwcolumns_right
+        incColumn HWScrollUpperRightColumn
+        incColumn HWScrollUpperLeftColumn
         rts
 .endproc
 
-.proc shift_hwscroll_down
-        incRow HWScrollUpperRight
-        incRow HWScrollUpperLeft
-        incRow HWScrollLowerLeft
+.proc shift_hwrows_left
+        decColumn HWScrollUpperLeftRow
+        decColumn HWScrollLowerLeftRow
         rts
 .endproc
 
-.proc shift_hwscroll_up
-        decRow HWScrollUpperRight
-        decRow HWScrollUpperLeft
-        decRow HWScrollLowerLeft
+.proc shift_hwcolumns_left
+        decColumn HWScrollUpperRightColumn
+        decColumn HWScrollUpperLeftColumn
+        rts
+.endproc
+
+.proc shift_hwrows_down
+        incRow HWScrollUpperLeftRow
+        incRow HWScrollLowerLeftRow
+        rts
+.endproc
+
+.proc shift_hwcolumns_down
+        incRow HWScrollUpperRightColumn
+        incRow HWScrollUpperLeftColumn
+        rts
+.endproc
+
+.proc shift_hwrows_up
+        decRow HWScrollUpperLeftRow
+        decRow HWScrollLowerLeftRow
+        rts
+.endproc
+
+.proc shift_hwcolumns_up
+        decRow HWScrollUpperRightColumn
+        decRow HWScrollUpperLeftColumn
         rts
 .endproc
 
@@ -409,88 +433,82 @@ scroll_down:
         ; switch to +1 mode
         lda #$A0
         sta PPUCTRL
-        set_ppuaddr HWScrollLowerLeft
-        mov16 MapLowerLeft, R0
+        set_ppuaddr HWScrollLowerLeftRow
+        mov16 MapLowerLeftRow, R0
         lda #16
         sec
         sbc MapXOffset
         sta R2
         ; the 5th bit of the scroll tells us if we're doing a left-column or a right-column
         lda #%00100000
-        bit HWScrollLowerLeft
+        bit HWScrollLowerLeftRow
         bne lower_edge_lower_row
 lower_edge_upper_row:
         jsr draw_upper_half_row
-        jmp shift_registers_down
+        ; The map index doesn't change, so we update *only* the row registers here
+        ; We need to leave the columns alone until we cross a metatile boundary
+        jsr shift_hwrows_down
+        jmp no_horizontal_scroll
 lower_edge_lower_row:
         jsr draw_lower_half_row
         clc
-        lda MapUpperRight
-        adc MapWidth
-        sta MapUpperRight
-        lda MapUpperRight+1
-        adc #0
-        sta MapUpperRight+1
-        clc
-        lda MapUpperLeft
-        adc MapWidth
-        sta MapUpperLeft
-        lda MapUpperLeft+1
-        adc #0
-        sta MapUpperLeft+1
-        clc
-        lda MapLowerLeft
-        adc MapWidth
-        sta MapLowerLeft
-        lda MapLowerLeft+1
-        adc #0
-        sta MapLowerLeft+1
+        add16 MapUpperRightColumn, MapWidth
+        add16 MapUpperLeftColumn, MapWidth
+        add16 MapUpperLeftRow, MapWidth
+        add16 MapLowerLeftRow, MapWidth
+        ; Increment MapYOffset with wrap around
+        inc MapYOffset
+        lda #14
+        cmp MapYOffset
+        bne shift_registers_down
+        lda #0
+        sta MapYOffset
 shift_registers_down:
-        jsr shift_hwscroll_down
+        ; Finish shifting hwrows down to the next metatile
+        jsr shift_hwrows_down
+        ; Shift columns down *twice* to advance a complete metatile
+        jsr shift_hwcolumns_down
+        jsr shift_hwcolumns_down
         ; note - NOT a bug! We intentionally prioritize vertical scroll and let horizontal lag by a frame or two; it's fine
         jmp no_horizontal_scroll
 scroll_up:
         ; switch to +1 mode
         lda #$A0
         sta PPUCTRL
-        set_ppuaddr HWScrollUpperLeft
-        mov16 MapUpperLeft, R0
+        set_ppuaddr HWScrollUpperLeftRow
+        mov16 MapUpperLeftRow, R0
         lda #16
         sec
         sbc MapXOffset
         sta R2
         ; the 5th bit of the scroll tells us if we're doing a left-column or a right-column
         lda #%00100000
-        bit HWScrollUpperLeft
+        bit HWScrollUpperLeftRow
         beq upper_edge_upper_row
 upper_edge_lower_row:
         jsr draw_lower_half_row
-        jmp shift_registers_up
+        ; The map index doesn't change, so we update *only* the row registers here
+        ; We need to leave the columns alone until we cross a metatile boundary
+        jsr shift_hwrows_up
+        jmp no_horizontal_scroll
 upper_edge_upper_row:
         jsr draw_upper_half_row
         sec
-        lda MapUpperRight
-        sbc MapWidth
-        sta MapUpperRight
-        lda MapUpperRight+1
-        sbc #0
-        sta MapUpperRight+1
-        sec
-        lda MapUpperLeft
-        sbc MapWidth
-        sta MapUpperLeft
-        lda MapUpperLeft+1
-        sbc #0
-        sta MapUpperLeft+1
-        sec
-        lda MapLowerLeft
-        sbc MapWidth
-        sta MapLowerLeft
-        lda MapLowerLeft+1
-        sbc #0
-        sta MapLowerLeft+1
+        sub16 MapUpperRightColumn, MapWidth
+        sub16 MapUpperLeftColumn, MapWidth
+        sub16 MapUpperLeftRow, MapWidth
+        sub16 MapLowerLeftRow, MapWidth
+        ; Decrement MapYOffset with wraparound
+        dec MapYOffset
+        bpl shift_registers_up
+        lda #13
+        sta MapYOffset
 shift_registers_up:
-        jsr shift_hwscroll_up
+        ; Finish shifting hwrows up to the next metatile
+        jsr shift_hwrows_up
+        ; Shift columns up *twice* to advance a complete metatile
+        jsr shift_hwcolumns_up
+        jsr shift_hwcolumns_up
          ; note - NOT a bug! We intentionally prioritize vertical scroll and let horizontal lag by a frame or two; it's fine
         jmp no_horizontal_scroll
 no_vertical_scroll:
@@ -504,59 +522,84 @@ no_vertical_scroll:
         lda CameraXTileCurrent
         cmp CameraXTileTarget
         ; if the result is zero, we did not scroll
-        beq no_horizontal_scroll
+        bne horizontal_scroll
+        jmp no_horizontal_scroll
+horizontal_scroll:
         ; if the subtract here needed to borrow, the result is negative; we moved LEFT
         bcs scroll_left
 scroll_right:
         ; switch to +32 mode
         lda #$A4
         sta PPUCTRL
-        set_ppuaddr HWScrollUpperRight
-        mov16 MapUpperRight, R0
+        set_ppuaddr HWScrollUpperRightColumn
+        mov16 MapUpperRightColumn, R0
         lda #14
         clc
         sbc MapYOffset
         sta R2
         ; the low bit of the scroll tells us if we're doing a left-column or a right-column
         lda #$01
-        bit HWScrollUpperRight
+        bit HWScrollUpperRightColumn
         beq right_side_left_column
 right_side_right_column:
         jsr draw_right_half_col
-        inc MapUpperRight
-        inc MapUpperLeft
-        inc MapLowerLeft
-        jmp shift_registers_right
+        inc MapUpperRightColumn
+        inc MapUpperLeftColumn
+        inc MapUpperLeftRow
+        inc MapLowerLeftRow
+        ; Increment MapXOffset with wrap around
+        inc MapXOffset
+        lda #$0F
+        and MapXOffset
+        sta MapXOffset
+        ; Finish shifting hwcolumns up to the next metatile
+        jsr shift_hwcolumns_right
+        ; Shift rows right *twice* to advance a complete metatile
+        jsr shift_hwrows_right
+        jsr shift_hwrows_right
+        jmp no_horizontal_scroll
 right_side_left_column:
         jsr draw_left_half_col
-shift_registers_right:
-        jsr shift_hwscroll_right
+        ; The map index doesn't change, so we update *only* the column registers here
+        ; Shift  hwcolumns right halfway to the next metatile
+        jsr shift_hwcolumns_right
         jmp no_horizontal_scroll
 scroll_left:
         ; switch to +32 mode
         lda #$A4
         sta PPUCTRL
-        set_ppuaddr HWScrollUpperLeft
-        mov16 MapUpperLeft, R0
+        set_ppuaddr HWScrollUpperLeftColumn
+        mov16 MapUpperLeftColumn, R0
         lda #14
         clc
         sbc MapYOffset
         sta R2
         ; the low bit of the scroll tells us if we're doing a left-column or a right-column
         lda #$01
-        bit HWScrollUpperLeft
+        bit HWScrollUpperLeftColumn
         beq left_side_left_column
 left_side_right_column:
         jsr draw_right_half_col
-        jmp shift_registers_left
+        ; The map index doesn't change, so we update *only* the column registers here
+        ; Shift hwcolumns left halfway to the next metatile
+        jsr shift_hwcolumns_left
+        jmp no_horizontal_scroll
 left_side_left_column:
         jsr draw_left_half_col
-        dec MapUpperRight
-        dec MapUpperLeft
-        dec MapLowerLeft
-shift_registers_left:
-        jsr shift_hwscroll_left
-        jmp no_horizontal_scroll
+        dec MapUpperRightColumn
+        dec MapUpperLeftColumn
+        dec MapUpperLeftRow
+        dec MapLowerLeftRow
+        ; Decrement MapXOffset with wraparound
+        dec MapXOffset
+        lda #$0F
+        and MapXOffset
+        sta MapXOffset
+        ; Finish shifting hwcolumns left to the next metatile
+        jsr shift_hwcolumns_left
+        ; Shift rows left *twice* to advance a complete metatile
+        jsr shift_hwrows_left
+        jsr shift_hwrows_left
 no_horizontal_scroll:
         ; keep the new camera coordinates; we'll use these soon
         ; to set PPUSCROLL / PPUADDR, and later in the above comparisons
