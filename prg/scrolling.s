@@ -427,6 +427,10 @@ row_loop:
         bne vertical_scroll
         jmp no_vertical_scroll
 vertical_scroll:
+        ; we're about to apply the Y difference, so copy the Y changes over here
+        ; (this does NOT clobber carry, but DOES clobber the zero flag)
+        lda CameraYTileTarget
+        sta CameraYTileCurrent
         ; if the subtract here needed to borrow, the result is negative; we moved UP
         bcc scroll_down
         jmp scroll_up
@@ -580,6 +584,10 @@ no_vertical_scroll:
         bne horizontal_scroll
         jmp no_horizontal_scroll
 horizontal_scroll:
+        ; We're about to apply the X difference here, so copy that tile over
+        ; (This does NOT clobber carry, but it DOES clobber zero)
+        lda CameraXTileTarget
+        sta CameraXTileCurrent
         ; if the subtract here needed to borrow, the result is negative; we moved LEFT
         bcs scroll_left
 scroll_right:
@@ -607,9 +615,10 @@ right_side_right_column:
         sta PPUADDR
         ; bytes remaining
         lda MapYOffset
-        adc #1
+        beq @skip
         sta R2
         jsr draw_right_half_col
+@skip:
         ; Move our map pointers to the right by one entire tile
         inc MapUpperRightColumn
         inc MapUpperLeftColumn
@@ -637,9 +646,10 @@ right_side_left_column:
         sta PPUADDR
         ; bytes remaining
         lda MapYOffset
-        adc #1
+        beq @skip
         sta R2
         jsr draw_left_half_col
+@skip:
         ; The map index doesn't change, so we update *only* the column registers here
         ; Shift  hwcolumns right halfway to the next metatile
         jsr shift_hwcolumns_right
@@ -669,9 +679,10 @@ left_side_right_column:
         sta PPUADDR
         ; bytes remaining
         lda MapYOffset
-        adc #1
+        beq @skip
         sta R2
         jsr draw_right_half_col
+@skip:
         ; The map index doesn't change, so we update *only* the column registers here
         ; Shift hwcolumns left halfway to the next metatile
         jsr shift_hwcolumns_left
@@ -687,9 +698,10 @@ left_side_left_column:
         sta PPUADDR
         ; bytes remaining
         lda MapYOffset
-        adc #1
+        beq @skip
         sta R2
         jsr draw_left_half_col
+@skip:
         ; Move our map index to the left
         dec MapUpperRightColumn
         dec MapUpperLeftColumn
@@ -706,21 +718,17 @@ left_side_left_column:
         jsr shift_hwrows_left
         jsr shift_hwrows_left
 no_horizontal_scroll:
-        ; keep the new camera coordinates; we'll use these soon
-        ; to set PPUSCROLL / PPUADDR, and later in the above comparisons
+        ; Always copy in the new sub-tile scroll position
+        ; (this visually hides the fact that we alternately may delay a row / column)
         lda CameraXScrollTarget
         sta CameraXScrollCurrent
-        lda CameraXTileTarget
-        sta CameraXTileCurrent
         lda CameraYScrollTarget
         sta CameraYScrollCurrent
-        lda CameraYTileTarget
-        sta CameraYTileCurrent
         rts
 .endproc
 
 
-; Based on the current hardware scroll position, write the appropriate PPU registers
+; Based on the target hardware scroll position, write the appropriate PPU registers
 ; in advance of the next frame to draw. Typically meant to be called once at the tail
 ; end of NMI, but could potentially be useful for mid-frame shenanigans.
 ; Clobbers: R0
@@ -728,7 +736,7 @@ no_horizontal_scroll:
 .proc set_scroll_for_frame
         ; First, set the nametable based on the 6th bit of the X tile position
         lda #%00100000
-        bit CameraXTileCurrent
+        bit CameraXTileTarget
         beq left_nametable
 right_nametable:
         lda #$A1
@@ -740,9 +748,9 @@ left_nametable:
 done_with_nametables:
         ; Reset PPU write latch
         lda PPUSTATUS
-        lda CameraXScrollCurrent
+        lda CameraXScrollTarget
         sta R0
-        lda CameraXTileCurrent
+        lda CameraXTileTarget
         .repeat 3
         rol R0
         rol a
@@ -751,9 +759,9 @@ done_with_nametables:
         ; (lower 5 bits of that are sub-pixels, and discarted)
         sta PPUSCROLL
         ; now do the same for Y scroll
-        lda CameraYScrollCurrent
+        lda CameraYScrollTarget
         sta R0
-        lda CameraYTileCurrent
+        lda CameraYTileTarget
         .repeat 3
         rol R0
         rol a
