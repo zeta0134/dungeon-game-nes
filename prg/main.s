@@ -114,7 +114,7 @@ start:
         jsr load_tileset
         lda #0
         sta R0
-        lda #8
+        lda #0
         sta R1
         jsr init_map
 
