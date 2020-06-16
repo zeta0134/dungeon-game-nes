@@ -41,3 +41,12 @@ no_carry:
         adc addr+1
         sta addr+1
 .endmacro
+
+.macro sub16 addr, value
+        lda addr
+        sbc value
+        sta addr
+        lda addr+1
+        sbc #0
+        sta addr+1
+.endmacro
