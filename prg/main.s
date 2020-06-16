@@ -117,6 +117,7 @@ start:
         lda #0
         sta R1
         jsr init_map
+        jsr install_irq_handler
 
         ; reset PPUADDR to top-left
         set_ppuaddr #$2000

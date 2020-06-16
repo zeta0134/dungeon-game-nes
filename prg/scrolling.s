@@ -40,7 +40,7 @@ CameraYScrollTarget: .byte $00
         .segment "PRGLAST_E000"
         ;.org $e000
 
-.export load_map, load_tileset, init_map, scroll_camera, set_scroll_for_frame
+.export load_map, load_tileset, init_map, scroll_camera, set_scroll_for_frame, install_irq_handler
 
 .macro incColumn addr
 .scope
@@ -768,6 +768,26 @@ done_with_nametables:
         .endrep
         sta PPUSCROLL
 done:
+        rts
+.endproc
+
+base_irq_handler:
+        lda #0
+        sta PPUADDR
+        lda #0
+        sta PPUADDR
+irq_cleanup_handler:
+        jmp $0000
+
+.proc install_irq_handler
+        ldx #13
+        ldy #0
+loop:
+        lda base_irq_handler,y
+        sta $00F0,y
+        iny
+        dex
+        bne loop
         rts
 .endproc
 

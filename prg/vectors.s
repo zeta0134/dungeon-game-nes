@@ -37,6 +37,10 @@ reset:
 nmi:
         ; preserve registers
         pha
+        txa
+        pha
+        tya
+        pha
         ; perform sprite OAM
         lda #$00
         sta OAMADDR
@@ -57,10 +61,11 @@ nmi:
 
         ; restore registers
         pla
+        tay
+        pla
+        tax
+        pla
         ; all done
-        rti
-
-irq:
         rti
 
         ;
@@ -69,5 +74,5 @@ irq:
         .segment "VECTORS"
         .addr nmi
         .addr reset
-        .addr irq
+        .addr $00F0
 .endscope

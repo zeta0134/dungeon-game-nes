@@ -3,5 +3,6 @@
 .import init_map
 .import set_scroll_for_frame
 .import scroll_camera
+.import install_irq_handler
 
 
