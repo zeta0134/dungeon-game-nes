@@ -428,7 +428,8 @@ row_loop:
         jmp no_vertical_scroll
 vertical_scroll:
         ; if the subtract here needed to borrow, the result is negative; we moved UP
-        bcs scroll_up
+        bcc scroll_down
+        jmp scroll_up
 scroll_down:
         ; switch to +1 mode
         lda #$A0
@@ -444,12 +445,41 @@ scroll_down:
         bit HWScrollLowerLeftRow
         bne lower_edge_lower_row
 lower_edge_upper_row:
+        ; The left half is easy; we're already prepped for it
+        jsr draw_upper_half_row
+        ; the right half needs to massage the target address; it should
+        ; switch nametables, and start at the left-most tile, but keep
+        ; the same Y coordinate
+        lda HWScrollLowerLeftRow+1 ; ppuaddr high byte
+        eor #%00000100 ; swap nametables
+        sta PPUADDR
+        lda HWScrollLowerLeftRow ; ppuaddr low byte
+        and #%11100000 ; set X component to 0
+        sta PPUADDR
+        ; bytes remaining
+        lda MapXOffset
+        adc #1
+        sta R2
         jsr draw_upper_half_row
         ; The map index doesn't change, so we update *only* the row registers here
         ; We need to leave the columns alone until we cross a metatile boundary
         jsr shift_hwrows_down
         jmp no_horizontal_scroll
 lower_edge_lower_row:
+        jsr draw_lower_half_row
+        ; the right half needs to massage the target address; it should
+        ; switch nametables, and start at the left-most tile, but keep
+        ; the same Y coordinate
+        lda HWScrollLowerLeftRow+1 ; ppuaddr high byte
+        eor #%00000100 ; swap nametables
+        sta PPUADDR
+        lda HWScrollLowerLeftRow ; ppuaddr low byte
+        and #%11100000 ; set X component to 0
+        sta PPUADDR
+        ; bytes remaining
+        lda MapXOffset
+        adc #1
+        sta R2
         jsr draw_lower_half_row
         clc
         add16 MapUpperRightColumn, MapWidth
@@ -487,11 +517,39 @@ scroll_up:
         beq upper_edge_upper_row
 upper_edge_lower_row:
         jsr draw_lower_half_row
+        ; the right half needs to massage the target address; it should
+        ; switch nametables, and start at the left-most tile, but keep
+        ; the same Y coordinate
+        lda HWScrollUpperLeftRow+1 ; ppuaddr high byte
+        eor #%00000100 ; swap nametables
+        sta PPUADDR
+        lda HWScrollUpperLeftRow ; ppuaddr low byte
+        and #%11100000 ; set X component to 0
+        sta PPUADDR
+        ; bytes remaining
+        lda MapXOffset
+        adc #1
+        sta R2
+        jsr draw_lower_half_row
         ; The map index doesn't change, so we update *only* the row registers here
         ; We need to leave the columns alone until we cross a metatile boundary
         jsr shift_hwrows_up
         jmp no_horizontal_scroll
 upper_edge_upper_row:
+        jsr draw_upper_half_row
+        ; the right half needs to massage the target address; it should
+        ; switch nametables, and start at the left-most tile, but keep
+        ; the same Y coordinate
+        lda HWScrollUpperLeftRow+1 ; ppuaddr high byte
+        eor #%00000100 ; swap nametables
+        sta PPUADDR
+        lda HWScrollUpperLeftRow ; ppuaddr low byte
+        and #%11100000 ; set X component to 0
+        sta PPUADDR
+        ; bytes remaining
+        lda MapXOffset
+        adc #1
+        sta R2
         jsr draw_upper_half_row
         sec
         sub16 MapUpperRightColumn, MapWidth
