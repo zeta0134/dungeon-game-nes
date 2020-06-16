@@ -572,9 +572,6 @@ shift_registers_up:
 no_vertical_scroll:
 
 
-
-
-
         ; did we move left or right?
         ; perform a 16-bit compare between target - current, and throw the result away
         lda CameraXTileCurrent
@@ -592,7 +589,7 @@ scroll_right:
         set_ppuaddr HWScrollUpperRightColumn
         mov16 MapUpperRightColumn, R0
         lda #14
-        clc
+        sec
         sbc MapYOffset
         sta R2
         ; the low bit of the scroll tells us if we're doing a left-column or a right-column
@@ -601,6 +598,19 @@ scroll_right:
         beq right_side_left_column
 right_side_right_column:
         jsr draw_right_half_col
+        lda HWScrollUpperRightColumn+1
+        ; Set the Y component to zero
+        and #%11111100
+        sta PPUADDR
+        lda HWScrollUpperRightColumn
+        and #%00011111
+        sta PPUADDR
+        ; bytes remaining
+        lda MapYOffset
+        adc #1
+        sta R2
+        jsr draw_right_half_col
+        ; Move our map pointers to the right by one entire tile
         inc MapUpperRightColumn
         inc MapUpperLeftColumn
         inc MapUpperLeftRow
@@ -618,6 +628,18 @@ right_side_right_column:
         jmp no_horizontal_scroll
 right_side_left_column:
         jsr draw_left_half_col
+        lda HWScrollUpperRightColumn+1
+        ; Set the Y component to zero
+        and #%11111100
+        sta PPUADDR
+        lda HWScrollUpperRightColumn
+        and #%00011111
+        sta PPUADDR
+        ; bytes remaining
+        lda MapYOffset
+        adc #1
+        sta R2
+        jsr draw_left_half_col
         ; The map index doesn't change, so we update *only* the column registers here
         ; Shift  hwcolumns right halfway to the next metatile
         jsr shift_hwcolumns_right
@@ -629,7 +651,7 @@ scroll_left:
         set_ppuaddr HWScrollUpperLeftColumn
         mov16 MapUpperLeftColumn, R0
         lda #14
-        clc
+        sec
         sbc MapYOffset
         sta R2
         ; the low bit of the scroll tells us if we're doing a left-column or a right-column
@@ -638,12 +660,37 @@ scroll_left:
         beq left_side_left_column
 left_side_right_column:
         jsr draw_right_half_col
+        lda HWScrollUpperLeftColumn+1
+        ; Set the Y component to zero
+        and #%11111100
+        sta PPUADDR
+        lda HWScrollUpperLeftColumn
+        and #%00011111
+        sta PPUADDR
+        ; bytes remaining
+        lda MapYOffset
+        adc #1
+        sta R2
+        jsr draw_right_half_col
         ; The map index doesn't change, so we update *only* the column registers here
         ; Shift hwcolumns left halfway to the next metatile
         jsr shift_hwcolumns_left
         jmp no_horizontal_scroll
 left_side_left_column:
         jsr draw_left_half_col
+        lda HWScrollUpperLeftColumn+1
+        ; Set the Y component to zero
+        and #%11111100
+        sta PPUADDR
+        lda HWScrollUpperLeftColumn
+        and #%00011111
+        sta PPUADDR
+        ; bytes remaining
+        lda MapYOffset
+        adc #1
+        sta R2
+        jsr draw_left_half_col
+        ; Move our map index to the left
         dec MapUpperRightColumn
         dec MapUpperLeftColumn
         dec MapUpperLeftRow
