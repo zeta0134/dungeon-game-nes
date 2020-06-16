@@ -92,7 +92,7 @@ no_overflow:
         lda addr
         adc #%00100000
         sta addr
-        bvs overflow
+        bcs overflow
         ; check to see if we've reached the magic value 28
         ; lower 3 bits
         and #%11100000
@@ -126,10 +126,10 @@ done:
         adc #%11100000 ;"subtract" 1 from the upper 3 bits
         sta addr
         ; if we *did* overflow the addition in hardware, then we *did not* overflow the 3-bit subtraction: 0x000 -> 0x111
-        bvs done
+        bcs done
         ; subtract 1 from the upper 2 bits
         lda addr+1
-        sbc #1
+        sbc #0
         ; stash the result in x (it might be wrong)
         tax
         ; check for overflow in *just these two bits*
@@ -242,7 +242,7 @@ height_loop:
         lda #16
         sta R2
         set_ppuaddr HWScrollLowerLeft
-        jsr draw_lower_half_row ; a, y clobbered, x preserved
+        jsr draw_upper_half_row ; a, y clobbered, x preserved
         add16 HWScrollLowerLeft, #32
 
         ; draw the lower row
@@ -250,7 +250,7 @@ height_loop:
         lda #16
         sta R2
         set_ppuaddr HWScrollLowerLeft
-        jsr draw_upper_half_row ; a, y clobbered, x preserved
+        jsr draw_lower_half_row ; a, y clobbered, x preserved
         add16 HWScrollLowerLeft, #32
         ; increment the row counter and continue
         add16 MapLowerLeft, MapWidth
@@ -281,7 +281,7 @@ height_loop:
 ;   PPUADDR: nametable destination
 ; Note: PPUCTRL should be set to VRAM+1 mode before calling
 
-.proc draw_lower_half_row
+.proc draw_upper_half_row
 MapAddr := R0
 TilesRemaining := R2
         clc
@@ -300,7 +300,7 @@ column_loop:
         rts
 .endproc
 
-.proc draw_upper_half_row
+.proc draw_lower_half_row
 MapAddr := R0
 TilesRemaining := R2
         clc
@@ -380,7 +380,125 @@ row_loop:
         rts
 .endproc
 
+.proc shift_hwscroll_down
+        incRow HWScrollUpperRight
+        incRow HWScrollUpperLeft
+        incRow HWScrollLowerLeft
+        rts
+.endproc
+
+.proc shift_hwscroll_up
+        decRow HWScrollUpperRight
+        decRow HWScrollUpperLeft
+        decRow HWScrollLowerLeft
+        rts
+.endproc
+
 .proc scroll_camera
+        ; did we move up or down?
+        ; perform a 16-bit compare between target - current, and throw the result away
+        lda CameraYTileCurrent
+        cmp CameraYTileTarget
+        ; if the result is zero, we did not scroll
+        bne vertical_scroll
+        jmp no_vertical_scroll
+vertical_scroll:
+        ; if the subtract here needed to borrow, the result is negative; we moved UP
+        bcs scroll_up
+scroll_down:
+        ; switch to +1 mode
+        lda #$A0
+        sta PPUCTRL
+        set_ppuaddr HWScrollLowerLeft
+        mov16 MapLowerLeft, R0
+        lda #16
+        sec
+        sbc MapXOffset
+        sta R2
+        ; the 5th bit of the scroll tells us if we're doing a left-column or a right-column
+        lda #%00100000
+        bit HWScrollLowerLeft
+        bne lower_edge_lower_row
+lower_edge_upper_row:
+        jsr draw_upper_half_row
+        jmp shift_registers_down
+lower_edge_lower_row:
+        jsr draw_lower_half_row
+        clc
+        lda MapUpperRight
+        adc MapWidth
+        sta MapUpperRight
+        lda MapUpperRight+1
+        adc #0
+        sta MapUpperRight+1
+        clc
+        lda MapUpperLeft
+        adc MapWidth
+        sta MapUpperLeft
+        lda MapUpperLeft+1
+        adc #0
+        sta MapUpperLeft+1
+        clc
+        lda MapLowerLeft
+        adc MapWidth
+        sta MapLowerLeft
+        lda MapLowerLeft+1
+        adc #0
+        sta MapLowerLeft+1
+shift_registers_down:
+        jsr shift_hwscroll_down
+        ; note - NOT a bug! We intentionally prioritize vertical scroll and let horizontal lag by a frame or two; it's fine
+        jmp no_horizontal_scroll
+scroll_up:
+        ; switch to +1 mode
+        lda #$A0
+        sta PPUCTRL
+        set_ppuaddr HWScrollUpperLeft
+        mov16 MapUpperLeft, R0
+        lda #16
+        sec
+        sbc MapXOffset
+        sta R2
+        ; the 5th bit of the scroll tells us if we're doing a left-column or a right-column
+        lda #%00100000
+        bit HWScrollUpperLeft
+        beq upper_edge_upper_row
+upper_edge_lower_row:
+        jsr draw_lower_half_row
+        jmp shift_registers_up
+upper_edge_upper_row:
+        jsr draw_upper_half_row
+        sec
+        lda MapUpperRight
+        sbc MapWidth
+        sta MapUpperRight
+        lda MapUpperRight+1
+        sbc #0
+        sta MapUpperRight+1
+        sec
+        lda MapUpperLeft
+        sbc MapWidth
+        sta MapUpperLeft
+        lda MapUpperLeft+1
+        sbc #0
+        sta MapUpperLeft+1
+        sec
+        lda MapLowerLeft
+        sbc MapWidth
+        sta MapLowerLeft
+        lda MapLowerLeft+1
+        sbc #0
+        sta MapLowerLeft+1
+shift_registers_up:
+        jsr shift_hwscroll_up
+         ; note - NOT a bug! We intentionally prioritize vertical scroll and let horizontal lag by a frame or two; it's fine
+        jmp no_horizontal_scroll
+no_vertical_scroll:
+
+
+
+
+
         ; did we move left or right?
         ; perform a 16-bit compare between target - current, and throw the result away
         lda CameraXTileCurrent
