@@ -132,6 +132,13 @@ start:
         sta FrameCounter
         lda #$20
         sta TestBlobbyDelay
+
+        ; disable unusual IRQ sources
+        lda #%01000000
+        sta $4017 ; APU frame counter
+        lda #0
+        sta $4010
+        cli
 gameloop:
         jsr demo_scroll_camera
         dec TestBlobbyDelay

@@ -1,5 +1,6 @@
         .setcpu "6502"
         .include "nes.inc"
+        .include "mmc3.inc"
         .include "ppu.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
@@ -36,6 +37,9 @@ CameraXTileTarget: .byte $00
 CameraXScrollTarget: .byte $00
 CameraYTileTarget: .byte $00
 CameraYScrollTarget: .byte $00
+PpuYTileTarget: .byte $00
+; IRQ variable to assist with screen split
+SplitScanlinesToStatus: .byte $00
 
         .segment "PRGLAST_E000"
         ;.org $e000
@@ -435,6 +439,13 @@ vertical_scroll:
         bcc scroll_down
         jmp scroll_up
 scroll_down:
+        inc PpuYTileTarget
+        lda #28
+        cmp PpuYTileTarget
+        bne no_positive_y_wrap
+        lda #0
+        sta PpuYTileTarget
+no_positive_y_wrap:
         ; switch to +1 mode
         lda #$A0
         sta PPUCTRL
@@ -506,6 +517,11 @@ shift_registers_down:
         ; note - NOT a bug! We intentionally prioritize vertical scroll and let horizontal lag by a frame or two; it's fine
         jmp no_horizontal_scroll
 scroll_up:
+        dec PpuYTileTarget
+        bpl no_negative_y_wrap
+        lda #27
+        sta PpuYTileTarget
+no_negative_y_wrap:
         ; switch to +1 mode
         lda #$A0
         sta PPUCTRL
@@ -727,6 +743,49 @@ no_horizontal_scroll:
         rts
 .endproc
 
+base_irq_handler:
+        pha
+irq_first_byte:
+        lda #0
+irq_first_address:
+        sta PPUADDR
+irq_second_byte:
+        lda #0
+irq_second_address:
+        sta PPUADDR
+irq_cleanup_handler:
+        jmp irq_do_nothing
+
+MY_IRQ_HANDLER_THAT_SCARES_SMALL_CHILDREN := $00F0
+
+.proc install_irq_handler
+        ldx #14
+        ldy #0
+loop:
+        lda base_irq_handler,y
+        sta MY_IRQ_HANDLER_THAT_SCARES_SMALL_CHILDREN,y
+        iny
+        dex
+        bne loop
+        rts
+.endproc
+
+.macro set_first_irq_byte value
+        lda value
+        sta irq_first_byte - base_irq_handler + MY_IRQ_HANDLER_THAT_SCARES_SMALL_CHILDREN + 1
+.endmacro
+
+.macro set_second_irq_byte value
+        lda value
+        sta irq_second_byte - base_irq_handler + MY_IRQ_HANDLER_THAT_SCARES_SMALL_CHILDREN + 1
+.endmacro
+
+.macro set_irq_cleanup_handler address
+        lda #<address
+        sta irq_cleanup_handler - base_irq_handler + MY_IRQ_HANDLER_THAT_SCARES_SMALL_CHILDREN + 1
+        lda #>address
+        sta irq_cleanup_handler - base_irq_handler + MY_IRQ_HANDLER_THAT_SCARES_SMALL_CHILDREN + 2
+.endmacro
 
 ; Based on the target hardware scroll position, write the appropriate PPU registers
 ; in advance of the next frame to draw. Typically meant to be called once at the tail
@@ -761,34 +820,144 @@ done_with_nametables:
         ; now do the same for Y scroll
         lda CameraYScrollTarget
         sta R0
-        lda CameraYTileTarget
+        lda PpuYTileTarget
         .repeat 3
         rol R0
         rol a
         .endrep
         sta PPUSCROLL
+setup_irq:
+        ; conveniently, A has the number of *pixels* we have scrolled the background down the screen
+        ; first off, stash it in R0 (we'll need this a few times)
+        sta R0
+        cmp #32
+        bcc no_midscreen_split
+midscreen_split:
+        ; The first IRQ will move us to the top of the playfield, but maintaining the same nametable
+        ; and X coordinate
+        ; the first byte is thus just based on our current nametable, with the Y component zeroed out:
+        lda CameraXTileTarget
+        and #%00100000
+        lsr ; >> 3
+        lsr
+        lsr
+        sta irq_first_byte - base_irq_handler + MY_IRQ_HANDLER_THAT_SCARES_SMALL_CHILDREN + 1
+        ; The second byte is just coarse X, with the upper bits cleared
+        lda CameraXTileTarget
+        and #%00011111
+        sta irq_second_byte - base_irq_handler + MY_IRQ_HANDLER_THAT_SCARES_SMALL_CHILDREN + 1
+        set_irq_cleanup_handler (post_irq_midframe_status_split)
+        ; The first IRQ will happen 192 - PpuYTileTarget - 32 scanlines into the display
+        clc ; subtract one extra on purpose here
+        lda #(192 + 32)
+        sbc R0
+        sta MMC3_IRQ_LATCH
+        ; The IRQ following this is 192 - this number - 1 again
+        clc
+        sta R0
+        lda #192
+        sbc R0
+        sta SplitScanlinesToStatus
+        ; whew
+        jmp enable_irq
+no_midscreen_split:
+        ; the first IRQ won't be until the top of the status area:
+        set_first_irq_byte #$03
+        set_second_irq_byte #$80
+        set_irq_cleanup_handler (post_irq_status_upper_half)
+        ; after 192 - 1 frames:
+        lda #191
+        sta MMC3_IRQ_LATCH
+enable_irq:
+        ; Request a counter reload
+        sta MMC3_IRQ_RELOAD
+        ; Let's do it
+        ; Actally let's test first
+        sta MMC3_IRQ_DISABLE
+        sta MMC3_IRQ_ENABLE
+enable_rendering:
+        lda #$1E
+        sta PPUMASK
 done:
         rts
 .endproc
 
-base_irq_handler:
-        lda #0
-        sta PPUADDR
-        lda #0
-        sta PPUADDR
-irq_cleanup_handler:
-        jmp $0000
+.proc post_irq_midframe_status_split
+        ; we will set PPUADDR to the start of the status area
+        set_first_irq_byte #$03
+        set_second_irq_byte #$80
+        ; after this, we will prepare for the lower half
+        set_irq_cleanup_handler (post_irq_status_upper_half)
+        ; this will occur in a number of scanlines we calculated during NMI
+        lda SplitScanlinesToStatus
+        sta MMC3_IRQ_LATCH
+        ; now we need to pulse IRQ DISABLE / ENABLE to acknowledge the previous interrupt
+        ; and enable the new one we just configured
+        ; (the value we write is not important here)
+        sta MMC3_IRQ_DISABLE
+        sta MMC3_IRQ_ENABLE
+        ; pop a in prep to return
+        pla 
+        rti        
+.endproc
 
-.proc install_irq_handler
-        ldx #13
-        ldy #0
-loop:
-        lda base_irq_handler,y
-        sta $00F0,y
-        iny
-        dex
-        bne loop
-        rts
+.proc post_irq_status_upper_half
+        ; we must correct fine X for status area display,
+        ; which was not fixed during the start of the IRQ handler
+        ; Y is written here, but ignored; its only purpose is to reset the
+        ; write latch for the next IRQ handler
+        lda #$00
+        sta PPUSCROLL 
+        sta PPUSCROLL
+        ; on the next IRQ we will set PPUADDR to the middle of the status area
+        set_first_irq_byte #$07
+        set_second_irq_byte #$80
+        ; and run the mid-scanline cleanup function:
+        set_irq_cleanup_handler (post_irq_status_lower_half)
+        ; The upper status area lasts for 16 frames, so we write 16-1 to the latch:
+        lda #15
+        sta MMC3_IRQ_LATCH
+        ; and acknowledge the irq:
+        sta MMC3_IRQ_DISABLE
+        sta MMC3_IRQ_ENABLE
+        ; pop a in prep to return
+        pla 
+        rti
+.endproc
+
+.proc post_irq_status_lower_half
+        ; it doesn't matter what we set PPUADDR to, so we don't bother to update it here
+        ; we will execute the following cleanup routine:
+        set_irq_cleanup_handler (post_irq_blanking_area)
+        ; in 16 scanlines, just like above:
+        lda #15
+        sta MMC3_IRQ_LATCH
+        ; we acknowledge the irq:
+        sta MMC3_IRQ_DISABLE
+        sta MMC3_IRQ_ENABLE
+        ; pop a in prep to return
+        pla 
+        rti
+.endproc
+
+.proc post_irq_blanking_area
+        ; Immediately disable background rendering
+        ; (sprites are okay for now)
+        lda #$16
+        sta PPUMASK
+        ; we're done with IRQs for this frame. Disable them entirely
+        sta MMC3_IRQ_DISABLE
+        ; pop a in prep to return
+        pla 
+        rti
+.endproc
+
+.proc irq_do_nothing
+        ; do not pass go.
+        ; do not collect $200
+        ; (do pop a though)
+        pla 
+        rti
 .endproc
 
 .endscope
