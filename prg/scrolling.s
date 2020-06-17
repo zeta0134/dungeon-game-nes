@@ -743,8 +743,16 @@ no_horizontal_scroll:
         rts
 .endproc
 
+.proc burn_some_cycles
+.repeat 32
+        nop
+.endrep
+        rts
+.endproc
+
 base_irq_handler:
         pha
+        jsr burn_some_cycles
 irq_first_byte:
         lda #0
 irq_first_address:
@@ -756,10 +764,10 @@ irq_second_address:
 irq_cleanup_handler:
         jmp irq_do_nothing
 
-MY_IRQ_HANDLER_THAT_SCARES_SMALL_CHILDREN := $00F0
+MY_IRQ_HANDLER_THAT_SCARES_SMALL_CHILDREN := $00E0
 
 .proc install_irq_handler
-        ldx #14
+        ldx #17
         ldy #0
 loop:
         lda base_irq_handler,y
@@ -852,7 +860,7 @@ midscreen_split:
         lda #(192 + 32)
         sbc R0
         sta MMC3_IRQ_LATCH
-        ; The IRQ following this is 192 - this number - 1 again
+        ; The IRQ following this is 192 - this number - 2
         clc
         sta R0
         lda #192
@@ -866,7 +874,7 @@ no_midscreen_split:
         set_second_irq_byte #$80
         set_irq_cleanup_handler (post_irq_status_upper_half)
         ; after 192 - 1 frames:
-        lda #191
+        lda #193
         sta MMC3_IRQ_LATCH
 enable_irq:
         ; Request a counter reload
@@ -891,6 +899,7 @@ done:
         ; this will occur in a number of scanlines we calculated during NMI
         lda SplitScanlinesToStatus
         sta MMC3_IRQ_LATCH
+        sta MMC3_IRQ_RELOAD
         ; now we need to pulse IRQ DISABLE / ENABLE to acknowledge the previous interrupt
         ; and enable the new one we just configured
         ; (the value we write is not important here)
@@ -915,8 +924,9 @@ done:
         ; and run the mid-scanline cleanup function:
         set_irq_cleanup_handler (post_irq_status_lower_half)
         ; The upper status area lasts for 16 frames, so we write 16-1 to the latch:
-        lda #15
+        lda #14
         sta MMC3_IRQ_LATCH
+        sta MMC3_IRQ_RELOAD
         ; and acknowledge the irq:
         sta MMC3_IRQ_DISABLE
         sta MMC3_IRQ_ENABLE
@@ -930,8 +940,9 @@ done:
         ; we will execute the following cleanup routine:
         set_irq_cleanup_handler (post_irq_blanking_area)
         ; in 16 scanlines, just like above:
-        lda #15
+        lda #14
         sta MMC3_IRQ_LATCH
+        sta MMC3_IRQ_RELOAD
         ; we acknowledge the irq:
         sta MMC3_IRQ_DISABLE
         sta MMC3_IRQ_ENABLE

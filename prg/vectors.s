@@ -74,5 +74,5 @@ nmi:
         .segment "VECTORS"
         .addr nmi
         .addr reset
-        .addr $00F0
+        .addr $00E0
 .endscope
