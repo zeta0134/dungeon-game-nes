@@ -52,7 +52,7 @@ left_not_held:
         bit ButtonsHeld
         beq down_not_held
         clc
-        lda #$10
+        lda #$40
         adc CameraYScrollTarget
         sta CameraYScrollTarget
         lda #$00
@@ -64,7 +64,7 @@ down_not_held:
         beq up_not_held
         clc
         lda CameraYScrollTarget
-        sbc #$10
+        sbc #$40
         sta CameraYScrollTarget
         lda CameraYTileTarget
         sbc #$00
@@ -77,8 +77,8 @@ up_not_held:
 .proc demo_oam_init
         lda #30
         sta $0200 ;sprite[0].Y
-        lda #01
-        sta $0201 ;sprite[0].Tile + Nametable
+        lda #00
+        sta $0201 ;sprite[0].Tile
         lda #$00
         sta $0202 ;sprite[0].Palette + Attributes
         lda #30
@@ -86,16 +86,39 @@ up_not_held:
 
         lda #30
         sta $0204 ;sprite[1].Y
-        lda #01
-        sta $0205 ;sprite[1].Tile + Nametable
+        lda #00
+        sta $0205 ;sprite[1].Tile
         lda #$40
         sta $0206 ;sprite[1].Palette + Attributes
         lda #38
         sta $0207 ;sprite[1].X
+
+        lda #38
+        sta $0208 ;sprite[0].Y
+        lda #01
+        sta $0209 ;sprite[0].Tile
+        lda #$00
+        sta $020A ;sprite[0].Palette + Attributes
+        lda #30
+        sta $020B ;sprite[0].X
+
+        lda #38
+        sta $020C ;sprite[1].Y
+        lda #01
+        sta $020D ;sprite[1].Tile
+        lda #$40
+        sta $020E ;sprite[1].Palette + Attributes
+        lda #38
+        sta $020F ;sprite[1].X
+
         rts  
 .endproc
 
 start:
+        lda #$00
+        sta PPUMASK ; disable rendering
+        sta PPUCTRL ; and NMI
+
         jsr clear_memory
         jsr initialize_mmc3
         jsr initialize_palettes
@@ -104,7 +127,7 @@ start:
         jsr initialize_ppu
 
         lda #$00
-        sta PPUMASK ; disable rendering
+        sta PPUMASK ; disable rendering (again)
         sta PPUCTRL ; and NMI
 
         ; less demo map init
@@ -149,6 +172,10 @@ gameloop:
         eor #%00000010
         sta $0201
         sta $0205
+        lda $0209
+        eor #%00000010
+        sta $0209
+        sta $020D
 wait_for_next_vblank:
         lda FrameCounter
 @loop:
