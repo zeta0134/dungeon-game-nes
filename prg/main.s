@@ -125,7 +125,7 @@ start:
         ; re-enable graphics
         lda #$1E
         sta PPUMASK
-        lda #$A0
+        lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
         sta PPUCTRL
 
         lda #$00

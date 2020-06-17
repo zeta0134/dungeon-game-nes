@@ -239,7 +239,7 @@ done_with_y_offset:
         st16 HWScrollLowerLeftRow, $2000
         lda #$00
         lda PPUSTATUS ; reset read/write latch
-        lda #$A0
+        lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
         sta PPUCTRL ; ensure VRAM increment mode is +1
         ldx #13
 height_loop:
@@ -447,7 +447,7 @@ scroll_down:
         sta PpuYTileTarget
 no_positive_y_wrap:
         ; switch to +1 mode
-        lda #$A0
+        lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
         sta PPUCTRL
         set_ppuaddr HWScrollLowerLeftRow
         mov16 MapLowerLeftRow, R0
@@ -523,7 +523,7 @@ scroll_up:
         sta PpuYTileTarget
 no_negative_y_wrap:
         ; switch to +1 mode
-        lda #$A0
+        lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
         sta PPUCTRL
         set_ppuaddr HWScrollUpperLeftRow
         mov16 MapUpperLeftRow, R0
@@ -608,7 +608,7 @@ horizontal_scroll:
         bcs scroll_left
 scroll_right:
         ; switch to +32 mode
-        lda #$A4
+        lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | VRAM_DOWN)
         sta PPUCTRL
         set_ppuaddr HWScrollUpperRightColumn
         mov16 MapUpperRightColumn, R0
@@ -672,7 +672,7 @@ right_side_left_column:
         jmp no_horizontal_scroll
 scroll_left:
         ; switch to +32 mode
-        lda #$A4
+        lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | VRAM_DOWN)
         sta PPUCTRL
         set_ppuaddr HWScrollUpperLeftColumn
         mov16 MapUpperLeftColumn, R0
@@ -798,11 +798,11 @@ loop:
         bit CameraXTileTarget
         beq left_nametable
 right_nametable:
-        lda #$A1
+        lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | NT_2400)
         sta PPUCTRL
         jmp done_with_nametables
 left_nametable:
-        lda #$A0
+        lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | NT_2000)
         sta PPUCTRL
 done_with_nametables:
         ; Reset PPU write latch

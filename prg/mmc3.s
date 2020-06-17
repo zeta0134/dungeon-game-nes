@@ -10,36 +10,36 @@
 
 .proc initialize_mmc3
         ; Note: the high bits of MMC3_BANK_SELECT determine the mode.
-        ; We leave these at 0 on purpose, which puts CHR0 in 2k mode,
+        ; We have this at %10 on purpose, which puts CHR1 in 2k mode,
         ; and leaves both fixed banks at $C000 - $FFFF
         
-        lda #$00 ; CHR0_LOW
-        sta MMC3_BANK_SELECT
-        sta MMC3_BANK_DATA
-
-        lda #$01 ; CHR0_HIGH
-        sta MMC3_BANK_SELECT
-        lda #$02
-        sta MMC3_BANK_DATA
-
-        lda #$02 ; CHR1_A
+        lda #$82 ; CHR0_A
         sta MMC3_BANK_SELECT
         lda #$04
         sta MMC3_BANK_DATA
 
-        lda #$03 ; CHR1_B
+        lda #$83 ; CHR0_B
         sta MMC3_BANK_SELECT
         lda #$05
         sta MMC3_BANK_DATA
 
-        lda #$04 ; CHR1_C
+        lda #$84 ; CHR0_C
         sta MMC3_BANK_SELECT
         lda #$06
         sta MMC3_BANK_DATA
 
-        lda #$05 ; CHR1_D
+        lda #$85 ; CHR0_D
         sta MMC3_BANK_SELECT
         lda #$07
+        sta MMC3_BANK_DATA
+
+        lda #$80 ; CHR1_LOW
+        sta MMC3_BANK_SELECT
+        sta MMC3_BANK_DATA
+
+        lda #$81 ; CHR1_HIGH
+        sta MMC3_BANK_SELECT
+        lda #$02
         sta MMC3_BANK_DATA
 
         ; Mirroring mode: vertical
