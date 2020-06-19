@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # WIP. Should eventually convert a .tsx tileset from Tiled into
 # the CHR data and engine metadata for display.

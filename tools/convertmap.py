@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Converts a map created by the Tiled editor, stored in .tmx format, to the internal
 # representation used by the NES engine. Very much project specific, not general
