@@ -886,6 +886,17 @@ enable_irq:
 enable_rendering:
         lda #$1E
         sta PPUMASK
+        lda #%01000000
+wait_for_sprite_zero_to_clear:
+        bit PPUSTATUS
+        bne wait_for_sprite_zero_to_clear
+        lda #16
+        sec
+spin_for_one_scanline:
+        sbc #1
+        bne spin_for_one_scanline
+reload_mmc3_irq:
+        sta MMC3_IRQ_RELOAD
 done:
         rts
 .endproc
