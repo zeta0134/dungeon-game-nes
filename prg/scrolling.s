@@ -762,7 +762,45 @@ setup_irq:
         sta R0
         cmp #32
         bcc no_midscreen_split
-midscreen_split:
+_midscreen_split:
+        cmp #(189 + 32)
+        bcs _spinwait_midscreen_split
+        jsr irq_midscreen_split
+        rts
+_spinwait_midscreen_split:
+        jsr spinwait_midscreen_split
+        rts
+_no_midscreen_split:
+        jsr no_midscreen_split
+        rts
+.endproc
+
+.proc no_midscreen_split
+        ; the first IRQ won't be until the top of the status area:
+        set_first_irq_byte #$03
+        set_second_irq_byte #$80
+        set_irq_cleanup_handler (post_irq_status_upper_half)
+        ; after 192 - 1 frames:
+        lda #193
+        sta MMC3_IRQ_LATCH
+enable_rendering:
+        lda #$1E
+        sta PPUMASK
+        lda #%01000000
+wait_for_sprite_zero_to_clear:
+        bit PPUSTATUS
+        bne wait_for_sprite_zero_to_clear
+reload_mmc3_irq:
+        sta MMC3_IRQ_RELOAD
+        sta MMC3_IRQ_DISABLE
+        sta MMC3_IRQ_ENABLE
+        rts
+.endproc
+
+; Used in the majority of Y-scroll positions, when there is enough time for an MMC3 IRQ
+; to trigger on the proper scanline for a scroll split
+
+.proc irq_midscreen_split
         ; The first IRQ will move us to the top of the playfield, but maintaining the same nametable
         ; and X coordinate
         ; the first byte is thus just based on our current nametable, with the Y component zeroed out:
@@ -788,23 +826,6 @@ midscreen_split:
         lda #192
         sbc R0
         sta SplitScanlinesToStatus
-        ; whew
-        jmp enable_irq
-no_midscreen_split:
-        ; the first IRQ won't be until the top of the status area:
-        set_first_irq_byte #$03
-        set_second_irq_byte #$80
-        set_irq_cleanup_handler (post_irq_status_upper_half)
-        ; after 192 - 1 frames:
-        lda #193
-        sta MMC3_IRQ_LATCH
-enable_irq:
-        ; Request a counter reload
-        sta MMC3_IRQ_RELOAD
-        ; Let's do it
-        ; Actally let's test first
-        sta MMC3_IRQ_DISABLE
-        sta MMC3_IRQ_ENABLE
 enable_rendering:
         lda #$1E
         sta PPUMASK
@@ -812,16 +833,86 @@ enable_rendering:
 wait_for_sprite_zero_to_clear:
         bit PPUSTATUS
         bne wait_for_sprite_zero_to_clear
-        lda #16
-        sec
-spin_for_one_scanline:
-        sbc #1
-        bne spin_for_one_scanline
 reload_mmc3_irq:
         sta MMC3_IRQ_RELOAD
+        sta MMC3_IRQ_DISABLE
+        sta MMC3_IRQ_ENABLE
+        rts
+.endproc
+
+; Used in cases where the scroll split would be 3 or fewer scanlines from the start of display; in
+; these cases the MMC3 IRQ is unreliable, so we manually spinwait instead. Configuration here is
+; similar to "no_midscreen_split" but with the status area offset by a small amount
+
+.proc spinwait_midscreen_split
+        ; the first IRQ won't be until the top of the status area:
+        set_first_irq_byte #$03
+        set_second_irq_byte #$80
+        set_irq_cleanup_handler (post_irq_status_upper_half)
+        ; after 192 - 1 frames:
+        lda #193
+        sta MMC3_IRQ_LATCH
+        ; We will spinwait for this many scanlines to perform a manual scroll split:
+        sec
+        lda #(192 + 32)
+        sbc R0
+        ; stash back in R0
+        sta R0
+        ; and you know, also in 80 for no apparant reason (I want to debug
+        sta $80
+
+        ; the first target byte is based on our current nametable, with the Y component zeroed out:
+        lda CameraXTileTarget
+        and #%00100000
+        lsr ; >> 3
+        lsr
+        lsr
+        tax ; stash in x
+
+        ; The second byte is just coarse X, with the upper bits cleared
+        lda CameraXTileTarget
+        and #%00011111
+        tay ; stash in Y
+
+enable_rendering:
+        lda #$1E
+        sta PPUMASK
+        lda #%01000000
+wait_for_sprite_zero_to_clear:
+        bit PPUSTATUS
+        bne wait_for_sprite_zero_to_clear
+reload_mmc3_irq:
+        sta MMC3_IRQ_RELOAD
+        sta MMC3_IRQ_DISABLE
+        sta MMC3_IRQ_ENABLE
+spinwait_for_R0_scanlines:
+        sec
+        lda #35
+loop1:
+        sbc #1
+        bne loop1
+        dec R0
+        beq skip_status_area
+        sec
+        lda #21
+loop2:
+        sbc #1
+        bne loop2
+        dec R0
+        beq skip_status_area
+sec
+        lda #22
+loop3:
+        sbc #1
+        bne loop3
+skip_status_area:
+        ; write here our scroll bytes, which were previously stashed in X and Y:
+        stx PPUADDR
+        sty PPUADDR
 done:
         rts
 .endproc
+
 
 .proc post_irq_midframe_status_split
         ; we will set PPUADDR to the start of the status area
