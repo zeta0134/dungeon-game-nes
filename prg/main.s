@@ -26,11 +26,12 @@ test_tileset:
         .incbin "build/tilesets/skull_tiles.mt"
 
 .proc demo_scroll_camera
+CameraSpeed := $10
         lda #KEY_RIGHT
         bit ButtonsHeld
         beq right_not_held
         clc
-        lda #$40
+        lda #CameraSpeed
         adc CameraXScrollTarget
         sta CameraXScrollTarget
         lda #$00
@@ -42,7 +43,7 @@ right_not_held:
         beq left_not_held
         clc
         lda CameraXScrollTarget
-        sbc #$40
+        sbc #CameraSpeed
         sta CameraXScrollTarget
         lda CameraXTileTarget
         sbc #$00
@@ -52,7 +53,7 @@ left_not_held:
         bit ButtonsHeld
         beq down_not_held
         clc
-        lda #$40
+        lda #CameraSpeed
         adc CameraYScrollTarget
         sta CameraYScrollTarget
         lda #$00
@@ -64,7 +65,7 @@ down_not_held:
         beq up_not_held
         clc
         lda CameraYScrollTarget
-        sbc #$40
+        sbc #CameraSpeed
         sta CameraYScrollTarget
         lda CameraYTileTarget
         sbc #$00
