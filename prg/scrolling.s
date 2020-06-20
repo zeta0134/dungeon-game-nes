@@ -445,6 +445,29 @@ row_loop:
         jsr drawing_function
 .endmacro
 
+.macro split_column_across_height_boundary starting_hw_address, drawing_function
+.scope
+        lda #14
+        sec
+        sbc MapYOffset
+        sta R2
+        jsr drawing_function
+        lda starting_hw_address+1
+        ; Set the Y component to zero
+        and #%11111100
+        sta PPUADDR
+        lda starting_hw_address
+        and #%00011111
+        sta PPUADDR
+        ; bytes remaining
+        lda MapYOffset
+        beq skip
+        sta R2
+        jsr drawing_function
+skip:
+.endscope
+.endmacro
+
 .proc scroll_camera
         ; did we move up or down?
         ; perform a 16-bit compare between target - current, and throw the result away
@@ -548,8 +571,6 @@ shift_registers_up:
          ; note - NOT a bug! We intentionally prioritize vertical scroll and let horizontal lag by a frame or two; it's fine
         jmp no_horizontal_scroll
 no_vertical_scroll:
-
-
         ; did we move left or right?
         ; perform a 16-bit compare between target - current, and throw the result away
         lda CameraXTileCurrent
@@ -563,36 +584,21 @@ horizontal_scroll:
         lda CameraXTileTarget
         sta CameraXTileCurrent
         ; if the subtract here needed to borrow, the result is negative; we moved LEFT
-        bcs scroll_left
+        bcc scroll_right
+        jmp scroll_left
 scroll_right:
         ; switch to +32 mode
         lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | VRAM_DOWN)
         sta PPUCTRL
         set_ppuaddr HWScrollUpperRightColumn
         mov16 MapUpperRightColumn, R0
-        lda #14
-        sec
-        sbc MapYOffset
-        sta R2
         ; the low bit of the scroll tells us if we're doing a left-column or a right-column
         lda #$01
         bit HWScrollUpperRightColumn
         beq right_side_left_column
 right_side_right_column:
-        jsr draw_right_half_col
-        lda HWScrollUpperRightColumn+1
-        ; Set the Y component to zero
-        and #%11111100
-        sta PPUADDR
-        lda HWScrollUpperRightColumn
-        and #%00011111
-        sta PPUADDR
-        ; bytes remaining
-        lda MapYOffset
-        beq @skip
-        sta R2
-        jsr draw_right_half_col
-@skip:
+        split_column_across_height_boundary HWScrollUpperRightColumn, draw_right_half_col
+
         ; Move our map pointers to the right by one entire tile
         inc MapUpperRightColumn
         inc MapUpperLeftColumn
@@ -610,20 +616,8 @@ right_side_right_column:
         jsr shift_hwrows_right
         jmp no_horizontal_scroll
 right_side_left_column:
-        jsr draw_left_half_col
-        lda HWScrollUpperRightColumn+1
-        ; Set the Y component to zero
-        and #%11111100
-        sta PPUADDR
-        lda HWScrollUpperRightColumn
-        and #%00011111
-        sta PPUADDR
-        ; bytes remaining
-        lda MapYOffset
-        beq @skip
-        sta R2
-        jsr draw_left_half_col
-@skip:
+        split_column_across_height_boundary HWScrollUpperRightColumn, draw_left_half_col
+
         ; The map index doesn't change, so we update *only* the column registers here
         ; Shift  hwcolumns right halfway to the next metatile
         jsr shift_hwcolumns_right
@@ -634,48 +628,18 @@ scroll_left:
         sta PPUCTRL
         set_ppuaddr HWScrollUpperLeftColumn
         mov16 MapUpperLeftColumn, R0
-        lda #14
-        sec
-        sbc MapYOffset
-        sta R2
         ; the low bit of the scroll tells us if we're doing a left-column or a right-column
         lda #$01
         bit HWScrollUpperLeftColumn
         beq left_side_left_column
 left_side_right_column:
-        jsr draw_right_half_col
-        lda HWScrollUpperLeftColumn+1
-        ; Set the Y component to zero
-        and #%11111100
-        sta PPUADDR
-        lda HWScrollUpperLeftColumn
-        and #%00011111
-        sta PPUADDR
-        ; bytes remaining
-        lda MapYOffset
-        beq @skip
-        sta R2
-        jsr draw_right_half_col
-@skip:
+        split_column_across_height_boundary HWScrollUpperLeftColumn, draw_right_half_col
         ; The map index doesn't change, so we update *only* the column registers here
         ; Shift hwcolumns left halfway to the next metatile
         jsr shift_hwcolumns_left
         jmp no_horizontal_scroll
 left_side_left_column:
-        jsr draw_left_half_col
-        lda HWScrollUpperLeftColumn+1
-        ; Set the Y component to zero
-        and #%11111100
-        sta PPUADDR
-        lda HWScrollUpperLeftColumn
-        and #%00011111
-        sta PPUADDR
-        ; bytes remaining
-        lda MapYOffset
-        beq @skip
-        sta R2
-        jsr draw_left_half_col
-@skip:
+        split_column_across_height_boundary HWScrollUpperLeftColumn, draw_left_half_col
         ; Move our map index to the left
         dec MapUpperRightColumn
         dec MapUpperLeftColumn
