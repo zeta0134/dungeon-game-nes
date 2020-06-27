@@ -856,10 +856,8 @@ reload_mmc3_irq:
         sec
         lda #(192 + 32)
         sbc R0
-        ; stash back in R0
+        ; stash back in R0 for use in the spinwait loops below
         sta R0
-        ; and you know, also in 80 for no apparant reason (I want to debug
-        sta $80
 
         ; the first target byte is based on our current nametable, with the Y component zeroed out:
         lda CameraXTileTarget
