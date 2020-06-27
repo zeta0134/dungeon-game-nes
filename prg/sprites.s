@@ -1,4 +1,5 @@
         .setcpu "6502"
+        .include "sprites.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
 
