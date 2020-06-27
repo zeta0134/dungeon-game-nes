@@ -33,6 +33,7 @@ no_carry:
         sta addr2+1
 .endmacro
 
+; unsigned
 .macro add16 addr, value
         lda value
         adc addr
@@ -40,6 +41,28 @@ no_carry:
         lda #0
         adc addr+1
         sta addr+1
+.endmacro
+
+; signed
+.macro sadd16 addr, value
+.scope
+        ; handle the low byte normally
+        clc
+        lda value
+        adc addr
+        sta addr
+        ; sign-extend the high bit into the high byte
+        lda value
+        and #$80 ;extract the high bit
+        beq positive
+        lda #$FF ; the high bit was high, so set high byte to 0xFF, then add that plus carry 
+        ; note: unless a signed overflow occurred, carry will usually be *set* in this case
+positive:
+        ; the high bit was low; a contains #$00, so add that plus carry
+        adc addr+1
+        sta addr+1
+
+.endscope
 .endmacro
 
 .macro sub16 addr, value
