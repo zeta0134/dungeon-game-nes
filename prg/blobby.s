@@ -5,6 +5,8 @@
         .segment "PRGLAST_E000"
         ;.org $e000
 
+.export blobby_oam_idle1
+
 blobby_anim_idle:
         .word blobby_frames_idle
         .byte $2
@@ -17,17 +19,17 @@ blobby_frames_idle:
 
 blobby_oam_idle1:
         ;     Y-offset  Tile  Attr   X-offset
-        .byte 0,        0,    $00,    0
-        .byte 8,        1,    $00,    0
-        .byte 0,        0,    $40,    8
-        .byte 8,        1,    $40,    8
+        .byte 0,        0,    $01,    0
+        .byte 8,        1,    $01,    0
+        .byte 0,        0,    $41,    8
+        .byte 8,        1,    $41,    8
 
 blobby_oam_idle2:
         ;     Y-offset  Tile  Attr    X-offset
-        .byte 0,        2,    $00,    0
-        .byte 8,        3,    $00,    0
-        .byte 0,        2,    $40,    8
-        .byte 8,        3,    $40,    8
+        .byte 0,        2,    $01,    0
+        .byte 8,        3,    $01,    0
+        .byte 0,        2,    $41,    8
+        .byte 8,        3,    $41,    8
 
 
 .endscope
