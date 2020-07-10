@@ -5,6 +5,7 @@ SOURCEDIR := prg
 CHRDIR := chr
 BUILDDIR := build
 ROM_NAME := $(notdir $(CURDIR)).nes
+DBG_NAME := $(notdir $(CURDIR)).dbg
 
 # Assembler files, for building out the banks
 PRG_ASM_FILES := $(wildcard $(SOURCEDIR)/*.s)
@@ -37,18 +38,19 @@ dir:
 clean:
 	-@rm -rf build
 	-@rm -f $(ROM_NAME)
+	-@rm -f $(DBG_NAME)
 
 run: dir $(ROM_NAME)
 	rusticnes-sdl $(ROM_NAME)
 
 $(ROM_NAME): $(SOURCEDIR)/mmc3.cfg $(O_FILES)
-	ld65 -m $(BUILDDIR)/map.txt -o $@ -C $^
+	ld65 -m $(BUILDDIR)/map.txt --dbgfile $(DBG_NAME) -o $@ -C $^
 
 $(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(BIN_FILES) $(TILESET_CHR_FILES)
-	ca65 -o $@ $<
+	ca65 -g -o $@ $<
 
 $(BUILDDIR)/%.o: $(CHRDIR)/%.s $(RAW_CHR_FILES) 
-	ca65 -o $@ $<
+	ca65 -g -o $@ $<
 
 $(BUILDDIR)/sprites/%.chr: $(ARTDIR)/sprites/%.png
 	vendor/pilbmp2nes.py $< -o $@ --planes="0;1" --tile-height=16
