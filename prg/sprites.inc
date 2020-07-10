@@ -1,4 +1,5 @@
-.import initialize_oam
+.import initialize_oam, draw_metasprite
+.importzp OAMTableLength, OAMEntryIndex, OAMTableAddr, MetaspritePosX, MetaspritePosY
 
 .struct AnimationHeader
         FrameTableAddr .word
