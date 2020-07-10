@@ -13,9 +13,9 @@
 .endstruct
 
 .struct OAMEntry
-        XOffset .byte
         YOffset .byte
         TileIndex .byte
         Attributes .byte
+        XOffset .byte
 .endstruct
 
