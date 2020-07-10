@@ -74,6 +74,14 @@ loop:
         lda #$0F
         sta PPUDATA
 
+        set_ppuaddr #$3F15
+        lda #$31
+        sta PPUDATA
+        lda #$21
+        sta PPUDATA
+        lda #$01
+        sta PPUDATA        
+
         ; Reset PPUADDR to 0,0
         lda #$00
         sta PPUADDR
