@@ -1,4 +1,4 @@
-.import initialize_oam, draw_metasprite, metasprite_table
+.import initialize_oam, draw_metasprite, metasprite_table, update_animations
 .importzp OAMTableLength, OAMEntryIndex, OAMTableAddr, MetaspritePosX, MetaspritePosY, ScratchSpritePtr
 
 .struct AnimationHeader
@@ -73,10 +73,6 @@
         lda AnimationHeaderAddr+1
         sta ScratchSpritePtr+1
         sta metasprite_table + MetaSpriteState::AnimationAddr + 1, x
-        ; initialize the delay counter to 0, so the next call to update
-        ; immediately loads a frame
-        lda #0
-        sta metasprite_table + MetaSpriteState::DelayCounter, x
         ; initialize the FrameCounter to the animation length; it counts
         ; down and will reset the animation when it reaches zero
         ldy #AnimationHeader::Length
@@ -89,8 +85,16 @@
         iny
         lda (ScratchSpritePtr),y
         ; a,x now contains the high,low byte of the frame index
+        ; stash this as the AnimationFrameAddr, and also write it to ScratchSpritePtr
         ldy MetaSpriteOffset
         sta metasprite_table + MetaSpriteState::AnimationFrameAddr + 1, y
+        sta ScratchSpritePtr+1
         txa
         sta metasprite_table + MetaSpriteState::AnimationFrameAddr, y
+        sta ScratchSpritePtr
+        ; use the AnimationFrameAddr to initialize the delay counter
+        ldy #AnimationFrame::DelayFrames
+        lda (ScratchSpritePtr),y
+        ldy MetaSpriteOffset
+        sta metasprite_table + MetaSpriteState::DelayCounter, y
 .endmacro
