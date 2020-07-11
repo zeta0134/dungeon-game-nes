@@ -25,7 +25,7 @@
         PositionY .word
         AnimationAddr .word
         AnimationFrameAddr .word
-        FrameIndex .byte
+        FrameCounter .byte
         DelayCounter .byte
         TileOffset .byte
         PaletteOffset .byte
@@ -73,12 +73,17 @@
         lda AnimationHeaderAddr+1
         sta ScratchSpritePtr+1
         sta metasprite_table + MetaSpriteState::AnimationAddr + 1, x
-        ; initialize the frame counter and delay to 0
+        ; initialize the delay counter to 0, so the next call to update
+        ; immediately loads a frame
         lda #0
-        sta metasprite_table + MetaSpriteState::FrameIndex, x
         sta metasprite_table + MetaSpriteState::DelayCounter, x
+        ; initialize the FrameCounter to the animation length; it counts
+        ; down and will reset the animation when it reaches zero
+        ldy #AnimationHeader::Length
+        lda (ScratchSpritePtr),y
+        sta metasprite_table + MetaSpriteState::FrameCounter, x
         ; read the starting frame index to complete initialization
-        ldy #0
+        ldy #AnimationHeader::FrameTableAddr
         lda (ScratchSpritePtr),y
         tax ; stash
         iny
