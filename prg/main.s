@@ -128,7 +128,7 @@ up_not_held:
         ; EVEN MORE JOY: initialize three animation states
         st16 R0, 20
         set_metasprite_x #.sizeof(MetaSpriteState)*0, R0
-        st16 R0, 40
+        st16 R0, 50
         set_metasprite_y #.sizeof(MetaSpriteState)*0, R0
         set_metasprite_tile_offset #.sizeof(MetaSpriteState)*0, #0
         set_metasprite_palette_offset #.sizeof(MetaSpriteState)*0, #1
@@ -137,7 +137,7 @@ up_not_held:
         
         st16 R0, 40
         set_metasprite_x #.sizeof(MetaSpriteState)*1, R0
-        st16 R0, 40
+        st16 R0, 50
         set_metasprite_y #.sizeof(MetaSpriteState)*1, R0
         set_metasprite_tile_offset #.sizeof(MetaSpriteState)*1, #0
         set_metasprite_palette_offset #.sizeof(MetaSpriteState)*1, #2
@@ -146,7 +146,7 @@ up_not_held:
 
         st16 R0, 60
         set_metasprite_x #.sizeof(MetaSpriteState)*2, R0
-        st16 R0, 20
+        st16 R0, 50
         set_metasprite_y #.sizeof(MetaSpriteState)*2, R0
         set_metasprite_tile_offset #.sizeof(MetaSpriteState)*2, #0
         set_metasprite_palette_offset #.sizeof(MetaSpriteState)*2, #3
@@ -205,10 +205,11 @@ start:
         sta $4010
         cli
 gameloop:
-        lda #$1F
+        lda #$9F
         sta PPUMASK
         jsr demo_scroll_camera
         jsr update_animations
+        jsr draw_metasprites
         lda #$1E
         sta PPUMASK
         dec TestBlobbyDelay

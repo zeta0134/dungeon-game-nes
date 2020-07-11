@@ -1,4 +1,4 @@
-.import initialize_oam, draw_metasprite, metasprite_table, update_animations
+.import initialize_oam, draw_metasprite, metasprite_table, update_animations, draw_metasprites
 .importzp OAMTableLength, OAMEntryIndex, OAMTableAddr, MetaspritePosX, MetaspritePosY, ScratchSpritePtr
 
 .struct AnimationHeader

@@ -12,6 +12,8 @@ OAMEntryIndex: .byte $00
 OAMTableAddr: .word $0000
 MetaspritePosX: .word $0000
 MetaspritePosY: .word $0000
+MetaspriteTileOffset: .byte $00
+MetaspritePaletteOffset: .byte $00
         .segment "RAM"
         .export metasprite_table
 metasprite_table:
@@ -22,7 +24,7 @@ metasprite_table:
         .segment "PRGLAST_E000"
         ;.org $e000
 
-.export initialize_oam, draw_metasprite, update_animations
+.export initialize_oam, draw_metasprite, update_animations, draw_metasprites
 
 SHADOW_OAM = $0200
 ; offsets
@@ -87,14 +89,20 @@ draw_oam_fragment:
         ldy #OAMEntry::TileIndex
         lda (OAMTableAddr),y
         ; TODO: If we want to use a custom bank offset, this is the place to do it
+        clc
+        adc MetaspriteTileOffset
         sta SHADOW_OAM + OAM_TILE, x
         ldy #OAMEntry::Attributes
         lda (OAMTableAddr),y
         ; TODO: If we want to alter the palette index, this is the place to do it
+        clc
+        adc MetaspritePaletteOffset
         sta SHADOW_OAM + OAM_ATTRIBUTES, x
 skip_oam_fragment:
         clc
-        add16 OAMEntryIndex, #4
+        lda #4
+        adc OAMEntryIndex
+        sta OAMEntryIndex
 skip_oam_entry:
         clc 
         add16 OAMTableAddr, #.sizeof(OAMEntry)
@@ -172,6 +180,65 @@ next_metasprite:
         sta MetaSpriteIndex 
         dec MetaSpriteCount
         bne metasprite_loop
+        rts
+.endproc
+
+.proc draw_metasprites
+MetaSpriteCount := R0
+MetaSpriteIndex := R1
+        lda #21
+        sta MetaSpriteCount
+        lda #0
+        sta MetaSpriteIndex
+        ; note: for now, jump over the test sprite
+        ; TODO: something smarter than this
+        lda #16
+        sta OAMEntryIndex
+metasprite_loop:
+        ; sanity check: is this animation enabled? ie, is the high byte
+        ; of the animation data non-zero?
+        ldx MetaSpriteIndex
+        lda metasprite_table + MetaSpriteState::AnimationAddr + 1, x
+        beq next_metasprite
+
+        ; we will at least attempt to draw this metasprite's parts.
+        ; most of this data is a straight copy from the state struct
+        lda metasprite_table + MetaSpriteState::PositionX, x
+        sta MetaspritePosX
+        lda metasprite_table + MetaSpriteState::PositionX + 1, x
+        sta MetaspritePosX+1
+        lda metasprite_table + MetaSpriteState::PositionY, x
+        sta MetaspritePosY
+        lda metasprite_table + MetaSpriteState::PositionY + 1, x
+        sta MetaspritePosY+1
+        lda metasprite_table + MetaSpriteState::TileOffset, x
+        sta MetaspriteTileOffset
+        lda metasprite_table + MetaSpriteState::PaletteOffset, x
+        sta MetaspritePaletteOffset
+
+        ; now we need the details from this animation frame
+        lda metasprite_table + MetaSpriteState::AnimationFrameAddr, x
+        sta ScratchSpritePtr
+        lda metasprite_table + MetaSpriteState::AnimationFrameAddr + 1, x
+        sta ScratchSpritePtr+1
+
+        ldy #AnimationFrame::OAMTableAddr
+        lda (ScratchSpritePtr),y
+        sta OAMTableAddr
+        ldy #AnimationFrame::OAMLength
+        lda (ScratchSpritePtr),y
+        sta OAMTableLength
+
+        ; finally
+        jsr draw_metasprite
+next_metasprite:
+        clc
+        lda #.sizeof(MetaSpriteState)
+        adc MetaSpriteIndex
+        sta MetaSpriteIndex 
+        dec MetaSpriteCount
+        bne metasprite_loop
+all_done:
         rts
 .endproc
 
