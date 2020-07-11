@@ -206,6 +206,7 @@ start:
         cli
 gameloop:
         jsr demo_scroll_camera
+        jsr update_animations
         dec TestBlobbyDelay
         bne wait_for_next_vblank
         lda #$20
