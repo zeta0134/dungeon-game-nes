@@ -123,9 +123,35 @@ up_not_held:
         sta OAMTableLength
         lda #16 ; arbitrary OAM entry index
         sta OAMEntryIndex
-
         jsr draw_metasprite
 
+        ; EVEN MORE JOY: initialize three animation states
+        st16 R0, 20
+        set_metasprite_x #.sizeof(MetaSpriteState)*0, R0
+        st16 R0, 40
+        set_metasprite_y #.sizeof(MetaSpriteState)*0, R0
+        set_metasprite_tile_offset #.sizeof(MetaSpriteState)*0, #0
+        set_metasprite_palette_offset #.sizeof(MetaSpriteState)*0, #1
+        st16 R0, blobby_anim_idle
+        set_metasprite_animation #.sizeof(MetaSpriteState)*0, R0
+        
+        st16 R0, 40
+        set_metasprite_x #.sizeof(MetaSpriteState)*1, R0
+        st16 R0, 40
+        set_metasprite_y #.sizeof(MetaSpriteState)*1, R0
+        set_metasprite_tile_offset #.sizeof(MetaSpriteState)*1, #0
+        set_metasprite_palette_offset #.sizeof(MetaSpriteState)*1, #2
+        st16 R0, blobby_anim_idle
+        set_metasprite_animation #.sizeof(MetaSpriteState)*1, R0
+
+        st16 R0, 60
+        set_metasprite_x #.sizeof(MetaSpriteState)*2, R0
+        st16 R0, 20
+        set_metasprite_y #.sizeof(MetaSpriteState)*2, R0
+        set_metasprite_tile_offset #.sizeof(MetaSpriteState)*2, #0
+        set_metasprite_palette_offset #.sizeof(MetaSpriteState)*2, #3
+        st16 R0, blobby_anim_idle
+        set_metasprite_animation #.sizeof(MetaSpriteState)*2, R0
 
         rts  
 .endproc
