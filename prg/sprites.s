@@ -225,6 +225,9 @@ metasprite_loop:
         ldy #AnimationFrame::OAMTableAddr
         lda (ScratchSpritePtr),y
         sta OAMTableAddr
+        ldy #AnimationFrame::OAMTableAddr+1
+        lda (ScratchSpritePtr),y
+        sta OAMTableAddr+1
         ldy #AnimationFrame::OAMLength
         lda (ScratchSpritePtr),y
         sta OAMTableLength
