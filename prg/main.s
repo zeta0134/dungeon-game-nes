@@ -141,7 +141,7 @@ up_not_held:
         set_metasprite_y #.sizeof(MetaSpriteState)*1, R0
         set_metasprite_tile_offset #.sizeof(MetaSpriteState)*1, #0
         set_metasprite_palette_offset #.sizeof(MetaSpriteState)*1, #2
-        st16 R0, blobby_anim_idle
+        st16 R0, blobby_anim_jump
         set_metasprite_animation #.sizeof(MetaSpriteState)*1, R0
 
         st16 R0, 60

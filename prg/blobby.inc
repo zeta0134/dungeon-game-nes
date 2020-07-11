@@ -1,1 +1,1 @@
-.import blobby_oam_idle1, blobby_anim_idle
+.import blobby_oam_idle1, blobby_anim_idle, blobby_anim_jump
