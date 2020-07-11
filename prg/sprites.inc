@@ -51,15 +51,15 @@
         sta metasprite_table + MetaSpriteState::PositionY+1, y
 .endmacro
 
-.macro set_metasprite_tile_offset MetaSpriteOffset, TileOffset
+.macro set_metasprite_tile_offset MetaSpriteOffset, TileIndex
         ldy MetaSpriteOffset
-        lda TileOffset
+        lda TileIndex
         sta metasprite_table + MetaSpriteState::TileOffset, y
 .endmacro
 
-.macro set_metasprite_palette_offset MetaSpriteOffset, PaletteOffset
+.macro set_metasprite_palette_offset MetaSpriteOffset, PaletteIndex
         ldy MetaSpriteOffset
-        lda PaletteOffset
+        lda PaletteIndex
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
 .endmacro
 
@@ -81,10 +81,11 @@
         ldy #0
         lda (ScratchSpritePtr),y
         tax ; stash
-        inc y
+        iny
         lda (ScratchSpritePtr),y
         ; a,x now contains the high,low byte of the frame index
         ldy MetaSpriteOffset
-        stx metasprite_table + MetaSpriteState::AnimationFrameAddr, y
         sta metasprite_table + MetaSpriteState::AnimationFrameAddr + 1, y
+        txa
+        sta metasprite_table + MetaSpriteState::AnimationFrameAddr, y
 .endmacro
