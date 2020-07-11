@@ -240,7 +240,7 @@ done_with_y_offset:
         st16 HWScrollLowerLeftRow, $2000
         lda #$00
         lda PPUSTATUS ; reset read/write latch
-        lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
+        lda #(OBJ_0000 | BG_1000)
         sta PPUCTRL ; ensure VRAM increment mode is +1
         ldx #13
 height_loop:
