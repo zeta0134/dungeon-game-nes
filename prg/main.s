@@ -132,7 +132,7 @@ up_not_held:
         set_metasprite_y #.sizeof(MetaSpriteState)*0, R0
         set_metasprite_tile_offset #.sizeof(MetaSpriteState)*0, #0
         set_metasprite_palette_offset #.sizeof(MetaSpriteState)*0, #1
-        st16 R0, blobby_anim_idle
+        st16 R0, blobby_anim_idle_alt
         set_metasprite_animation #.sizeof(MetaSpriteState)*0, R0
         
         st16 R0, 40
@@ -150,7 +150,7 @@ up_not_held:
         set_metasprite_y #.sizeof(MetaSpriteState)*2, R0
         set_metasprite_tile_offset #.sizeof(MetaSpriteState)*2, #0
         set_metasprite_palette_offset #.sizeof(MetaSpriteState)*2, #3
-        st16 R0, blobby_anim_idle
+        st16 R0, blobby_anim_roll
         set_metasprite_animation #.sizeof(MetaSpriteState)*2, R0
 
         rts  
