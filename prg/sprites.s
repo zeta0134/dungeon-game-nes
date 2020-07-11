@@ -58,10 +58,16 @@ calculate_oam_position:
         clc
         ldy #OAMEntry::XOffset
         lda (OAMTableAddr),y ; note: OAMTableAddr must reside in zero page
+        pha
         adc MetaspritePosX
         tax ; stash OamX for now
-        lda MetaspritePosX+1
-        adc #0
+        ; sign extend for the high byte
+        pla
+        and #$80 ;extract the high bit
+        beq x_positive
+        lda #$FF
+x_positive:
+        adc MetaspritePosX+1
         ; a now contains the modified high byte of the X position
         ; sanity check: is this sprite onscreen horizontally?
         bne skip_oam_entry
@@ -69,10 +75,16 @@ calculate_oam_position:
         clc
         ldy #OAMEntry::YOffset
         lda (OAMTableAddr),y
+        pha
         adc MetaspritePosY
         tay ; stash OamY for now
-        lda MetaspritePosY+1
-        adc #0
+        ; sign extend for the high byte
+        pla
+        and #$80 ;extract the high bit
+        beq y_positive
+        lda #$FF
+y_positive:
+        adc MetaspritePosY+1
         ; a now contains the modified high byte of the Y position
         ; sanity check: is this sprite onscreen vertically?
         bne skip_oam_entry
@@ -88,13 +100,11 @@ draw_oam_fragment:
         ; using y so we don't need to shuffle the two indices around
         ldy #OAMEntry::TileIndex
         lda (OAMTableAddr),y
-        ; TODO: If we want to use a custom bank offset, this is the place to do it
         clc
         adc MetaspriteTileOffset
         sta SHADOW_OAM + OAM_TILE, x
         ldy #OAMEntry::Attributes
         lda (OAMTableAddr),y
-        ; TODO: If we want to alter the palette index, this is the place to do it
         clc
         adc MetaspritePaletteOffset
         sta SHADOW_OAM + OAM_ATTRIBUTES, x
