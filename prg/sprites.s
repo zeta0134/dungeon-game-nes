@@ -1,5 +1,6 @@
         .setcpu "6502"
         .include "sprites.inc"
+        .include "scrolling.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
 
@@ -14,6 +15,8 @@ MetaspritePosX: .word $0000
 MetaspritePosY: .word $0000
 MetaspriteTileOffset: .byte $00
 MetaspritePaletteOffset: .byte $00
+CameraScrollPixelsX: .word $0000
+CameraScrollPixelsY: .word $0000
         .segment "RAM"
         .export metasprite_table
 metasprite_table:
@@ -193,9 +196,36 @@ next_metasprite:
         rts
 .endproc
 
+.proc update_camera_scroll
+        lda CameraXScrollTarget
+        sta R0
+        lda CameraXTileTarget
+        .repeat 5
+        lsr a
+        ror R0
+        .endrep
+        ; a now contains low 5 bits of scroll tile, and upper 3 bits of sub-tile scroll
+        sta CameraScrollPixelsX+1
+        lda R0
+        sta CameraScrollPixelsX
+        ; now do the same for Y scroll
+        lda CameraYScrollTarget
+        sta R0
+        lda CameraYTileTarget
+        .repeat 5
+        lsr a
+        ror R0
+        .endrep
+        sta CameraScrollPixelsY+1
+        lda R0
+        sta CameraScrollPixelsY
+        rts
+.endproc
+
 .proc draw_metasprites
 MetaSpriteCount := R0
 MetaSpriteIndex := R1
+        jsr update_camera_scroll
         lda #21
         sta MetaSpriteCount
         lda #0
@@ -241,6 +271,23 @@ metasprite_loop:
         ldy #AnimationFrame::OAMLength
         lda (ScratchSpritePtr),y
         sta OAMTableLength
+
+        ; apply the camera scroll amount to the sprite's meta position
+        sec
+        lda MetaspritePosX
+        sbc CameraScrollPixelsX
+        sta MetaspritePosX
+        lda MetaspritePosX+1
+        sbc CameraScrollPixelsX+1
+        sta MetaspritePosX+1
+
+        sec
+        lda MetaspritePosY
+        sbc CameraScrollPixelsY
+        sta MetaspritePosY
+        lda MetaspritePosY+1
+        sbc CameraScrollPixelsY+1
+        sta MetaspritePosY+1
 
         ; finally
         jsr draw_metasprite
