@@ -6,11 +6,18 @@
 .scope PRGLAST_E000
         .zeropage
 .exportzp OAMTableLength, OAMEntryIndex, OAMTableAddr, MetaspritePosX, MetaspritePosY
+ScratchSpritePtr: .word $0000
 OAMTableLength: .byte $00
 OAMEntryIndex: .byte $00
 OAMTableAddr: .word $0000
 MetaspritePosX: .word $0000
 MetaspritePosY: .word $0000
+        .segment "RAM"
+metasprite_table:
+        .repeat 21
+        .tag MetaSpriteState
+        .endrepeat
+
         .segment "PRGLAST_E000"
         ;.org $e000
 
