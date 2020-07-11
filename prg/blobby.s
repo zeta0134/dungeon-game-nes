@@ -13,9 +13,9 @@ blobby_anim_idle:
 
 blobby_frames_idle:
         .word blobby_oam_idle1
-        .byte $04, $04, 20; oam length, mapper, delay frames
+        .byte $04, $04, 2; oam length, mapper, delay frames
         .word blobby_oam_idle2
-        .byte $04, $04, 40
+        .byte $04, $04, 4
 
 blobby_oam_idle1:
         ;     Y-offset  Tile  Attr   X-offset
