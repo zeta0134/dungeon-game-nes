@@ -205,8 +205,12 @@ start:
         sta $4010
         cli
 gameloop:
+        lda #$1F
+        sta PPUMASK
         jsr demo_scroll_camera
         jsr update_animations
+        lda #$1E
+        sta PPUMASK
         dec TestBlobbyDelay
         bne wait_for_next_vblank
         lda #$20
@@ -218,7 +222,7 @@ gameloop:
         lda $0209
         eor #%00000010
         sta $0209
-        sta $020D
+        sta $020D        
 wait_for_next_vblank:
         lda FrameCounter
 @loop:
