@@ -47,15 +47,38 @@ loop_bottom_half:
         sta PPUDATA
         lda #BORDER_TR
         sta PPUDATA
+        ; and a larger blank region, to imply we have some plan (we don't yet)
+        lda #BORDER_TL
+        sta PPUDATA
+        ldx #22
+        lda #BORDER_TM
+loop1:
+        sta PPUDATA
+        dex
+        bne loop1   
+        lda #BORDER_TR
+        sta PPUDATA
+
         set_ppuaddr #$23A2
         lda #BORDER_ML
         sta PPUDATA
         lda #FILL
         sta PPUDATA
-        lda #FILL
         sta PPUDATA
         lda #BORDER_MR
         sta PPUDATA
+
+        lda #BORDER_ML
+        sta PPUDATA
+        ldx #22
+        lda #FILL
+loop2:
+        sta PPUDATA
+        dex
+        bne loop2
+        lda #BORDER_MR
+        sta PPUDATA
+
         set_ppuaddr #$2782
         lda #BORDER_ML
         sta PPUDATA
@@ -65,12 +88,35 @@ loop_bottom_half:
         sta PPUDATA
         lda #BORDER_MR
         sta PPUDATA
+
+        lda #BORDER_ML
+        sta PPUDATA
+        ldx #22
+        lda #FILL
+loop3:
+        sta PPUDATA
+        dex
+        bne loop3
+        lda #BORDER_MR
+        sta PPUDATA
+
         set_ppuaddr #$27A2
         lda #BORDER_BL
         sta PPUDATA
         lda #BORDER_BM
         sta PPUDATA
         sta PPUDATA
+        lda #BORDER_BR
+        sta PPUDATA
+
+        lda #BORDER_BL
+        sta PPUDATA
+        ldx #22
+        lda #BORDER_BM
+loop4:
+        sta PPUDATA
+        dex
+        bne loop4
         lda #BORDER_BR
         sta PPUDATA
         ; all done
