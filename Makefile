@@ -49,7 +49,7 @@ $(ROM_NAME): $(SOURCEDIR)/mmc3.cfg $(O_FILES)
 $(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(BIN_FILES) $(TILESET_CHR_FILES)
 	ca65 -g -o $@ $<
 
-$(BUILDDIR)/%.o: $(CHRDIR)/%.s $(RAW_CHR_FILES) 
+$(BUILDDIR)/%.o: $(CHRDIR)/%.s $(RAW_CHR_FILES) $(TILESET_CHR_FILES)
 	ca65 -g -o $@ $<
 
 $(BUILDDIR)/sprites/%.chr: $(ARTDIR)/sprites/%.png

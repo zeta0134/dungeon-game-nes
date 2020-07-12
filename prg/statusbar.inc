@@ -1,0 +1,1 @@
+.import demo_init_statusbar

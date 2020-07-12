@@ -52,6 +52,7 @@ def hardware_tile_to_bitplane(index_array):
 
 def read_tile(filename, nespalette):
   im = Image.open(filename)
+  print(filename)
   assert im.getpalette() != None, "Non-paletted tile found! This is unsupported: " + filename
   rgb_palette = bytes_to_palette(im.getpalette()[0:12])
   nes_palette = [rgb_to_nes(color, nespalette) for color in rgb_palette]

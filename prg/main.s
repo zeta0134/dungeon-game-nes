@@ -10,6 +10,7 @@
         .include "zeropage.inc"
         .include "input.inc"
         .include "blobby.inc"
+        .include "statusbar.inc"
 
 .scope PRGLAST_E000
         .export start
@@ -78,40 +79,40 @@ up_not_held:
 
 .proc demo_oam_init
         ; Setup a demo blob; this happens to also be sprite zero, which is needed for scrolling
-        lda #192
+        lda #200
         sta $0200 ;sprite[0].Y
         lda #00
         sta $0201 ;sprite[0].Tile
         lda #$00
         sta $0202 ;sprite[0].Palette + Attributes
-        lda #30
+        lda #24
         sta $0203 ;sprite[0].X
 
-        lda #192
+        lda #200
         sta $0204 ;sprite[1].Y
         lda #00
         sta $0205 ;sprite[1].Tile
         lda #$40
         sta $0206 ;sprite[1].Palette + Attributes
-        lda #38
+        lda #32
         sta $0207 ;sprite[1].X
 
-        lda #200
+        lda #208
         sta $0208 ;sprite[0].Y
         lda #01
         sta $0209 ;sprite[0].Tile
         lda #$00
         sta $020A ;sprite[0].Palette + Attributes
-        lda #30
+        lda #24
         sta $020B ;sprite[0].X
 
-        lda #200
+        lda #208
         sta $020C ;sprite[1].Y
         lda #01
         sta $020D ;sprite[1].Tile
         lda #$40
         sta $020E ;sprite[1].Palette + Attributes
-        lda #38
+        lda #32
         sta $020F ;sprite[1].X
 
         ; FOR FUN HAPPY TIMES let us draw a test blob
@@ -184,6 +185,9 @@ start:
         sta R1
         jsr init_map
         jsr install_irq_handler
+
+        ; init the statusarea to something not stupid
+        jsr demo_init_statusbar
 
         ; reset PPUADDR to top-left
         set_ppuaddr #$2000

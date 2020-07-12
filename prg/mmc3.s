@@ -35,6 +35,7 @@
 
         lda #$80 ; CHR1_LOW
         sta MMC3_BANK_SELECT
+        lda #$00
         sta MMC3_BANK_DATA
 
         lda #$81 ; CHR1_HIGH
