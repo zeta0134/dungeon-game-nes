@@ -77,7 +77,8 @@ up_not_held:
 .endproc
 
 .proc demo_oam_init
-        lda #30
+        ; Setup a demo blob; this happens to also be sprite zero, which is needed for scrolling
+        lda #192
         sta $0200 ;sprite[0].Y
         lda #00
         sta $0201 ;sprite[0].Tile
@@ -86,7 +87,7 @@ up_not_held:
         lda #30
         sta $0203 ;sprite[0].X
 
-        lda #30
+        lda #192
         sta $0204 ;sprite[1].Y
         lda #00
         sta $0205 ;sprite[1].Tile
@@ -95,7 +96,7 @@ up_not_held:
         lda #38
         sta $0207 ;sprite[1].X
 
-        lda #38
+        lda #200
         sta $0208 ;sprite[0].Y
         lda #01
         sta $0209 ;sprite[0].Tile
@@ -104,7 +105,7 @@ up_not_held:
         lda #30
         sta $020B ;sprite[0].X
 
-        lda #38
+        lda #200
         sta $020C ;sprite[1].Y
         lda #01
         sta $020D ;sprite[1].Tile

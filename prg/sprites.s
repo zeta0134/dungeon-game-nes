@@ -222,10 +222,24 @@ next_metasprite:
         rts
 .endproc
 
+.proc hide_all_sprites
+        ldx #16 ; actually don't hide sprite zero and friends
+        lda #$F8
+loop:
+        sta SHADOW_OAM + OAM_Y_POS, x
+        inx
+        inx
+        inx
+        inx
+        bne loop
+        rts
+.endproc
+
 .proc draw_metasprites
 MetaSpriteCount := R0
 MetaSpriteIndex := R1
         jsr update_camera_scroll
+        jsr hide_all_sprites
         lda #21
         sta MetaSpriteCount
         lda #0
