@@ -9,7 +9,7 @@
         .include "word_util.inc"
         .include "zeropage.inc"
         .include "input.inc"
-        .include "blobby.inc"
+        .include "animations/blobby.inc"
         .include "statusbar.inc"
 
 .scope PRGLAST_E000
@@ -114,18 +114,6 @@ up_not_held:
         sta $020E ;sprite[1].Palette + Attributes
         lda #32
         sta $020F ;sprite[1].X
-
-        ; FOR FUN HAPPY TIMES let us draw a test blob
-        lda #80
-        sta MetaspritePosX
-        lda #90
-        sta MetaspritePosY
-        st16 OAMTableAddr, blobby_oam_idle1
-        lda #4 ; number of 8x8 tiles in test sprite
-        sta OAMTableLength
-        lda #16 ; arbitrary OAM entry index
-        sta OAMEntryIndex
-        jsr draw_metasprite
 
         ; EVEN MORE JOY: initialize three animation states
         st16 R0, 20
