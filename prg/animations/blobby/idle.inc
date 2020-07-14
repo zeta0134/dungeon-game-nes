@@ -42,7 +42,7 @@ blobby_oam_idle2:
 blobby_oam_idle3:
         ;     Y-offset  Tile  Attr    X-offset
         .byte 0,        2,    $00,    255
-        .byte 8,        3,    $00,    0
+        .byte 8,        7,    $00,    0
         .byte 0,        2,    $40,    7
         .byte 8,        1,    $40,    7
 
@@ -52,4 +52,4 @@ blobby_oam_idle4:
         .byte 0,        2,    $00,    1
         .byte 8,        1,    $00,    1
         .byte 0,        2,    $40,    9
-        .byte 8,        3,    $40,    8
+        .byte 8,        7,    $40,    8
