@@ -129,6 +129,8 @@ up_not_held:
         initialize_metasprite 0, 20, 50, 1, 0, blobby_anim_idle_alt
         initialize_metasprite 1, 40, 50, 2, 0, blobby_anim_jump
         initialize_metasprite 2, 60, 50, 3, 0, blobby_anim_roll
+        initialize_metasprite 3, 20, 70, 0, 0, blobby_anim_walk_right
+        initialize_metasprite 4, 40, 70, 0, 0, blobby_anim_walk_left
 
         rts  
 .endproc
@@ -185,7 +187,7 @@ start:
         sta $4010
         cli
 gameloop:
-        lda #$9F
+        lda #$9E
         sta PPUMASK
         jsr demo_scroll_camera
         jsr update_animations
