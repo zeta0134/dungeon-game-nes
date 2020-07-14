@@ -129,10 +129,16 @@ up_not_held:
         initialize_metasprite 0, 60, 80, 1, 0, blobby_anim_idle_alt
         initialize_metasprite 1, 80, 80, 2, 0, blobby_anim_jump
         initialize_metasprite 2, 100, 80, 3, 0, blobby_anim_roll
+
         initialize_metasprite 3, 60, 100, 0, 0, blobby_anim_walk_right
         initialize_metasprite 4, 80, 100, 0, 0, blobby_anim_walk_left
         initialize_metasprite 5, 100, 100, 0, 0, blobby_anim_walk_up
         initialize_metasprite 6, 120, 100, 0, 0, blobby_anim_walk_down
+
+        initialize_metasprite 7, 60, 120, 0, 0, blobby_anim_chargeA
+        initialize_metasprite 8, 80, 120, 0, 0, blobby_anim_chargeB
+        initialize_metasprite 9, 100, 120, 0, 0, blobby_anim_chargeC
+        initialize_metasprite 10, 120, 120, 0, 0, blobby_anim_rest
 
         rts  
 .endproc

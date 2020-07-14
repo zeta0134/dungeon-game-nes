@@ -1,4 +1,4 @@
-.export blobby_anim_idle, blobby_anim_idle_alt
+.export blobby_anim_idle, blobby_anim_idle_alt, blobby_anim_rest
 
 blobby_anim_idle:
         .word blobby_frames_idle
@@ -53,3 +53,27 @@ blobby_oam_idle4:
         .byte 8,        1,    $00,    1
         .byte 0,        2,    $40,    9
         .byte 8,        7,    $40,    8
+
+blobby_anim_rest:
+        .word blobby_frames_rest
+        .byte 2
+
+blobby_frames_rest:
+        .word blobby_oam_rest1
+        .byte $04, $04, 30; oam length, mapper, delay frames
+        .word blobby_oam_rest2
+        .byte $04, $04, 30; oam length, mapper, delay frames
+
+blobby_oam_rest1:
+        ;     Y-offset  Tile  Attr   X-offset
+        .byte 0,        30,    $00,    0
+        .byte 8,        31,    $00,    0
+        .byte 0,        30,    $40,    8
+        .byte 8,        31,    $40,    8
+
+blobby_oam_rest2:
+        ;     Y-offset  Tile  Attr   X-offset
+        .byte 0,        16,    $00,    0
+        .byte 8,        31,    $00,    0
+        .byte 0,        16,    $40,    8
+        .byte 8,        31,    $40,    8
