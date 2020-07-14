@@ -189,12 +189,16 @@ start:
         sta $4010
         cli
 gameloop:
-        lda #$9E
+        lda #(BG_ON | OBJ_ON | BG_CLIP | OBJ_CLIP | LIGHTGRAY)
         sta PPUMASK
         jsr demo_scroll_camera
+        lda #(BG_ON | OBJ_ON | BG_CLIP | OBJ_CLIP | TINT_B)
+        sta PPUMASK
         jsr update_animations
+        lda #(BG_ON | OBJ_ON | BG_CLIP | OBJ_CLIP | TINT_B | TINT_G)
+        sta PPUMASK
         jsr draw_metasprites
-        lda #$1E
+        lda #(BG_ON | OBJ_ON | BG_CLIP | OBJ_CLIP)
         sta PPUMASK
         dec TestBlobbyDelay
         bne wait_for_next_vblank
