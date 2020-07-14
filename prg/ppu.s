@@ -55,7 +55,8 @@ loop:
         ; Backgrounds
         set_ppuaddr #$3F00
 
-        lda #$0F
+        ; level regions use this greyscale thing
+        lda #$2D
         sta PPUDATA
         lda #$00
         sta PPUDATA
@@ -63,7 +64,6 @@ loop:
         sta PPUDATA
         lda #$20
         sta PPUDATA
-        
 
         ; Sprites
         ; gray!
