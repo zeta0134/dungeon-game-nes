@@ -17,15 +17,15 @@
         .importzp FrameCounter, CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget
         .zeropage
 TestBlobbyDelay: .byte $00
-        .segment "PRGLAST_E000"
-        ;.org $e000
 
-
+        .segment "PRGLAST_C000"
 test_map:
         .incbin "build/maps/large_test_room.bin"
 test_tileset:
         ;.byte $00, $00, $00, $00 ;tile 0 shouldn't exist in valid map data
         .incbin "build/tilesets/skull_tiles.mt"
+
+        .segment "PRGLAST_E000"
 
 .proc demo_scroll_camera
 CameraSpeed := $10
@@ -126,11 +126,13 @@ up_not_held:
         sta $020F ;sprite[1].X
 
         ; EVEN MORE JOY: initialize three animation states
-        initialize_metasprite 0, 20, 50, 1, 0, blobby_anim_idle_alt
-        initialize_metasprite 1, 40, 50, 2, 0, blobby_anim_jump
-        initialize_metasprite 2, 60, 50, 3, 0, blobby_anim_roll
-        initialize_metasprite 3, 20, 70, 0, 0, blobby_anim_walk_right
-        initialize_metasprite 4, 40, 70, 0, 0, blobby_anim_walk_left
+        initialize_metasprite 0, 60, 80, 1, 0, blobby_anim_idle_alt
+        initialize_metasprite 1, 80, 80, 2, 0, blobby_anim_jump
+        initialize_metasprite 2, 100, 80, 3, 0, blobby_anim_roll
+        initialize_metasprite 3, 60, 100, 0, 0, blobby_anim_walk_right
+        initialize_metasprite 4, 80, 100, 0, 0, blobby_anim_walk_left
+        initialize_metasprite 5, 100, 100, 0, 0, blobby_anim_walk_up
+        initialize_metasprite 6, 120, 100, 0, 0, blobby_anim_walk_down
 
         rts  
 .endproc

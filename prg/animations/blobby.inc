@@ -4,3 +4,5 @@
 .import blobby_anim_roll
 .import blobby_anim_walk_right
 .import blobby_anim_walk_left
+.import blobby_anim_walk_up
+.import blobby_anim_walk_down
