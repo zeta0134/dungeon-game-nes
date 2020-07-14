@@ -77,6 +77,16 @@ up_not_held:
         rts
 .endproc
 
+.macro initialize_metasprite index, pos_x, pos_y, palette, tilebase, animation
+        st16 R0, pos_x
+        set_metasprite_x #.sizeof(MetaSpriteState)*index, R0
+        st16 R0, pos_y
+        set_metasprite_y #.sizeof(MetaSpriteState)*index, R0
+        set_metasprite_tile_offset #.sizeof(MetaSpriteState)*index, #tilebase
+        set_metasprite_palette_offset #.sizeof(MetaSpriteState)*index, #palette
+        set_metasprite_animation #.sizeof(MetaSpriteState)*index, animation
+.endmacro
+
 .proc demo_oam_init
         ; Setup a demo blob; this happens to also be sprite zero, which is needed for scrolling
         lda #200
@@ -116,32 +126,9 @@ up_not_held:
         sta $020F ;sprite[1].X
 
         ; EVEN MORE JOY: initialize three animation states
-        st16 R0, 20
-        set_metasprite_x #.sizeof(MetaSpriteState)*0, R0
-        st16 R0, 50
-        set_metasprite_y #.sizeof(MetaSpriteState)*0, R0
-        set_metasprite_tile_offset #.sizeof(MetaSpriteState)*0, #0
-        set_metasprite_palette_offset #.sizeof(MetaSpriteState)*0, #1
-        st16 R0, blobby_anim_idle_alt
-        set_metasprite_animation #.sizeof(MetaSpriteState)*0, R0
-        
-        st16 R0, 40
-        set_metasprite_x #.sizeof(MetaSpriteState)*1, R0
-        st16 R0, 50
-        set_metasprite_y #.sizeof(MetaSpriteState)*1, R0
-        set_metasprite_tile_offset #.sizeof(MetaSpriteState)*1, #0
-        set_metasprite_palette_offset #.sizeof(MetaSpriteState)*1, #2
-        st16 R0, blobby_anim_jump
-        set_metasprite_animation #.sizeof(MetaSpriteState)*1, R0
-
-        st16 R0, 60
-        set_metasprite_x #.sizeof(MetaSpriteState)*2, R0
-        st16 R0, 50
-        set_metasprite_y #.sizeof(MetaSpriteState)*2, R0
-        set_metasprite_tile_offset #.sizeof(MetaSpriteState)*2, #0
-        set_metasprite_palette_offset #.sizeof(MetaSpriteState)*2, #3
-        st16 R0, blobby_anim_roll
-        set_metasprite_animation #.sizeof(MetaSpriteState)*2, R0
+        initialize_metasprite 0, 20, 50, 1, 0, blobby_anim_idle_alt
+        initialize_metasprite 1, 40, 50, 2, 0, blobby_anim_jump
+        initialize_metasprite 2, 60, 50, 3, 0, blobby_anim_roll
 
         rts  
 .endproc
