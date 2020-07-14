@@ -67,10 +67,10 @@
         ; load the AnimationHeader address into our scratch pointer,
         ; and also write it to the metasprite state
         ldx MetaSpriteOffset
-        lda AnimationHeaderAddr
+        lda #<AnimationHeaderAddr
         sta ScratchSpritePtr
         sta metasprite_table + MetaSpriteState::AnimationAddr, x
-        lda AnimationHeaderAddr+1
+        lda #>AnimationHeaderAddr
         sta ScratchSpritePtr+1
         sta metasprite_table + MetaSpriteState::AnimationAddr + 1, x
         ; initialize the FrameCounter to the animation length; it counts
