@@ -59,17 +59,17 @@ blobby_frames_jump:
 ; squish down horizontally
 blobby_oam_hsquish_blink:
         ;     Y-offset  Tile  Attr    X-offset
-        .byte 1,        20,    $00,    0
-        .byte 8,        21,    $00,    0
-        .byte 1,        20,    $40,    8
-        .byte 8,        21,    $40,    8
+        .byte 0,        30,    $00,    0
+        .byte 8,        31,    $00,    0
+        .byte 0,        30,    $40,    8
+        .byte 8,        31,    $40,    8
 
 blobby_oam_hsquish:
         ;     Y-offset  Tile  Attr    X-offset
-        .byte 1,        0,    $00,    0
-        .byte 8,        1,    $00,    0
-        .byte 1,        0,    $40,    8
-        .byte 8,        1,    $40,    8
+        .byte 0,        28,    $00,    0
+        .byte 8,        29,    $00,    0
+        .byte 0,        28,    $40,    8
+        .byte 8,        29,    $40,    8
 
 ; reuse 2 idle frames here
 
