@@ -1,5 +1,6 @@
         .setcpu "6502"
         .include "sprites.inc"
+        .include "entity.inc"
 
 .scope PRGLAST_E000
         .segment "PRGLAST_E000"
@@ -8,5 +9,6 @@
         .include "animations/blobby/jump.inc" ;note: currently depends on idle.inc!
         .include "animations/blobby/roll.inc" ;note: currently depends on idle.inc!
         .include "animations/blobby/walk.inc"
+
 
 .endscope
