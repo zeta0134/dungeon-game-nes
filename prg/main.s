@@ -126,22 +126,28 @@ up_not_held:
         sta $020F ;sprite[1].X
 
         ; EVEN MORE JOY: initialize three animation states
-        initialize_metasprite 0, 60, 80, 1, 0, blobby_anim_idle_alt
-        initialize_metasprite 1, 80, 80, 2, 0, blobby_anim_jump
-        initialize_metasprite 2, 100, 80, 3, 0, blobby_anim_roll
+        initialize_metasprite 0, 60, 80, 0, 0, blobby_anim_idle
+        initialize_metasprite 1, 80, 80, 1, 0, blobby_anim_idle_alt
+        initialize_metasprite 2, 100, 80, 2, 0, blobby_anim_jump
+        initialize_metasprite 3, 120, 80, 3, 0, blobby_anim_roll
 
-        initialize_metasprite 3, 60, 100, 0, 0, blobby_anim_walk_right
-        initialize_metasprite 4, 80, 100, 0, 0, blobby_anim_walk_left
-        initialize_metasprite 5, 100, 100, 0, 0, blobby_anim_walk_up
-        initialize_metasprite 6, 120, 100, 0, 0, blobby_anim_walk_down
+        initialize_metasprite 4, 60, 100, 0, 0, blobby_anim_walk_right
+        initialize_metasprite 5, 80, 100, 0, 0, blobby_anim_walk_left
+        initialize_metasprite 6, 100, 100, 0, 0, blobby_anim_walk_up
+        initialize_metasprite 7, 120, 100, 0, 0, blobby_anim_walk_down
 
-        initialize_metasprite 7, 60, 120, 0, 0, blobby_anim_chargeA
-        initialize_metasprite 8, 80, 120, 0, 0, blobby_anim_chargeB
-        initialize_metasprite 9, 100, 120, 0, 0, blobby_anim_chargeC
-        initialize_metasprite 10, 120, 120, 0, 0, blobby_anim_rest
+        initialize_metasprite 8, 60, 120, 0, 0, blobby_anim_chargeA
+        initialize_metasprite 9, 80, 120, 0, 0, blobby_anim_chargeB
+        initialize_metasprite 10, 100, 120, 0, 0, blobby_anim_chargeC
+        initialize_metasprite 11, 120, 120, 0, 0, blobby_anim_rest
 
         rts  
 .endproc
+
+.macro debug_color flags
+        ;lda #(BG_ON | OBJ_ON | BG_CLIP | OBJ_CLIP | flags)
+        ;sta PPUMASK
+.endmacro
 
 start:
         lda #$00
@@ -195,17 +201,14 @@ start:
         sta $4010
         cli
 gameloop:
-        lda #(BG_ON | OBJ_ON | BG_CLIP | OBJ_CLIP | LIGHTGRAY)
-        sta PPUMASK
+        debug_color LIGHTGRAY
         jsr demo_scroll_camera
-        lda #(BG_ON | OBJ_ON | BG_CLIP | OBJ_CLIP | TINT_B)
-        sta PPUMASK
+        debug_color TINT_B
         jsr update_animations
-        lda #(BG_ON | OBJ_ON | BG_CLIP | OBJ_CLIP | TINT_B | TINT_G)
-        sta PPUMASK
+        debug_color TINT_B | TINT_G
         jsr draw_metasprites
-        lda #(BG_ON | OBJ_ON | BG_CLIP | OBJ_CLIP)
-        sta PPUMASK
+        debug_color 0 ; disable debug colors
+
         dec TestBlobbyDelay
         bne wait_for_next_vblank
         lda #$20

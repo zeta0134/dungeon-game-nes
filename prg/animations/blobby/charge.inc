@@ -68,13 +68,13 @@ blobby_anim_chargeC:
 
 blobby_frames_chargeC:
         .word blobby_oam_chargeC1
-        .byte $04, $04, 1; oam length, mapper, delay frames
+        .byte $04, $04, 0; oam length, mapper, delay frames
         .word blobby_oam_chargeC2
-        .byte $04, $04, 1
+        .byte $04, $04, 0
         .word blobby_oam_chargeC3
-        .byte $04, $04, 1; oam length, mapper, delay frames
+        .byte $04, $04, 0; oam length, mapper, delay frames
         .word blobby_oam_chargeC4
-        .byte $04, $04, 1
+        .byte $04, $04, 0
 
 blobby_oam_chargeC1:
         ;     Y-offset  Tile  Attr   X-offset
