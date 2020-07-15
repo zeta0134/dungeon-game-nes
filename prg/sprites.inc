@@ -1,3 +1,6 @@
+.ifndef _SPRITES_INC
+_SPRITES_INC := 1
+
 .import initialize_oam, draw_metasprite, metasprite_table, update_animations, draw_metasprites
 .importzp OAMTableLength, OAMEntryIndex, OAMTableAddr, MetaspritePosX, MetaspritePosY, ScratchSpritePtr
 
@@ -98,3 +101,5 @@
         ldy MetaSpriteOffset
         sta metasprite_table + MetaSpriteState::DelayCounter, y
 .endmacro
+
+.endif
