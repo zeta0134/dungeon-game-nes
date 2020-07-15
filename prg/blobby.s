@@ -9,6 +9,7 @@
         .include "animations/blobby/jump.inc" ;note: currently depends on idle.inc!
         .include "animations/blobby/roll.inc" ;note: currently depends on idle.inc!
         .include "animations/blobby/walk.inc"
+        .include "animations/blobby/charge.inc"
 
 
 .endscope
