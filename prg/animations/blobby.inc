@@ -1,3 +1,5 @@
+.import blobby_init
+
 .import blobby_anim_idle
 .import blobby_anim_idle_alt
 .import blobby_anim_rest

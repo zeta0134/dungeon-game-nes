@@ -11,7 +11,7 @@
 CurrentEntityIndex: .byte $00
         .exportzp CurrentEntityIndex
         .segment "RAM"
-        .export entity_table, spawn_entity, update_entities
+        .export entity_table, spawn_entity, update_entities, set_metasprite_pos
 entity_table:
         .repeat 16
         .tag EntityState
@@ -26,10 +26,13 @@ CurrentEntityFuncPtr: .word $0000
 ; might be called *this* frame if the new entity is created
 ; in a later slot by an entity function in an earlier slot.
 
+; upon completion, y will contain the spawned index, or the
+; value #$FF to indicate failure.
+
 .proc spawn_entity
         ldy #0
 loop:
-        lda EntityState::UpdateFunc+1, y
+        lda entity_table + EntityState::UpdateFunc+1, y
         beq found_slot
         clc
         tya
@@ -39,11 +42,13 @@ loop:
         jmp loop
 found_slot:
         lda R0
-        sta EntityState::UpdateFunc, y
+        sta entity_table + EntityState::UpdateFunc, y
         lda R0+1
-        sta EntityState::UpdateFunc+1, y
+        sta entity_table + EntityState::UpdateFunc+1, y
+        ; all done!
+        rts
 spawn_failed:
-done:
+        ldy #$FF
         rts
 .endproc
 
@@ -52,27 +57,53 @@ done:
         sta CurrentEntityIndex
 loop:
         ldy CurrentEntityIndex
-        lda EntityState::UpdateFunc+1, y
+        lda entity_table + EntityState::UpdateFunc+1, y
         beq skip_entity
         sta CurrentEntityFuncPtr+1
-        lda EntityState::UpdateFunc, y
+        lda entity_table + EntityState::UpdateFunc, y
         sta CurrentEntityFuncPtr
-        lda #<(return_from_indirect-1)
-        pha
         lda #>(return_from_indirect-1)
+        pha
+        lda #<(return_from_indirect-1)
         pha
         jmp (CurrentEntityFuncPtr)
 return_from_indirect:
 skip_entity:
         clc
-        lda .sizeof(EntityState)
+        lda #.sizeof(EntityState)
         adc CurrentEntityIndex
         bvs done
         sta CurrentEntityIndex
         jmp loop
 done:
         rts
+.endproc
 
+.proc set_metasprite_pos
+MetaSpriteIndex := R0
+EntityIndex := R1
+        ; first, copy the coordinates into place
+        ldy EntityIndex
+        ldx MetaSpriteIndex
+        lda entity_table + EntityState::PositionX, y
+        sta metasprite_table + MetaSpriteState::PositionX, x
+        lda entity_table + EntityState::PositionX+1, y
+        sta metasprite_table + MetaSpriteState::PositionX+1, x
+        lda entity_table + EntityState::PositionY, y
+        sta metasprite_table + MetaSpriteState::PositionY, x
+        lda entity_table + EntityState::PositionY+1, y
+        sta metasprite_table + MetaSpriteState::PositionY+1, x
+        ; now, shift the metasprite position to the right by 4, taking
+        ; the coordinates from *subtile* space to *pixel* space
+        .repeat 4
+        lsr metasprite_table + MetaSpriteState::PositionX+1, x
+        ror metasprite_table + MetaSpriteState::PositionX, x
+        .endrepeat
+        .repeat 4
+        lsr metasprite_table + MetaSpriteState::PositionY+1, x
+        ror metasprite_table + MetaSpriteState::PositionY, x
+        .endrepeat
+        rts
 .endproc
 
 .endscope

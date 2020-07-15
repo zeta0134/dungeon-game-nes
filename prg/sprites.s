@@ -27,7 +27,7 @@ metasprite_table:
         .segment "PRGLAST_E000"
         ;.org $e000
 
-.export initialize_oam, draw_metasprite, update_animations, draw_metasprites
+.export initialize_oam, draw_metasprite, update_animations, draw_metasprites, find_unused_metasprite
 
 SHADOW_OAM = $0200
 ; offsets
@@ -51,6 +51,30 @@ loop:
         sta (R0),y ; x-position: far left
         iny
         bne loop ; Continue until Y rolls back around to 0
+        rts
+.endproc
+
+; when called, R0 is updated with the first free
+; metasprite slot. Upon failure (full table), R0
+; will be set to $FF, so check for this condition in the calling
+; code to handle the error.
+.proc find_unused_metasprite
+MetaSpriteIndex := R0
+        lda #0
+        sta MetaSpriteIndex
+loop:
+        lda MetaSpriteIndex
+        lda metasprite_table + MetaSpriteState::AnimationAddr + 1, x
+        beq found
+        lda #.sizeof(MetaSpriteState)
+        adc MetaSpriteIndex
+        bvs table_is_full
+        sta MetaSpriteIndex
+        jmp loop
+table_is_full:
+        lda #$FF
+        sta MetaSpriteIndex
+found:
         rts
 .endproc
 

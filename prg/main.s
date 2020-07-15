@@ -6,6 +6,7 @@
         .include "ppu.inc"
         .include "scrolling.inc"
         .include "sprites.inc"
+        .include "entity.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
         .include "input.inc"
@@ -87,7 +88,7 @@ up_not_held:
         set_metasprite_animation #.sizeof(MetaSpriteState)*index, animation
 .endmacro
 
-.proc demo_oam_init
+.proc demo_init
         ; Setup a demo blob; this happens to also be sprite zero, which is needed for scrolling
         lda #200
         sta $0200 ;sprite[0].Y
@@ -126,27 +127,38 @@ up_not_held:
         sta $020F ;sprite[1].X
 
         ; EVEN MORE JOY: initialize three animation states
-        initialize_metasprite 0, 60, 80, 0, 0, blobby_anim_idle
-        initialize_metasprite 1, 80, 80, 1, 0, blobby_anim_idle_alt
-        initialize_metasprite 2, 100, 80, 2, 0, blobby_anim_jump
-        initialize_metasprite 3, 120, 80, 3, 0, blobby_anim_roll
+        ;initialize_metasprite 0, 60, 80, 0, 0, blobby_anim_idle
+        ;initialize_metasprite 1, 80, 80, 1, 0, blobby_anim_idle_alt
+        ;initialize_metasprite 2, 100, 80, 2, 0, blobby_anim_jump
+        ;initialize_metasprite 3, 120, 80, 3, 0, blobby_anim_roll
 
-        initialize_metasprite 4, 60, 100, 0, 0, blobby_anim_walk_right
-        initialize_metasprite 5, 80, 100, 0, 0, blobby_anim_walk_left
-        initialize_metasprite 6, 100, 100, 0, 0, blobby_anim_walk_up
-        initialize_metasprite 7, 120, 100, 0, 0, blobby_anim_walk_down
+        ;initialize_metasprite 4, 60, 100, 0, 0, blobby_anim_walk_right
+        ;initialize_metasprite 5, 80, 100, 0, 0, blobby_anim_walk_left
+        ;initialize_metasprite 6, 100, 100, 0, 0, blobby_anim_walk_up
+        ;initialize_metasprite 7, 120, 100, 0, 0, blobby_anim_walk_down
 
-        initialize_metasprite 8, 60, 120, 0, 0, blobby_anim_chargeA
-        initialize_metasprite 9, 80, 120, 0, 0, blobby_anim_chargeB
-        initialize_metasprite 10, 100, 120, 0, 0, blobby_anim_chargeC
-        initialize_metasprite 11, 120, 120, 0, 0, blobby_anim_rest
+        ;initialize_metasprite 8, 60, 120, 0, 0, blobby_anim_chargeA
+        ;initialize_metasprite 9, 80, 120, 0, 0, blobby_anim_chargeB
+        ;initialize_metasprite 10, 100, 120, 0, 0, blobby_anim_chargeC
+        ;initialize_metasprite 11, 120, 120, 0, 0, blobby_anim_rest
 
-        rts  
+        st16 R0, blobby_init
+        jsr spawn_entity
+        ; y now contains the entity index. Use this to set the tile
+        ; coordinate to 5, 5 for testing
+        lda #0
+        sta entity_table + EntityState::PositionX, y
+        sta entity_table + EntityState::PositionY, y
+        lda #5
+        sta entity_table + EntityState::PositionX+1, y
+        sta entity_table + EntityState::PositionY+1, y
+        ; in theory, blobby is now ready to go
+        rts
 .endproc
 
 .macro debug_color flags
-        ;lda #(BG_ON | OBJ_ON | BG_CLIP | OBJ_CLIP | flags)
-        ;sta PPUMASK
+        lda #(BG_ON | OBJ_ON | BG_CLIP | OBJ_CLIP | flags)
+        sta PPUMASK
 .endmacro
 
 start:
@@ -158,7 +170,7 @@ start:
         jsr initialize_mmc3
         jsr initialize_palettes
         jsr initialize_oam
-        jsr demo_oam_init
+        jsr demo_init
         jsr initialize_ppu
 
         lda #$00
@@ -203,6 +215,8 @@ start:
 gameloop:
         debug_color LIGHTGRAY
         jsr demo_scroll_camera
+        debug_color TINT_R | TINT_G
+        jsr update_entities
         debug_color TINT_B
         jsr update_animations
         debug_color TINT_B | TINT_G

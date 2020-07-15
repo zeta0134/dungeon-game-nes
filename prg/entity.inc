@@ -1,9 +1,8 @@
 .ifndef _ENTITY_INC
 _ENTITY_INC := 1
 
-.include "sprites.inc"
-
-.import entity_table
+.import entity_table, spawn_entity, update_entities, set_metasprite_pos
+.importzp CurrentEntityIndex
 
 .struct EntityState
         UpdateFunc .word
@@ -26,30 +25,6 @@ _ENTITY_INC := 1
         sta entity_table + EntityState::UpdateFunc, y
         lda #>FunctionAddr
         sta entity_table + EntityState::UpdateFunc+1, y
-.endmacro
-
-.macro set_metasprite_pos EntityIndex, MetaSpriteIndex
-        ; first, copy the coordinates into place
-        ldy EntityIndex
-        ldx MetaSpriteIndex
-        lda entity_table +EntityState::PositionX, y
-        sta metasprite_table + MetaSpriteState::PositionX, x
-        lda entity_table +EntityState::PositionX+1, y
-        sta metasprite_table + MetaSpriteState::PositionX+1, x
-        lda entity_table +EntityState::PositionY, y
-        sta metasprite_table + MetaSpriteState::PoitionY, x
-        lda entity_table +EntityState::PositionY+1, y
-        sta metasprite_table + MetaSpriteState::PositionY+1, x
-        ; now, shift the metasprite position to the right by 4, taking
-        ; the coordinates from *subtile* space to *pixel* space
-        .repeat 4
-        lsr metasprite_table + MetaSpriteState::PositionX+1, x
-        ror metasprite_table + MetaSpriteState::PositionX, x
-        .endrepeat
-        .repeat 4
-        lsr metasprite_table + MetaSpriteState::PositionY+1, x
-        ror metasprite_table + MetaSpriteState::PositionY, x
-        .endrepeat
 .endmacro
 
 .endif
