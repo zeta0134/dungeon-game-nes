@@ -10,7 +10,7 @@
         .include "word_util.inc"
         .include "zeropage.inc"
         .include "input.inc"
-        .include "animations/blobby.inc"
+        .include "blobby.inc"
         .include "statusbar.inc"
 
 .scope PRGLAST_E000
@@ -125,22 +125,6 @@ up_not_held:
         sta $020E ;sprite[1].Palette + Attributes
         lda #32
         sta $020F ;sprite[1].X
-
-        ; EVEN MORE JOY: initialize three animation states
-        ;initialize_metasprite 0, 60, 80, 0, 0, blobby_anim_idle
-        ;initialize_metasprite 1, 80, 80, 1, 0, blobby_anim_idle_alt
-        ;initialize_metasprite 2, 100, 80, 2, 0, blobby_anim_jump
-        ;initialize_metasprite 3, 120, 80, 3, 0, blobby_anim_roll
-
-        ;initialize_metasprite 4, 60, 100, 0, 0, blobby_anim_walk_right
-        ;initialize_metasprite 5, 80, 100, 0, 0, blobby_anim_walk_left
-        ;initialize_metasprite 6, 100, 100, 0, 0, blobby_anim_walk_up
-        ;initialize_metasprite 7, 120, 100, 0, 0, blobby_anim_walk_down
-
-        ;initialize_metasprite 8, 60, 120, 0, 0, blobby_anim_chargeA
-        ;initialize_metasprite 9, 80, 120, 0, 0, blobby_anim_chargeB
-        ;initialize_metasprite 10, 100, 120, 0, 0, blobby_anim_chargeC
-        ;initialize_metasprite 11, 120, 120, 0, 0, blobby_anim_rest
 
         st16 R0, blobby_init
         jsr spawn_entity
