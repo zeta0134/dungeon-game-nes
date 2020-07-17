@@ -31,6 +31,7 @@ loop:
         lsr a ; bit0 -> carry
         rol result_dest ; carry -> low bit of result, high bit -> carry
         bcc loop ; triggered when our initialized bit leaves result
+
 .endscope
 .endmacro
 
@@ -49,6 +50,16 @@ reread:
         pla 
         cmp ButtonsThisFrame
         bne reread ; buttons didn't match; DPCM fetch or unusually accurate player
+        ; If either UP or LEFT is pressed:
+        lda ButtonsThisFrame
+        and #(KEY_UP | KEY_LEFT)
+        ; shift to produce DOWN and RIGHT
+        lsr
+        ; invert to produce allowed keys
+        eor #$FF
+        ; use allowed keys to mask off disallowed D-pad presses:
+        and ButtonsThisFrame
+        sta ButtonsThisFrame
 check_release:
         ; ButtonsThisFrame is already in a
         eor #$FF ; If NOT pressed this frame
