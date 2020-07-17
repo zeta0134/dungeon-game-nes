@@ -1,5 +1,6 @@
         .setcpu "6502"
         .include "nes.inc"
+        .include "camera.inc"
         .include "input.inc"
         .include "mmc3.inc"
         .include "memory_util.inc"
@@ -199,6 +200,7 @@ start:
 gameloop:
         debug_color LIGHTGRAY
         ;jsr demo_scroll_camera
+        jsr update_camera
         debug_color TINT_R | TINT_G
         jsr update_entities
         debug_color TINT_B
