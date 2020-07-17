@@ -57,17 +57,100 @@ failed_to_spawn:
         lda entity_table + EntityState::Data + DATA_SPEED_X, x
         sta R0
         sadd16x entity_table + EntityState::PositionX, R0
-        ;lda entity_table + EntityState::Data + DATA_SPEED_Y, x
-        ;sta R0
-        ;sadd16x entity_table + EntityState::PositionY, R0
+        lda entity_table + EntityState::Data + DATA_SPEED_Y, x
+        sta R0
+        sadd16x entity_table + EntityState::PositionY, R0
+        rts
+.endproc
+
+.proc walking_acceleration
+        ldx CurrentEntityIndex
+check_right:
+        lda #KEY_RIGHT
+        bit ButtonsHeld
+        beq right_not_held
+        ; right is held, so accelerate to the +X
+        accelerate entity_table + EntityState::Data + DATA_SPEED_X, #3
+        max_speed entity_table + EntityState::Data + DATA_SPEED_X, #16
+        ; note: we explicitly skip checking for left, to work around
+        ; worn controllers and broken emulators; right wins
+        jmp check_up
+right_not_held:
+check_left:
+        lda #KEY_LEFT
+        bit ButtonsHeld
+        beq left_not_held
+        ; left is held, so accelerate to the -X
+        accelerate entity_table + EntityState::Data + DATA_SPEED_X, #253
+        min_speed entity_table + EntityState::Data + DATA_SPEED_X, #240
+        jmp check_up
+left_not_held:
+        apply_friction entity_table + EntityState::Data + DATA_SPEED_X, 2
+check_up:
+        lda #KEY_UP
+        bit ButtonsHeld
+        beq up_not_held
+        ; up is held, so accelerate to the -Y
+        accelerate entity_table + EntityState::Data + DATA_SPEED_Y, #253
+        min_speed entity_table + EntityState::Data + DATA_SPEED_Y, #240
+        ; note: we explicitly skip checking for down, to work around
+        ; worn controllers and broken emulators; up wins
+        jmp done
+up_not_held:
+check_down:
+        lda #KEY_DOWN
+        bit ButtonsHeld
+        beq down_not_held
+        ; down is held, so accelerate to the +Y
+        accelerate entity_table + EntityState::Data + DATA_SPEED_Y, #3
+        max_speed entity_table + EntityState::Data + DATA_SPEED_Y, #16
+        jmp done
+down_not_held:
+        apply_friction entity_table + EntityState::Data + DATA_SPEED_Y, 2
+done:
+        rts
+.endproc
+
+.proc pick_walk_animation
+        lda #KEY_RIGHT
+        bit ButtonsHeld
+        beq right_not_held
+        ; switch to the walk right animation and state
+        set_metasprite_animation R0, blobby_anim_walk_right
+        set_update_func CurrentEntityIndex, blobby_walk_right
+        rts
+right_not_held:       
+        lda #KEY_LEFT
+        bit ButtonsHeld
+        beq left_not_held
+        ; switch to the walk right animation and state
+        set_metasprite_animation R0, blobby_anim_walk_left
+        set_update_func CurrentEntityIndex, blobby_walk_left
+        rts
+left_not_held:
+        lda #KEY_UP
+        bit ButtonsHeld
+        beq up_not_held
+        ; switch to the walk right animation and state
+        set_metasprite_animation R0, blobby_anim_walk_up
+        set_update_func CurrentEntityIndex, blobby_walk_up
+        rts
+up_not_held:
+        lda #KEY_DOWN
+        bit ButtonsHeld
+        beq down_not_held
+        ; switch to the walk right animation and state
+        set_metasprite_animation R0, blobby_anim_walk_down
+        set_update_func CurrentEntityIndex, blobby_walk_down
+        rts
+down_not_held:
+        set_metasprite_animation R0, blobby_anim_idle
+        set_update_func CurrentEntityIndex, blobby_idle
         rts
 .endproc
 
 .proc blobby_idle
-        ; dampen the current speed
-        ldx CurrentEntityIndex
-        apply_friction entity_table + EntityState::Data + DATA_SPEED_X, 2
-        ;apply_friction entity_table + EntityState::Data + DATA_SPEED_Y, 2
+        jsr walking_acceleration
         ; apply physics normally
         jsr apply_speed
         txa
@@ -76,28 +159,16 @@ failed_to_spawn:
         sta R0
         jsr set_metasprite_pos
         ; check for state changes
-        lda #KEY_RIGHT
+        lda #(KEY_RIGHT | KEY_LEFT | KEY_UP | KEY_DOWN)
         bit ButtonsHeld
-        beq right_not_held
-        ; switch to the walk right animation and state
-        set_metasprite_animation R0, blobby_anim_walk_right
-        set_update_func CurrentEntityIndex, blobby_walk_right
-right_not_held:       
-        lda #KEY_LEFT
-        bit ButtonsHeld
-        beq left_not_held
-        ; switch to the walk right animation and state
-        set_metasprite_animation R0, blobby_anim_walk_left
-        set_update_func CurrentEntityIndex, blobby_walk_left
-left_not_held:
+        beq still_idle
+        jsr pick_walk_animation
+still_idle:
         rts
 .endproc
 
 .proc blobby_walk_right
-        ; accelerate to the right
-        ldx CurrentEntityIndex
-        accelerate entity_table + EntityState::Data + DATA_SPEED_X, #3
-        max_speed entity_table + EntityState::Data + DATA_SPEED_X, #16
+        jsr walking_acceleration
         ; apply physics normally
         jsr apply_speed
         txa
@@ -110,17 +181,13 @@ left_not_held:
         bit ButtonsHeld
         bne right_not_held
         ; switch to the idle right animation and state
-        set_metasprite_animation R0, blobby_anim_idle
-        set_update_func CurrentEntityIndex, blobby_idle
+        jsr pick_walk_animation
 right_not_held:
         rts
 .endproc
 
 .proc blobby_walk_left
-        ; accelerate to the right
-        ldx CurrentEntityIndex
-        accelerate entity_table + EntityState::Data + DATA_SPEED_X, #253
-        min_speed entity_table + EntityState::Data + DATA_SPEED_X, #240
+        jsr walking_acceleration
         ; apply physics normally
         jsr apply_speed
         txa
@@ -133,10 +200,48 @@ right_not_held:
         bit ButtonsHeld
         bne left_not_held
         ; switch to the idle right animation and state
-        set_metasprite_animation R0, blobby_anim_idle
-        set_update_func CurrentEntityIndex, blobby_idle
+        jsr pick_walk_animation
 left_not_held:
         rts
 .endproc
+
+.proc blobby_walk_up
+        jsr walking_acceleration
+        ; apply physics normally
+        jsr apply_speed
+        txa
+        sta R1
+        lda entity_table + EntityState::MetaSpriteIndex, x
+        sta R0
+        jsr set_metasprite_pos
+        ; check for state changes
+        lda #KEY_UP
+        bit ButtonsHeld
+        bne up_not_held
+        ; switch to the idle right animation and state
+        jsr pick_walk_animation
+up_not_held:
+        rts
+.endproc
+
+.proc blobby_walk_down
+        jsr walking_acceleration
+        ; apply physics normally
+        jsr apply_speed
+        txa
+        sta R1
+        lda entity_table + EntityState::MetaSpriteIndex, x
+        sta R0
+        jsr set_metasprite_pos
+        ; check for state changes
+        lda #KEY_DOWN
+        bit ButtonsHeld
+        bne down_not_held
+        ; switch to the idle right animation and state
+        jsr pick_walk_animation
+down_not_held:
+        rts
+.endproc
+
 
 .endscope
