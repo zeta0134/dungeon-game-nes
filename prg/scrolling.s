@@ -33,7 +33,7 @@ CameraXTileCurrent: .byte $00
 CameraXScrollCurrent: .byte $00
 CameraYTileCurrent: .byte $00
 CameraYScrollCurrent: .byte $00
-.exportzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget
+.exportzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget, MapWidth, MapHeight
 CameraXTileTarget: .byte $00
 CameraXScrollTarget: .byte $00
 CameraYTileTarget: .byte $00
