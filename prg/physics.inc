@@ -4,60 +4,73 @@ _PHYSICS_INC := 1
 ; note: all of these are meant to operate on items in an
 ; entity table, so speed_addr is indexed with x in all cases
 
-.macro accelerate speed_addr, acceleration
+.macro accelerate SpeedAddr, Acceleration
         clc
-        lda acceleration
-        adc speed_addr, x
-        sta speed_addr, x
+        lda Acceleration
+        adc SpeedAddr, x
+        sta SpeedAddr, x
 .endmacro
 
-.macro max_speed speed_addr, speed_limit
+.macro max_speed SpeedAddr, SpeedLimit
 .scope
-        lda speed_addr, x
-        cmp speed_limit
-        bcc no_change
-        lda speed_limit
-        sta speed_addr, x
+        lda SpeedAddr, x
+        sbc SpeedLimit
+        bvc no_overflow
+        eor #$80 ; flip the high bit
+no_overflow:
+        ; the high bit is now V EOR N
+        ; if SpeedAddr < SpeedLimit
+        bmi no_change
+        ; otherwise, make it so!
+        lda SpeedLimit
+        sta SpeedAddr, x
 no_change:
 .endscope
 .endmacro
 
-.macro min_speed speed_addr, speed_limit
+.macro min_speed SpeedAddr, SpeedLimit
 .scope
-        lda speed_limit
-        cmp speed_addr, x
-        bcc no_change
-        sta speed_addr, x
+        lda SpeedLimit
+        sbc SpeedAddr, x
+        bvc no_overflow
+        eor #$80 ; flip the high bit
+no_overflow:
+        ; the high bit is now V EOR N
+        ; if SpeedLimit < SpeedAddr
+        bmi no_change
+        ; otherwise, make it so!
+        lda SpeedLimit
+        sta SpeedAddr, x
 no_change:
 .endscope
 .endmacro
 
-.macro apply_friction speed_addr, slipperiness
+.macro apply_friction SpeedAddr, Slipperiness
 .scope
-        lda speed_addr, x
+        lda SpeedAddr, x
         beq done ; bail if speed is 0
         ; the 7th bit needs to be preserved, we branch to handle both cases
         bmi negative
 positive:
-        .repeat slipperiness
-        lsr speed_addr, x
+        .repeat Slipperiness
+        lsr SpeedAddr, x
         .endrepeat
         ; at this point, a still contains the original speed
         clc ; effectively force a min dampening value of 1
-        sbc speed_addr, x
+        sbc SpeedAddr, x
         ; and now it contains the dampened speed
-        sta speed_addr, x
+        sta SpeedAddr, x
         jmp done
 negative:
-        .repeat slipperiness
+        .repeat Slipperiness
         sec
-        ror speed_addr, x
+        ror SpeedAddr, x
         .endrepeat
         ; at this point, a still contains the original speed
         sec
-        sbc speed_addr, x
+        sbc SpeedAddr, x
         ; now it contains the dampened speed
-        sta speed_addr, x
+        sta SpeedAddr, x
 done:
 .endscope
 .endmacro
