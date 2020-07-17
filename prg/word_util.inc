@@ -1,3 +1,6 @@
+.ifndef _WORD_UTIL_INC
+_WORD_UTIL_INC := 1
+
 .macro st16 addr, value
         lda #<value
         sta addr
@@ -65,6 +68,50 @@ positive:
 .endscope
 .endmacro
 
+; signed, with x offset on the addr
+.macro sadd16x addr, value
+.scope
+        ; handle the low byte normally
+        clc
+        lda value
+        adc addr, x
+        sta addr, x
+        ; sign-extend the high bit into the high byte
+        lda value
+        and #$80 ;extract the high bit
+        beq positive
+        lda #$FF ; the high bit was high, so set high byte to 0xFF, then add that plus carry 
+        ; note: unless a signed overflow occurred, carry will usually be *set* in this case
+positive:
+        ; the high bit was low; a contains #$00, so add that plus carry
+        adc addr+1, x
+        sta addr+1, x
+
+.endscope
+.endmacro
+
+; signed, with y offset on the addr
+.macro sadd16y addr, value
+.scope
+        ; handle the low byte normally
+        clc
+        lda value
+        adc addr, y
+        sta addr, y
+        ; sign-extend the high bit into the high byte
+        lda value
+        and #$80 ;extract the high bit
+        beq positive
+        lda #$FF ; the high bit was high, so set high byte to 0xFF, then add that plus carry 
+        ; note: unless a signed overflow occurred, carry will usually be *set* in this case
+positive:
+        ; the high bit was low; a contains #$00, so add that plus carry
+        adc addr+1, y
+        sta addr+1, y
+
+.endscope
+.endmacro
+
 .macro sub16 addr, value
         lda addr
         sbc value
@@ -73,3 +120,5 @@ positive:
         sbc #0
         sta addr+1
 .endmacro
+
+.endif

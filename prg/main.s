@@ -198,7 +198,7 @@ start:
         cli
 gameloop:
         debug_color LIGHTGRAY
-        jsr demo_scroll_camera
+        ;jsr demo_scroll_camera
         debug_color TINT_R | TINT_G
         jsr update_entities
         debug_color TINT_B
