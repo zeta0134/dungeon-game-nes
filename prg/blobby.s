@@ -18,8 +18,15 @@
 
         .export blobby_init
 
-DATA_SPEED_X := 0
-DATA_SPEED_Y := 1
+WALKING_SPEED = 16
+WALKING_ACCEL = 2
+
+; because of how this is used by the macro which applies friction,
+; this must be a define and not a numeric constant
+.define SLIPPERINESS 4
+
+DATA_SPEED_X = 0
+DATA_SPEED_Y = 1
 
 ; mostly performs a whole bunch of one-time setup
 ; expects the entity position to have been set by whatever did the initial spawning
@@ -70,8 +77,8 @@ check_right:
         bit ButtonsHeld
         beq right_not_held
         ; right is held, so accelerate to the +X
-        accelerate entity_table + EntityState::Data + DATA_SPEED_X, #3
-        max_speed entity_table + EntityState::Data + DATA_SPEED_X, #16
+        accelerate entity_table + EntityState::Data + DATA_SPEED_X, #WALKING_ACCEL
+        max_speed entity_table + EntityState::Data + DATA_SPEED_X, #WALKING_SPEED
         ; note: we explicitly skip checking for left, to work around
         ; worn controllers and broken emulators; right wins
         jmp check_up
@@ -81,18 +88,18 @@ check_left:
         bit ButtonsHeld
         beq left_not_held
         ; left is held, so accelerate to the -X
-        accelerate entity_table + EntityState::Data + DATA_SPEED_X, #253
-        min_speed entity_table + EntityState::Data + DATA_SPEED_X, #240
+        accelerate entity_table + EntityState::Data + DATA_SPEED_X, #(256-WALKING_ACCEL)
+        min_speed entity_table + EntityState::Data + DATA_SPEED_X, #(256-WALKING_SPEED)
         jmp check_up
 left_not_held:
-        apply_friction entity_table + EntityState::Data + DATA_SPEED_X, 2
+        apply_friction entity_table + EntityState::Data + DATA_SPEED_X, SLIPPERINESS
 check_up:
         lda #KEY_UP
         bit ButtonsHeld
         beq up_not_held
         ; up is held, so accelerate to the -Y
-        accelerate entity_table + EntityState::Data + DATA_SPEED_Y, #253
-        min_speed entity_table + EntityState::Data + DATA_SPEED_Y, #240
+        accelerate entity_table + EntityState::Data + DATA_SPEED_Y, #(256-WALKING_ACCEL)
+        min_speed entity_table + EntityState::Data + DATA_SPEED_Y, #(256-WALKING_SPEED)
         ; note: we explicitly skip checking for down, to work around
         ; worn controllers and broken emulators; up wins
         jmp done
@@ -102,11 +109,11 @@ check_down:
         bit ButtonsHeld
         beq down_not_held
         ; down is held, so accelerate to the +Y
-        accelerate entity_table + EntityState::Data + DATA_SPEED_Y, #3
-        max_speed entity_table + EntityState::Data + DATA_SPEED_Y, #16
+        accelerate entity_table + EntityState::Data + DATA_SPEED_Y, #WALKING_ACCEL
+        max_speed entity_table + EntityState::Data + DATA_SPEED_Y, #WALKING_SPEED
         jmp done
 down_not_held:
-        apply_friction entity_table + EntityState::Data + DATA_SPEED_Y, 2
+        apply_friction entity_table + EntityState::Data + DATA_SPEED_Y, SLIPPERINESS
 done:
         rts
 .endproc
