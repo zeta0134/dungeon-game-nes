@@ -477,14 +477,11 @@ skip:
         bne vertical_scroll
         jmp no_vertical_scroll
 vertical_scroll:
-        ; we're about to apply the Y difference, so copy the Y changes over here
-        ; (this does NOT clobber carry, but DOES clobber the zero flag)
-        lda CameraYTileTarget
-        sta CameraYTileCurrent
         ; if the subtract here needed to borrow, the result is negative; we moved UP
         bcc scroll_down
         jmp scroll_up
 scroll_down:
+        inc CameraYTileCurrent
         inc PpuYTileTarget
         lda #28
         cmp PpuYTileTarget
@@ -530,6 +527,7 @@ shift_registers_down:
         ; note - NOT a bug! We intentionally prioritize vertical scroll and let horizontal lag by a frame or two; it's fine
         jmp no_horizontal_scroll
 scroll_up:
+        dec CameraYTileCurrent
         dec PpuYTileTarget
         bpl no_negative_y_wrap
         lda #27
@@ -579,14 +577,11 @@ no_vertical_scroll:
         bne horizontal_scroll
         jmp no_horizontal_scroll
 horizontal_scroll:
-        ; We're about to apply the X difference here, so copy that tile over
-        ; (This does NOT clobber carry, but it DOES clobber zero)
-        lda CameraXTileTarget
-        sta CameraXTileCurrent
         ; if the subtract here needed to borrow, the result is negative; we moved LEFT
         bcc scroll_right
         jmp scroll_left
 scroll_right:
+        inc CameraXTileCurrent
         ; switch to +32 mode
         lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | VRAM_DOWN)
         sta PPUCTRL
@@ -623,6 +618,7 @@ right_side_left_column:
         jsr shift_hwcolumns_right
         jmp no_horizontal_scroll
 scroll_left:
+        dec CameraXTileCurrent
         ; switch to +32 mode
         lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | VRAM_DOWN)
         sta PPUCTRL
