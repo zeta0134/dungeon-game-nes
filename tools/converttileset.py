@@ -70,6 +70,7 @@ def read_tile(filename, nespalette):
 def read_tileset(filename, nespalette):
   tileset_element = ElementTree.parse(filename).getroot()
   tile_elements = tileset_element.findall("tile")
+  tile_types = [int(tile.get("type",default=0)) for tile in tile_elements]
   image_elements = [tile.find("image") for tile in tile_elements]
   image_filenames = [image.get("source") for image in image_elements]
   
@@ -78,6 +79,8 @@ def read_tileset(filename, nespalette):
   base_path = Path(filename).parent;
   image_filenames = [(base_path / file_path).resolve() for file_path in image_filenames]
   tiles = [read_tile(filename, nespalette) for filename in image_filenames]
+  for i in range(0,len(tiles)):
+    tiles[i]["type"] = tile_types[i]
   return tiles
 
 def generate_base_palettes(tiles):
@@ -106,8 +109,18 @@ def write_chr_tiles(chr_tiles, filename):
 
 def write_meta_tiles(metatiles, filename):
   with open(filename, "wb") as output_file:
+    # First write all the CHR data as one page
     for tile in metatiles:
       output_file.write(bytes(tile["chr_indices"]))
+    # pad the page with zero bytes for smaller tilesets
+    for i in range(len(metatiles), 64):
+      output_file.write(bytes([0,0,0,0]))
+    # Now write all the type data, here separated by 4 bytes
+    for tile in metatiles:
+      output_file.write(bytes([tile["type"], 0, 0, 0]))
+    # Again, pad the remaining space to a full page
+    for i in range(len(metatiles), 64):
+      output_file.write(bytes([0,0,0,0]))
 
 def write_palettes(palettes, filename):
   with open(filename, "wb") as output_file:
