@@ -78,13 +78,13 @@ BottomY := R4
         ; line up with the sprite edge (of idle, frame 1)
 
         ; left
-        lda #(1 << 4)
+        lda #(3 << 4)
         sta LeftX
         ; top
-        lda #(4 << 4)
+        lda #(8 << 4)
         sta TopY
         ; right
-        lda #(14 << 4)
+        lda #(12 << 4)
         sta RightX
         ; bottom
         lda #(14 << 4)
