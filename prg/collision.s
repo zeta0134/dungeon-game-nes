@@ -54,17 +54,19 @@ loop:
         clc
         lda entity_table + EntityState::PositionX, y
         adc OffsetX ; and throw it away; we just need the carry
+        sta DestX
         lda entity_table + EntityState::PositionX+1, y
         adc #0
-        sta DestX ; now contains map tile for top-left
+        sta DestX+1 ; now contains map tile for top-left
         
         ; now repeat this for the Y axis
         clc
         lda entity_table + EntityState::PositionY, y
         adc OffsetY ; and throw it away; we just need the carry
+        sta DestY
         lda entity_table + EntityState::PositionY+1, y
         adc #0
-        sta DestY ; now contains map tile for top-left
+        sta DestY+1 ; now contains map tile for top-left
 .endmacro
 
 .macro if_solid TileAddr, HandleResponse
@@ -80,6 +82,10 @@ no_response:
 .endmacro
 
 .proc collision_response_push_down
+SubtileX := R5
+TileX := R6
+SubtileY := R7
+TileY := R8
         ; todo: this
         ; movement? Nah, *highlight*
         ldy CurrentEntityIndex
@@ -88,10 +94,27 @@ no_response:
         lda #1
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
 
+        lda #0
+        sec
+        sbc SubtileY
+        sta SubtileY
+        ldy CurrentEntityIndex
+        clc
+        lda entity_table + EntityState::PositionY, y
+        adc SubtileY
+        sta entity_table + EntityState::PositionY, y
+        lda entity_table + EntityState::PositionY + 1, y
+        adc #0
+        sta entity_table + EntityState::PositionY + 1, y
+
         rts
 .endproc
 
 .proc collision_response_push_up
+SubtileX := R5
+TileX := R6
+SubtileY := R7
+TileY := R8
         ; todo: this
         ; movement? Nah, *highlight*
         ldy CurrentEntityIndex
@@ -99,6 +122,15 @@ no_response:
         tay
         lda #2
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
+
+
+        clc
+        lda entity_table + EntityState::PositionY, y
+        sbc SubtileY
+        sta entity_table + EntityState::PositionY, y
+        lda entity_table + EntityState::PositionY + 1, y
+        sbc #0
+        sta entity_table + EntityState::PositionY + 1, y
 
         rts
 .endproc
@@ -120,14 +152,16 @@ LeftX := R1
 TopY := R2
 RightX := R3
 BottomY := R4
-TileX := R5
-TileY := R6
-TileAddr := R7
-        tile_offset LeftX, TopY, TileX, TileY
+SubtileX := R5
+TileX := R6
+SubtileY := R7
+TileY := R8
+TileAddr := R9
+        tile_offset LeftX, TopY, SubtileX, SubtileY
         map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_down
 
-        tile_offset RightX, TopY, TileX, TileY
+        tile_offset RightX, TopY, SubtileX, SubtileY
         map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_down
 
@@ -140,14 +174,16 @@ LeftX := R1
 TopY := R2
 RightX := R3
 BottomY := R4
-TileX := R5
-TileY := R6
-TileAddr := R7
-        tile_offset LeftX, BottomY, TileX, TileY
+SubtileX := R5
+TileX := R6
+SubtileY := R7
+TileY := R8
+TileAddr := R9
+        tile_offset LeftX, BottomY, SubtileX, SubtileY
         map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_up
 
-        tile_offset RightX, BottomY, TileX, TileY
+        tile_offset RightX, BottomY, SubtileX, SubtileY
         map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_up
 
