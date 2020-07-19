@@ -135,6 +135,60 @@ TileY := R8
         rts
 .endproc
 
+.proc collision_response_push_right
+SubtileX := R5
+TileX := R6
+SubtileY := R7
+TileY := R8
+        ; todo: this
+        ; movement? Nah, *highlight*
+        ldy CurrentEntityIndex
+        lda entity_table + EntityState::MetaSpriteIndex, y
+        tay
+        lda #3
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
+
+        lda #0
+        sec
+        sbc SubtileX
+        sta SubtileX
+        ldy CurrentEntityIndex
+        clc
+        lda entity_table + EntityState::PositionX, y
+        adc SubtileX
+        sta entity_table + EntityState::PositionX, y
+        lda entity_table + EntityState::PositionX + 1, y
+        adc #0
+        sta entity_table + EntityState::PositionX + 1, y
+
+        rts
+.endproc
+
+.proc collision_response_push_left
+SubtileX := R5
+TileX := R6
+SubtileY := R7
+TileY := R8
+        ; todo: this
+        ; movement? Nah, *highlight*
+        ldy CurrentEntityIndex
+        lda entity_table + EntityState::MetaSpriteIndex, y
+        tay
+        lda #3
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
+
+
+        clc
+        lda entity_table + EntityState::PositionX, y
+        sbc SubtileX
+        sta entity_table + EntityState::PositionX, y
+        lda entity_table + EntityState::PositionX + 1, y
+        sbc #0
+        sta entity_table + EntityState::PositionX + 1, y
+
+        rts
+.endproc
+
 ; Handles collision response of an AABB against map tiles which are exclusively
 ; fully solid, or fully impassable.
 ; Restrictions: AABB maximum size is 16px x 16px
@@ -186,6 +240,50 @@ TileAddr := R9
         tile_offset RightX, BottomY, SubtileX, SubtileY
         map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_up
+
+        rts
+.endproc
+
+.export collide_left_with_map
+.proc collide_left_with_map
+LeftX := R1
+TopY := R2
+RightX := R3
+BottomY := R4
+SubtileX := R5
+TileX := R6
+SubtileY := R7
+TileY := R8
+TileAddr := R9
+        tile_offset LeftX, TopY, SubtileX, SubtileY
+        map_index TileX, TileY, TileAddr
+        if_solid TileAddr, collision_response_push_right
+
+        tile_offset LeftX, BottomY, SubtileX, SubtileY
+        map_index TileX, TileY, TileAddr
+        if_solid TileAddr, collision_response_push_right
+
+        rts
+.endproc
+
+.export collide_right_with_map
+.proc collide_right_with_map
+LeftX := R1
+TopY := R2
+RightX := R3
+BottomY := R4
+SubtileX := R5
+TileX := R6
+SubtileY := R7
+TileY := R8
+TileAddr := R9
+        tile_offset RightX, TopY, SubtileX, SubtileY
+        map_index TileX, TileY, TileAddr
+        if_solid TileAddr, collision_response_push_left
+
+        tile_offset RightX, BottomY, SubtileX, SubtileY
+        map_index TileX, TileY, TileAddr
+        if_solid TileAddr, collision_response_push_left
 
         rts
 .endproc

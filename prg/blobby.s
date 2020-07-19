@@ -95,9 +95,15 @@ BottomY := R4
         ldx CurrentEntityIndex
         lda entity_table + EntityState::Data + DATA_SPEED_X, x
         sta R0
+        bmi move_left
+move_right:
         sadd16x entity_table + EntityState::PositionX, R0
-        ; collide with X axis here
-
+        jsr collide_right_with_map
+        jmp done_with_x
+move_left:
+        sadd16x entity_table + EntityState::PositionX, R0
+        jsr collide_left_with_map
+done_with_x:
         ldx CurrentEntityIndex
         lda entity_table + EntityState::Data + DATA_SPEED_Y, x
         sta R0
