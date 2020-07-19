@@ -1,0 +1,1 @@
+.import load_tileset_attributes, collide_up_with_map
