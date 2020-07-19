@@ -1,5 +1,6 @@
         .setcpu "6502"
         .include "nes.inc"
+        .include "collision.inc"
         .include "input.inc"
         .include "sprites.inc"
         .include "entity.inc"
@@ -59,14 +60,57 @@ failed_to_spawn:
 .endproc
 
 .proc apply_speed
-        ; apply speed to position
+; these parameters define the bounds of a collision box around
+; the blob's feet, which determines where it exists for wall
+; tile purposes
+LeftX := R1
+TopY := R2
+RightX := R3
+BottomY := R4
+        ; set our palette index to 0 by default, for debugging
+        ldy CurrentEntityIndex
+        lda entity_table + EntityState::MetaSpriteIndex
+        tay
+        lda #0
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
+
+        ; load in our bounding box; for now this should perfectly
+        ; line up with the sprite edge (of idle, frame 1)
+
+        ; left
+        lda #(1 << 4)
+        sta LeftX
+        ; top
+        lda #(4 << 4)
+        sta TopY
+        ; right
+        lda #(14 << 4)
+        sta RightX
+        ; bottom
+        lda #(14 << 4)
+        sta BottomY
+
+        ; apply speed to position for each axis, then check the
+        ; tilemap and correct for any tile collisions
         ldx CurrentEntityIndex
         lda entity_table + EntityState::Data + DATA_SPEED_X, x
         sta R0
         sadd16x entity_table + EntityState::PositionX, R0
+        ; collide with X axis here
+
+        ldx CurrentEntityIndex
         lda entity_table + EntityState::Data + DATA_SPEED_Y, x
         sta R0
+        bmi move_up
+move_down:
         sadd16x entity_table + EntityState::PositionY, R0
+        jsr collide_down_with_map
+        jmp done
+move_up:
+        sadd16x entity_table + EntityState::PositionY, R0
+        jsr collide_up_with_map
+
+done:
         rts
 .endproc
 
@@ -160,6 +204,7 @@ down_not_held:
         jsr walking_acceleration
         ; apply physics normally
         jsr apply_speed
+        ldx CurrentEntityIndex
         txa
         sta R1
         lda entity_table + EntityState::MetaSpriteIndex, x
@@ -178,6 +223,7 @@ still_idle:
         jsr walking_acceleration
         ; apply physics normally
         jsr apply_speed
+        ldx CurrentEntityIndex
         txa
         sta R1
         lda entity_table + EntityState::MetaSpriteIndex, x
@@ -197,6 +243,7 @@ right_not_held:
         jsr walking_acceleration
         ; apply physics normally
         jsr apply_speed
+        ldx CurrentEntityIndex
         txa
         sta R1
         lda entity_table + EntityState::MetaSpriteIndex, x
@@ -216,6 +263,7 @@ left_not_held:
         jsr walking_acceleration
         ; apply physics normally
         jsr apply_speed
+        ldx CurrentEntityIndex
         txa
         sta R1
         lda entity_table + EntityState::MetaSpriteIndex, x
@@ -235,6 +283,7 @@ up_not_held:
         jsr walking_acceleration
         ; apply physics normally
         jsr apply_speed
+        ldx CurrentEntityIndex
         txa
         sta R1
         lda entity_table + EntityState::MetaSpriteIndex, x

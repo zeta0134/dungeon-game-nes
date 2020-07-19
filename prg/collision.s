@@ -91,6 +91,18 @@ no_response:
         rts
 .endproc
 
+.proc collision_response_push_up
+        ; todo: this
+        ; movement? Nah, *highlight*
+        ldy CurrentEntityIndex
+        lda entity_table + EntityState::MetaSpriteIndex, y
+        tay
+        lda #2
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
+
+        rts
+.endproc
+
 ; Handles collision response of an AABB against map tiles which are exclusively
 ; fully solid, or fully impassable.
 ; Restrictions: AABB maximum size is 16px x 16px
@@ -115,12 +127,31 @@ TileAddr := R7
         map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_down
 
-        ;tile_offset RightX, TopY, TileX, TileY
-        ;map_index TileX, TileY, TileAddr
-        ;if_solid TileAddr, collision_response_push_down
+        tile_offset RightX, TopY, TileX, TileY
+        map_index TileX, TileY, TileAddr
+        if_solid TileAddr, collision_response_push_down
 
         rts
 .endproc
 
+.export collide_down_with_map
+.proc collide_down_with_map
+LeftX := R1
+TopY := R2
+RightX := R3
+BottomY := R4
+TileX := R5
+TileY := R6
+TileAddr := R7
+        tile_offset LeftX, BottomY, TileX, TileY
+        map_index TileX, TileY, TileAddr
+        if_solid TileAddr, collision_response_push_up
+
+        tile_offset RightX, BottomY, TileX, TileY
+        map_index TileX, TileY, TileAddr
+        if_solid TileAddr, collision_response_push_up
+
+        rts
+.endproc
 
 .endscope
