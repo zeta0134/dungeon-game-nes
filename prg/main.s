@@ -171,7 +171,6 @@ start:
         jsr load_tileset_attributes
         lda #0
         sta R0
-        lda #0
         sta R1
         jsr init_map
         jsr install_irq_handler

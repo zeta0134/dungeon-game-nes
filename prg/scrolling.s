@@ -229,10 +229,12 @@ TileOffsetY := R1
         lda TileOffsetY
         beq done_with_y_offset
 y_offset_loop:
+        clc
         add16 MapUpperLeftRow, MapWidth
         dec TileOffsetY
         bne y_offset_loop
 done_with_y_offset:
+        clc
         add16 MapUpperLeftRow, TileOffsetX
         ; At this point MapUpperLeft is correct, so use it as the base for
         ; lower left, which needs to advance an extra 24 tiles downwards.
