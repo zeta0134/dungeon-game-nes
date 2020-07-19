@@ -12,6 +12,7 @@
         .segment "PRGRAM"
 MapData: .res 4096
 TilesetData: .res 256
+.export MapData
         .zeropage
 ; Map dimensions
 MapWidth: .byte $00
