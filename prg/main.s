@@ -1,6 +1,7 @@
         .setcpu "6502"
         .include "nes.inc"
         .include "camera.inc"
+        .include "collision.inc"
         .include "input.inc"
         .include "mmc3.inc"
         .include "memory_util.inc"
@@ -24,7 +25,6 @@ TestBlobbyDelay: .byte $00
 test_map:
         .incbin "build/maps/large_test_room.bin"
 test_tileset:
-        ;.byte $00, $00, $00, $00 ;tile 0 shouldn't exist in valid map data
         .incbin "build/tilesets/skull_tiles.mt"
 
         .segment "PRGLAST_E000"
@@ -167,6 +167,8 @@ start:
         jsr load_map
         st16 R0, (test_tileset)
         jsr load_tileset
+        st16 R0, (test_tileset+256)
+        jsr load_tileset_attributes
         lda #0
         sta R0
         lda #0
