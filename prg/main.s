@@ -151,7 +151,15 @@ start:
         sta PPUMASK ; disable rendering
         sta PPUCTRL ; and NMI
 
+        ; Clear out main memory regions
+        st16 R0, ($0000)
+        st16 R2, ($0100)
         jsr clear_memory
+        st16 R0, ($0200)
+        st16 R2, ($0600)
+        jsr clear_memory        
+
+
         jsr initialize_mmc3
         jsr initialize_palettes
         jsr initialize_oam
