@@ -51,6 +51,17 @@
         lda #$80
         sta MMC3_RAM_PROTECT
 
+        ; initialize program banks 0 and 1
+        lda #$86 ; PRG_8000
+        sta MMC3_BANK_SELECT
+        lda #$00
+        sta MMC3_BANK_DATA
+
+        lda #$87 ; PRG_A000
+        sta MMC3_BANK_SELECT
+        lda #$01
+        sta MMC3_BANK_DATA
+
         ; Disable IRQ interrupts for init
         sta MMC3_IRQ_DISABLE
         rts

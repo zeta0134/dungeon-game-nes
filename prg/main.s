@@ -28,6 +28,7 @@ test_map:
 test_tileset:
         .incbin "build/tilesets/skull_tiles.mt"
 
+.segment "PRG0_8000"
 song_data:
         .feature force_range
         .include "../build/music/skulldungeon.asm"
@@ -143,6 +144,11 @@ up_not_held:
         sta entity_table + EntityState::PositionX+1, y
         sta entity_table + EntityState::PositionY+1, y
         ; in theory, blobby is now ready to go
+
+
+        ; initialize ggsound
+
+
         rts
 .endproc
 
