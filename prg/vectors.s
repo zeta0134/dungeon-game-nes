@@ -3,6 +3,7 @@
 .include "input.inc"
 .include "memory_util.inc"
 .include "scrolling.inc"
+.include "ggsound.inc"
 
 .scope PRGLAST_E000
         .segment "PRGLAST_E000"
@@ -55,6 +56,7 @@ nmi:
 
         ; Other tasks that should run once per frame with consistent-ish timing
         jsr poll_input
+        soundengine_update
         
         ; This signals to the gameloop that it may continue
         inc FrameCounter

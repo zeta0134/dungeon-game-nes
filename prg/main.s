@@ -146,8 +146,22 @@ up_not_held:
         ; in theory, blobby is now ready to go
 
 
-        ; initialize ggsound
+        ; initialize ggsound and play a demo song
+        lda #SOUND_REGION_NTSC ;or #SOUND_REGION_PAL, or #SOUND_REGION_DENDY
+        sta sound_param_byte_0
+        lda #<song_list
+        sta sound_param_word_0
+        lda #>song_list
+        sta sound_param_word_0+1
+        lda #<instrument_list
+        sta sound_param_word_2
+        lda #>instrument_list
+        sta sound_param_word_2+1
+        jsr sound_initialize
 
+        lda #song_index_New20song
+        sta sound_param_byte_0
+        jsr play_song
 
         rts
 .endproc
