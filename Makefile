@@ -17,7 +17,11 @@ O_FILES := \
 # Artwork files, for performing conversions to NES format bitplanes
 SPRITE_FILES := $(wildcard $(ARTDIR)/sprites/*.png)
 RAW_CHR_FILES := \
-	$(patsubst $(ARTDIR)/sprites/%.png,$(BUILDDIR)/sprites/%.chr,$(SPRITE_FILES)) \
+	$(patsubst $(ARTDIR)/sprites/%.png,$(BUILDDIR)/sprites/%.chr,$(SPRITE_FILES))
+
+# Music files
+MUSIC_TXT_FILES := $(wildcard $(ARTDIR)/music/*.txt)
+MUSIC_ASM_FILES := $(patsubst $(ARTDIR)/music/%.txt,$(BUILDDIR)/music/%.asm,$(MUSIC_TXT_FILES))
 	
 # Data files (maps, game data, etc) for more complex conversions
 MAP_FILES := $(wildcard $(ARTDIR)/maps/*.tmx)
@@ -26,7 +30,7 @@ BIN_FILES := \
 TILESET_FILES := $(wildcard $(ARTDIR)/tilesets/*.tsx)
 TILESET_CHR_FILES := $(patsubst $(ARTDIR)/tilesets/%.tsx,$(BUILDDIR)/tilesets/%.chr,$(TILESET_FILES))
 
-.PRECIOUS: $(BIN_FILES)
+.PRECIOUS: $(BIN_FILES) $(MUSIC_ASM_FILES)
 
 all: dir $(ROM_NAME)
 
@@ -34,6 +38,7 @@ dir:
 	@mkdir -p build/sprites
 	@mkdir -p build/tilesets
 	@mkdir -p build/maps
+	@mkdir -p build/music
 
 clean:
 	-@rm -rf build
@@ -46,7 +51,7 @@ run: dir $(ROM_NAME)
 $(ROM_NAME): $(SOURCEDIR)/mmc3.cfg $(O_FILES)
 	ld65 -m $(BUILDDIR)/map.txt --dbgfile $(DBG_NAME) -o $@ -C $^
 
-$(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(BIN_FILES) $(TILESET_CHR_FILES)
+$(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(BIN_FILES) $(TILESET_CHR_FILES) $(MUSIC_ASM_FILES)
 	ca65 -g -o $@ $<
 
 $(BUILDDIR)/%.o: $(CHRDIR)/%.s $(RAW_CHR_FILES) $(TILESET_CHR_FILES)
@@ -61,7 +66,6 @@ $(BUILDDIR)/maps/%.bin: $(ARTDIR)/maps/%.tmx
 $(BUILDDIR)/tilesets/%.chr: $(ARTDIR)/tilesets/%.tsx
 	tools/converttileset.py $< $@ $(basename $@).mt $(basename $@).pal
 
-
-
-
-
+$(BUILDDIR)/music/%.asm: $(ARTDIR)/music/%.txt
+	vendor/ft_txt_to_asm.py $<
+	mv $(basename $<).asm $@
