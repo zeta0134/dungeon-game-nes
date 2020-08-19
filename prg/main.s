@@ -14,6 +14,7 @@
         .include "input.inc"
         .include "blobby.inc"
         .include "statusbar.inc"
+        .include "ggsound.inc"
 
 .scope PRGLAST_E000
         .export start
@@ -26,6 +27,10 @@ test_map:
         .incbin "build/maps/large_test_room.bin"
 test_tileset:
         .incbin "build/tilesets/skull_tiles.mt"
+
+song_data:
+        .feature force_range
+        .include "../build/music/skulldungeon.asm"
 
         .segment "PRGLAST_E000"
 
