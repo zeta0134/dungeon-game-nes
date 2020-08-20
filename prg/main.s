@@ -232,6 +232,8 @@ start:
         sta $4010
         cli
 gameloop:
+        debug_color TINT_B
+        soundengine_update
         debug_color LIGHTGRAY
         ;jsr demo_scroll_camera
         jsr update_camera
