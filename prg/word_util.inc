@@ -29,11 +29,11 @@ no_carry:
 .endscope
 .endmacro
 
-.macro mov16 addr1, addr2
-        lda addr1
-        sta addr2
-        lda addr1+1
-        sta addr2+1
+.macro mov16 destination, source
+        lda source
+        sta destination
+        lda source+1
+        sta destination+1
 .endmacro
 
 ; unsigned

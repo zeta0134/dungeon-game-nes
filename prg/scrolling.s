@@ -238,7 +238,7 @@ done_with_y_offset:
         add16 MapUpperLeftRow, TileOffsetX
         ; At this point MapUpperLeft is correct, so use it as the base for
         ; lower left, which needs to advance an extra 24 tiles downwards.
-        mov16 MapUpperLeftRow, MapLowerLeftRow
+        mov16 MapLowerLeftRow, MapUpperLeftRow
         ; While we're at it, we can use the same loop to initialize the nametable
         st16 HWScrollLowerLeftRow, $2000
         lda #$00
@@ -248,7 +248,7 @@ done_with_y_offset:
         ldx #13
 height_loop:
         ; draw the upper row
-        mov16 MapLowerLeftRow, R0
+        mov16 R0, MapLowerLeftRow
         lda #16
         sta R2
         set_ppuaddr HWScrollLowerLeftRow
@@ -256,7 +256,7 @@ height_loop:
         add16 HWScrollLowerLeftRow, #32
 
         ; draw the lower row
-        mov16 MapLowerLeftRow, R0
+        mov16 R0, MapLowerLeftRow
         lda #16
         sta R2
         set_ppuaddr HWScrollLowerLeftRow
@@ -266,9 +266,9 @@ height_loop:
         add16 MapLowerLeftRow, MapWidth
         dex
         bne height_loop
-        ; Now initialize the remaining Map variables:
-        mov16 MapUpperLeftRow, MapUpperLeftColumn
-        mov16 MapUpperLeftRow, MapUpperRightColumn
+        ; Now initialize the Map variables:
+        mov16 MapUpperLeftColumn, MapUpperLeftRow
+        mov16 MapUpperRightColumn, MapUpperLeftRow
         add16 MapUpperRightColumn, #16
         ; Initialize the remaining hardware scroll registers
         st16 HWScrollUpperLeftRow, $2000
@@ -496,7 +496,7 @@ no_positive_y_wrap:
         lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
         sta PPUCTRL
         set_ppuaddr HWScrollLowerLeftRow
-        mov16 MapLowerLeftRow, R0
+        mov16 R0, MapLowerLeftRow
         ; the 5th bit of the scroll tells us if we're doing a left-column or a right-column
         lda #%00100000
         bit HWScrollLowerLeftRow
@@ -540,7 +540,7 @@ no_negative_y_wrap:
         lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
         sta PPUCTRL
         set_ppuaddr HWScrollUpperLeftRow
-        mov16 MapUpperLeftRow, R0
+        mov16 R0, MapUpperLeftRow
         ; the 5th bit of the scroll tells us if we're doing a left-column or a right-column
         lda #%00100000
         bit HWScrollUpperLeftRow
@@ -589,7 +589,7 @@ scroll_right:
         lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | VRAM_DOWN)
         sta PPUCTRL
         set_ppuaddr HWScrollUpperRightColumn
-        mov16 MapUpperRightColumn, R0
+        mov16 R0, MapUpperRightColumn
         ; the low bit of the scroll tells us if we're doing a left-column or a right-column
         lda #$01
         bit HWScrollUpperRightColumn
@@ -626,7 +626,7 @@ scroll_left:
         lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | VRAM_DOWN)
         sta PPUCTRL
         set_ppuaddr HWScrollUpperLeftColumn
-        mov16 MapUpperLeftColumn, R0
+        mov16 R0, MapUpperLeftColumn
         ; the low bit of the scroll tells us if we're doing a left-column or a right-column
         lda #$01
         bit HWScrollUpperLeftColumn
