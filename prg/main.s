@@ -138,7 +138,7 @@ up_not_held:
         lda #5
         sta entity_table + EntityState::PositionX+1, y
         sta entity_table + EntityState::PositionY+1, y
-        ; in theory, blobby is now ready to go
+        ; in theory, blobby is now ready to go        
         rts
 .endproc
 
@@ -146,6 +146,18 @@ up_not_held:
         lda #(BG_ON | OBJ_ON | BG_CLIP | OBJ_CLIP | flags)
         sta PPUMASK
 .endmacro
+
+test_vram_data:
+        .byte $00, $01, $02, $03, $04, $05, $06, $07
+
+test_vram_transfer:
+        write_vram_header_imm $214A, 8, VRAM_INC_1
+        vramcpy test_vram_data, 8
+        inc VRAM_TABLE_ENTRIES
+        write_vram_header_imm $218A, 8, VRAM_INC_32
+        vramcpy test_vram_data, 8
+        inc VRAM_TABLE_ENTRIES
+        rts
 
 start:
         lda #$00
@@ -218,6 +230,8 @@ gameloop:
         debug_color TINT_B | TINT_G
         jsr draw_metasprites
         debug_color 0 ; disable debug colors
+
+        jsr test_vram_transfer
 
         dec TestBlobbyDelay
         bne wait_for_next_vblank

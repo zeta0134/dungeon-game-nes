@@ -53,8 +53,12 @@ vram_zipper:
         lda #>vram_pop_slide
         sta PopSlideAddress+1
 
-        ; Preserve the stack pointer into X and leave it there
+        ; Preserve the stack pointer into memory
         tsx
+        stx VRAM_TABLE_INDEX
+        ; set the stack to the start of the table
+        ldx #<(VRAM_TABLE_START - 1)
+        txs
         lda PPUSTATUS ; reset the PPUADDR latch (throw this byte away)
 section_loop:
         ; the first two bytes are always the target address
@@ -72,20 +76,21 @@ vram_1:
         sta PPUCTRL
         jmp converge
 vram_32:
-        lda VRAM_DOWN
+        lda #VRAM_DOWN
         sta PPUCTRL
 converge:
         jmp (PopSlideAddress)
 done_with_transfer:
         dec VRAM_TABLE_ENTRIES
         bne section_loop
-all_done:
-        ; restore the stack pointer
+        ; restore the original stack pointer from memory
+        ldx VRAM_TABLE_INDEX
         txs
         ; zero out our table to reset it for the next frame
         lda #0
         sta VRAM_TABLE_ENTRIES
         lda VRAM_TABLE_START
         sta VRAM_TABLE_INDEX
+all_done:
         rts
 .endscope

@@ -3,6 +3,7 @@
 .include "input.inc"
 .include "memory_util.inc"
 .include "scrolling.inc"
+.include "vram_buffer.inc"
 
 .scope PRGLAST_E000
         .segment "PRGLAST_E000"
@@ -49,6 +50,7 @@ nmi:
 
         ; Tasks dependent on PPU not rendering
         jsr scroll_camera
+        jsr vram_zipper
 
         ; Cleanup PPU tasks, set registers for next frame
         jsr set_scroll_for_frame

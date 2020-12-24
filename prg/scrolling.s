@@ -3,6 +3,7 @@
         .include "branch_util.inc"
         .include "mmc3.inc"
         .include "ppu.inc"
+        .include "vram_buffer.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
 

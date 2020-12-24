@@ -25,27 +25,37 @@ VRAM_INC_32 := $80
 ; again by the decoding routine, resulting in a 4x operation on the length,
 ; exactly the size of one step through the pop slide.
 
-.macro write_vram_header address, length, mode
+.macro write_vram_header_imm address, length, mode
         ldx VRAM_TABLE_INDEX
-.if (.match (.left (1, {address}), #))
         ; immediate address provided, so just write the bytes out
         lda #>address
         sta VRAM_TABLE_START,x
+        inx
         lda #<address
         sta VRAM_TABLE_START,x
-.else
-        ; memory address provided, read the value out of memory
-        lda address
-        sta VRAM_TABLE_START,x
-        lda address+1
-        sta VRAM_TABLE_START,x
-.endif
-        inx
         inx
         ; the mode and length combine into a single byte
         ; for length we need to massage it into a pop slide offset
         lda #(((64 - length) << 1) + mode)
-        sta VRAM_TABLE_START+2,x
+        sta VRAM_TABLE_START,x
+        ; finally, add 3 to our index
+        inx
+        stx VRAM_TABLE_INDEX
+.endmacro
+
+.macro write_vram_header_ptr address, length, mode
+        ldx VRAM_TABLE_INDEX
+        ; memory address provided, read the value out of memory
+        lda address
+        sta VRAM_TABLE_START,x
+        inx
+        lda address+1
+        sta VRAM_TABLE_START,x
+        inx
+        ; the mode and length combine into a single byte
+        ; for length we need to massage it into a pop slide offset
+        lda #(((64 - length) << 1) + mode)
+        sta VRAM_TABLE_START,x
         ; finally, add 3 to our index
         inx
         stx VRAM_TABLE_INDEX
