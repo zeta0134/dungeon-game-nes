@@ -161,7 +161,7 @@ done:
 .endscope
 .endmacro
 
-; Loads a map into memory, in preparation for drawing, scrolling, and eventually
+; Loads a map into PRG RAM buffer, in preparation for drawing and gameplay
 ; maybe gameplay stuff
 ; Inputs:
 ;   R4: 16bit address of the map to load

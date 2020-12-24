@@ -2,6 +2,7 @@
         .include "nes.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
+        .include "vram_buffer.inc"
 
 .scope PRGLAST_E000
         .zeropage
@@ -30,11 +31,6 @@ PopSlideAddress: .word $0000
 ;   Fresh brewed Coffee (stronest available)
 
 ; Clobbers: A, X PPUCTRL
-
-VRAM_TABLE_ENTRIES := $100
-VRAM_TABLE_INDEX := $101
-VRAM_TABLE_START := $108 ; 7 bytes of breathing room, in case any part
-                         ; of table processing gets interrupted
 
 ; By aligning this to 256, we force the pop slide to
 ; both be on a four byte boundary, and begin at a $xx00 address, which lets us
@@ -86,5 +82,10 @@ done_with_transfer:
 all_done:
         ; restore the stack pointer
         txs
+        ; zero out our table to reset it for the next frame
+        lda #0
+        sta VRAM_TABLE_ENTRIES
+        lda VRAM_TABLE_START
+        sta VRAM_TABLE_INDEX
         rts
 .endscope
