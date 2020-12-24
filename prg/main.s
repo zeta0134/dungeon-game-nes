@@ -14,6 +14,7 @@
         .include "input.inc"
         .include "blobby.inc"
         .include "statusbar.inc"
+        .include "vram_buffer.inc"
 
 .scope PRGLAST_E000
         .export start
