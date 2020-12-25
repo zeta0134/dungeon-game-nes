@@ -252,20 +252,21 @@ height_loop:
         mov16 R0, MapLowerLeftRow
         lda #16
         sta R2
-        set_ppuaddr HWScrollLowerLeftRow
-        jsr draw_upper_half_row ; a, y clobbered, x preserved
+        ;set_ppuaddr HWScrollLowerLeftRow
+        ;jsr draw_upper_half_row ; a, y clobbered, x preserved
         add16 HWScrollLowerLeftRow, #32
 
         ; draw the lower row
         mov16 R0, MapLowerLeftRow
         lda #16
         sta R2
-        set_ppuaddr HWScrollLowerLeftRow
-        jsr draw_lower_half_row ; a, y clobbered, x preserved
+        ;set_ppuaddr HWScrollLowerLeftRow
+        ;jsr draw_lower_half_row ; a, y clobbered, x preserved
         add16 HWScrollLowerLeftRow, #32
         ; increment the row counter and continue
         add16 MapLowerLeftRow, MapWidth
         dex
+
         bne height_loop
         ; Now initialize the Map variables:
         mov16 MapUpperLeftColumn, MapUpperLeftRow
@@ -297,38 +298,46 @@ height_loop:
 .proc draw_upper_half_row
 MapAddr := R0
 TilesRemaining := R2
-        clc
+        ldx VRAM_TABLE_INDEX
 column_loop:
         ldy #$00
         lda (MapAddr),y ; a now holds the tile index
         tay
         lda TilesetData,y ; a now holds CHR index of the top-left tile
-        sta PPUDATA
-        iny
-        lda TilesetData,y ; a now holds CHR index of the top-right tile
-        sta PPUDATA
+        sta VRAM_TABLE_START,x
+        inx
+        lda TilesetData+1,y ; a now holds CHR index of the top-right tile
+        sta VRAM_TABLE_START,x
+        inx
+
         inc16 MapAddr
         dec TilesRemaining
         bne column_loop
+        stx VRAM_TABLE_INDEX
+        inc VRAM_TABLE_ENTRIES
         rts
 .endproc
 
 .proc draw_lower_half_row
 MapAddr := R0
 TilesRemaining := R2
-        clc
+        ldx VRAM_TABLE_INDEX
 column_loop:
         ldy #$00
         lda (MapAddr),y ; a now holds the tile index
         tay
-        lda TilesetData+2,y ; a now holds CHR index of the bottom-left tile
-        sta PPUDATA
-        iny
-        lda TilesetData+2,y ; a now holds CHR index of the bottom-right tile
-        sta PPUDATA
+        lda TilesetData+2,y ; a now holds CHR index of the top-left tile
+        sta VRAM_TABLE_START,x
+        inx
+        lda TilesetData+3,y ; a now holds CHR index of the top-right tile
+        sta VRAM_TABLE_START,x
+        inx
+
         inc16 MapAddr
         dec TilesRemaining
         bne column_loop
+        stx VRAM_TABLE_INDEX
+        inc VRAM_TABLE_ENTRIES
         rts
 .endproc
 
@@ -342,42 +351,160 @@ column_loop:
 .proc draw_left_half_col
 MapAddr := R0
 TilesRemaining := R2
-        clc
+        ldx VRAM_TABLE_INDEX
 row_loop:
         ldy #$00
         lda (MapAddr),y ; a now holds the tile index
-        tay 
-        lda TilesetData, y
-        sta PPUDATA
-        iny
-        iny
-        lda TilesetData, y
-        sta PPUDATA
+        tay
+        lda TilesetData+0,y ; a now holds CHR index of the top-left tile
+        sta VRAM_TABLE_START,x
+        inx
+        lda TilesetData+2,y ; a now holds CHR index of the top-right tile
+        sta VRAM_TABLE_START,x
+        inx
+
+        clc
         add16 MapAddr, MapWidth
         dec TilesRemaining
         bne row_loop
+        stx VRAM_TABLE_INDEX
+        inc VRAM_TABLE_ENTRIES
         rts
 .endproc
 
 .proc draw_right_half_col
 MapAddr := R0
 TilesRemaining := R2
-        clc
+        ldx VRAM_TABLE_INDEX
 row_loop:
         ldy #$00
         lda (MapAddr),y ; a now holds the tile index
-        tay 
-        lda TilesetData+1, y
-        sta PPUDATA
-        iny
-        iny
-        lda TilesetData+1, y
-        sta PPUDATA
+        tay
+        lda TilesetData+1,y ; a now holds CHR index of the top-left tile
+        sta VRAM_TABLE_START,x
+        inx
+        lda TilesetData+3,y ; a now holds CHR index of the top-right tile
+        sta VRAM_TABLE_START,x
+        inx
+
+        clc
         add16 MapAddr, MapWidth
         dec TilesRemaining
         bne row_loop
+        stx VRAM_TABLE_INDEX
+        inc VRAM_TABLE_ENTRIES
         rts
 .endproc
+
+;.proc draw_left_half_col
+;MapAddr := R0
+;TilesRemaining := R2
+;        clc
+;row_loop:
+;        ldy #$00
+;        lda (MapAddr),y ; a now holds the tile index
+;        tay 
+;        lda TilesetData, y
+;        sta PPUDATA
+;        iny
+;        iny
+;        lda TilesetData, y
+;        sta PPUDATA
+;        add16 MapAddr, MapWidth
+;        dec TilesRemaining
+;        bne row_loop
+;        rts
+;.endproc
+
+;.proc draw_right_half_col
+;MapAddr := R0
+;TilesRemaining := R2
+;        clc
+;row_loop:
+;        ldy #$00
+;        lda (MapAddr),y ; a now holds the tile index
+;        tay 
+;        lda TilesetData+1, y
+;        sta PPUDATA
+;        iny
+;        iny
+;        lda TilesetData+1, y
+;        sta PPUDATA
+;        add16 MapAddr, MapWidth
+;        dec TilesRemaining
+;        bne row_loop
+;        rts
+;.endproc
+
+.macro split_row_across_nametables starting_hw_address, drawing_function
+        lda #16
+        sec
+        sbc MapXOffset
+        sta R2
+
+        asl R2
+        write_vram_header_ptr starting_hw_address, R2, VRAM_INC_1
+        ror R2
+
+        jsr drawing_function
+        ; the right half needs to massage the target address; it should
+        ; switch nametables, and start at the left-most tile, but keep
+        ; the same Y coordinate
+        lda starting_hw_address+1 ; ppuaddr high byte
+        eor #%00000100 ; swap nametables
+        sta VRAM_SCRATCH+1
+
+        lda starting_hw_address ; ppuaddr low byte
+        and #%11100000 ; set X component to 0
+        sta VRAM_SCRATCH
+
+        ; bytes remaining
+        lda MapXOffset
+        adc #1
+        sta R2
+
+        asl R2
+        write_vram_header_ptr VRAM_SCRATCH, R2, VRAM_INC_1
+        ror R2
+
+        jsr drawing_function
+.endmacro
+
+.macro split_column_across_height_boundary starting_hw_address, drawing_function
+.scope
+        lda #14
+        sec
+        sbc MapYOffset
+        sta R2
+
+        asl R2
+        write_vram_header_ptr starting_hw_address, R2, VRAM_INC_32
+        ror R2
+
+        jsr drawing_function
+
+        lda starting_hw_address+1
+        ; Set the Y component to zero
+        and #%11111100
+        sta VRAM_SCRATCH+1
+
+        lda starting_hw_address
+        and #%00011111
+        sta VRAM_SCRATCH
+
+        ; bytes remaining
+        lda MapYOffset
+        beq skip
+        sta R2
+
+        asl R2
+        write_vram_header_ptr VRAM_SCRATCH, R2, VRAM_INC_32
+        ror R2
+        
+        jsr drawing_function
+skip:
+.endscope
+.endmacro
 
 .proc shift_hwrows_right
         incColumn HWScrollUpperLeftRow
@@ -427,51 +554,6 @@ row_loop:
         rts
 .endproc
 
-.macro split_row_across_nametables starting_hw_address, drawing_function
-        lda #16
-        sec
-        sbc MapXOffset
-        sta R2
-        jsr drawing_function
-        ; the right half needs to massage the target address; it should
-        ; switch nametables, and start at the left-most tile, but keep
-        ; the same Y coordinate
-        lda starting_hw_address+1 ; ppuaddr high byte
-        eor #%00000100 ; swap nametables
-        sta PPUADDR
-        lda starting_hw_address ; ppuaddr low byte
-        and #%11100000 ; set X component to 0
-        sta PPUADDR
-        ; bytes remaining
-        lda MapXOffset
-        adc #1
-        sta R2
-        jsr drawing_function
-.endmacro
-
-.macro split_column_across_height_boundary starting_hw_address, drawing_function
-.scope
-        lda #14
-        sec
-        sbc MapYOffset
-        sta R2
-        jsr drawing_function
-        lda starting_hw_address+1
-        ; Set the Y component to zero
-        and #%11111100
-        sta PPUADDR
-        lda starting_hw_address
-        and #%00011111
-        sta PPUADDR
-        ; bytes remaining
-        lda MapYOffset
-        beq skip
-        sta R2
-        jsr drawing_function
-skip:
-.endscope
-.endmacro
-
 .proc scroll_camera
         ; did we move up or down?
         ; perform a 16-bit compare between target - current, and throw the result away
@@ -494,9 +576,9 @@ scroll_down:
         sta PpuYTileTarget
 no_positive_y_wrap:
         ; switch to +1 mode
-        lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
-        sta PPUCTRL
-        set_ppuaddr HWScrollLowerLeftRow
+        ;lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
+        ;sta PPUCTRL
+        ;set_ppuaddr HWScrollLowerLeftRow
         mov16 R0, MapLowerLeftRow
         ; the 5th bit of the scroll tells us if we're doing a left-column or a right-column
         lda #%00100000
@@ -538,9 +620,9 @@ scroll_up:
         sta PpuYTileTarget
 no_negative_y_wrap:
         ; switch to +1 mode
-        lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
-        sta PPUCTRL
-        set_ppuaddr HWScrollUpperLeftRow
+        ;lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
+        ;sta PPUCTRL
+        ;set_ppuaddr HWScrollUpperLeftRow
         mov16 R0, MapUpperLeftRow
         ; the 5th bit of the scroll tells us if we're doing a left-column or a right-column
         lda #%00100000
@@ -587,14 +669,15 @@ horizontal_scroll:
 scroll_right:
         inc CameraXTileCurrent
         ; switch to +32 mode
-        lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | VRAM_DOWN)
-        sta PPUCTRL
-        set_ppuaddr HWScrollUpperRightColumn
+        ;lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | VRAM_DOWN)
+        ;sta PPUCTRL
+        ;set_ppuaddr HWScrollUpperRightColumn
         mov16 R0, MapUpperRightColumn
         ; the low bit of the scroll tells us if we're doing a left-column or a right-column
         lda #$01
         bit HWScrollUpperRightColumn
-        beq right_side_left_column
+        bne right_side_right_column
+        jmp right_side_left_column
 right_side_right_column:
         split_column_across_height_boundary HWScrollUpperRightColumn, draw_right_half_col
 
@@ -624,9 +707,9 @@ right_side_left_column:
 scroll_left:
         dec CameraXTileCurrent
         ; switch to +32 mode
-        lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | VRAM_DOWN)
-        sta PPUCTRL
-        set_ppuaddr HWScrollUpperLeftColumn
+        ;lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | VRAM_DOWN)
+        ;sta PPUCTRL
+        ;set_ppuaddr HWScrollUpperLeftColumn
         mov16 R0, MapUpperLeftColumn
         ; the low bit of the scroll tells us if we're doing a left-column or a right-column
         lda #$01

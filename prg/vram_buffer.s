@@ -4,11 +4,11 @@
         .include "zeropage.inc"
         .include "vram_buffer.inc"
 
-.scope PRGLAST_E000
+.scope PRGLAST_C000
         .zeropage
 PopSlideAddress: .word $0000
 
-        .segment "PRGLAST_E000"
+        .segment "PRGLAST_C000"
 .export vram_zipper
 
 
@@ -69,8 +69,8 @@ section_loop:
         ; the high bit of the third byte is our VRAM increment mode
         pla
         asl
+        sta PopSlideAddress
         bcs vram_32
-        sta PopSlideAddress ; 
 vram_1:
         lda #$00
         sta PPUCTRL
@@ -89,7 +89,6 @@ done_with_transfer:
         ; zero out our table to reset it for the next frame
         lda #0
         sta VRAM_TABLE_ENTRIES
-        lda VRAM_TABLE_START
         sta VRAM_TABLE_INDEX
 all_done:
         rts

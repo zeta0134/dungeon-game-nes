@@ -151,10 +151,10 @@ test_vram_data:
         .byte $00, $01, $02, $03, $04, $05, $06, $07
 
 test_vram_transfer:
-        write_vram_header_imm $214A, 8, VRAM_INC_1
+        write_vram_header_imm $214A, #8, VRAM_INC_1
         vramcpy test_vram_data, 8
         inc VRAM_TABLE_ENTRIES
-        write_vram_header_imm $218A, 8, VRAM_INC_32
+        write_vram_header_imm $218A, #8, VRAM_INC_32
         vramcpy test_vram_data, 8
         inc VRAM_TABLE_ENTRIES
         rts
@@ -229,9 +229,11 @@ gameloop:
         jsr update_animations
         debug_color TINT_B | TINT_G
         jsr draw_metasprites
+        debug_color TINT_R
+        jsr scroll_camera
         debug_color 0 ; disable debug colors
 
-        jsr test_vram_transfer
+        ;jsr test_vram_transfer
 
         dec TestBlobbyDelay
         bne wait_for_next_vblank

@@ -3,6 +3,7 @@ _VRAM_BUFFER_INC := 1
 
 VRAM_TABLE_ENTRIES := $100
 VRAM_TABLE_INDEX := $101
+VRAM_SCRATCH := $102
 VRAM_TABLE_START := $108 ; 7 bytes of breathing room, in case any part
                          ; of table processing gets interrupted
 
@@ -36,7 +37,12 @@ VRAM_INC_32 := $80
         inx
         ; the mode and length combine into a single byte
         ; for length we need to massage it into a pop slide offset
-        lda #(((64 - length) << 1) + mode)
+        sec
+        lda #64
+        sbc length
+        asl
+        ora #mode
+
         sta VRAM_TABLE_START,x
         ; finally, add 3 to our index
         inx
@@ -46,15 +52,20 @@ VRAM_INC_32 := $80
 .macro write_vram_header_ptr address, length, mode
         ldx VRAM_TABLE_INDEX
         ; memory address provided, read the value out of memory
-        lda address
+        lda address+1
         sta VRAM_TABLE_START,x
         inx
-        lda address+1
+        lda address
         sta VRAM_TABLE_START,x
         inx
         ; the mode and length combine into a single byte
         ; for length we need to massage it into a pop slide offset
-        lda #(((64 - length) << 1) + mode)
+        sec
+        lda #64
+        sbc length
+        asl
+        ora #mode
+
         sta VRAM_TABLE_START,x
         ; finally, add 3 to our index
         inx

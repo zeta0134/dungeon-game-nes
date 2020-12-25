@@ -49,7 +49,6 @@ nmi:
         sta OAM_DMA
 
         ; Tasks dependent on PPU not rendering
-        jsr scroll_camera
         jsr vram_zipper
 
         ; Cleanup PPU tasks, set registers for next frame
