@@ -396,46 +396,6 @@ row_loop:
         rts
 .endproc
 
-;.proc draw_left_half_col
-;MapAddr := R0
-;TilesRemaining := R2
-;        clc
-;row_loop:
-;        ldy #$00
-;        lda (MapAddr),y ; a now holds the tile index
-;        tay 
-;        lda TilesetData, y
-;        sta PPUDATA
-;        iny
-;        iny
-;        lda TilesetData, y
-;        sta PPUDATA
-;        add16 MapAddr, MapWidth
-;        dec TilesRemaining
-;        bne row_loop
-;        rts
-;.endproc
-
-;.proc draw_right_half_col
-;MapAddr := R0
-;TilesRemaining := R2
-;        clc
-;row_loop:
-;        ldy #$00
-;        lda (MapAddr),y ; a now holds the tile index
-;        tay 
-;        lda TilesetData+1, y
-;        sta PPUDATA
-;        iny
-;        iny
-;        lda TilesetData+1, y
-;        sta PPUDATA
-;        add16 MapAddr, MapWidth
-;        dec TilesRemaining
-;        bne row_loop
-;        rts
-;.endproc
-
 .macro split_row_across_nametables starting_hw_address, drawing_function
         lda #16
         sec
@@ -500,7 +460,7 @@ row_loop:
         asl R2
         write_vram_header_ptr VRAM_SCRATCH, R2, VRAM_INC_32
         ror R2
-        
+
         jsr drawing_function
 skip:
 .endscope
@@ -575,10 +535,6 @@ scroll_down:
         lda #0
         sta PpuYTileTarget
 no_positive_y_wrap:
-        ; switch to +1 mode
-        ;lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
-        ;sta PPUCTRL
-        ;set_ppuaddr HWScrollLowerLeftRow
         mov16 R0, MapLowerLeftRow
         ; the 5th bit of the scroll tells us if we're doing a left-column or a right-column
         lda #%00100000
@@ -619,10 +575,6 @@ scroll_up:
         lda #27
         sta PpuYTileTarget
 no_negative_y_wrap:
-        ; switch to +1 mode
-        ;lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
-        ;sta PPUCTRL
-        ;set_ppuaddr HWScrollUpperLeftRow
         mov16 R0, MapUpperLeftRow
         ; the 5th bit of the scroll tells us if we're doing a left-column or a right-column
         lda #%00100000
@@ -668,10 +620,6 @@ horizontal_scroll:
         jmp scroll_left
 scroll_right:
         inc CameraXTileCurrent
-        ; switch to +32 mode
-        ;lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | VRAM_DOWN)
-        ;sta PPUCTRL
-        ;set_ppuaddr HWScrollUpperRightColumn
         mov16 R0, MapUpperRightColumn
         ; the low bit of the scroll tells us if we're doing a left-column or a right-column
         lda #$01
@@ -706,10 +654,6 @@ right_side_left_column:
         jmp no_horizontal_scroll
 scroll_left:
         dec CameraXTileCurrent
-        ; switch to +32 mode
-        ;lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | VRAM_DOWN)
-        ;sta PPUCTRL
-        ;set_ppuaddr HWScrollUpperLeftColumn
         mov16 R0, MapUpperLeftColumn
         ; the low bit of the scroll tells us if we're doing a left-column or a right-column
         lda #$01
