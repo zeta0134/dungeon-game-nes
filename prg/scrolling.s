@@ -691,39 +691,7 @@ done:
         rts
 .endproc
 
-.proc scroll_camera
-        ; did we move up or down?
-        ; perform a 16-bit compare between target - current, and throw the result away
-        lda CameraYTileCurrent
-        cmp CameraYTileTarget
-        ; if the result is zero, we did not scroll
-        bne vertical_scroll
-        jmp no_vertical_scroll
-vertical_scroll:
-        ; if the subtract here needed to borrow, the result is negative; we moved UP
-        bcc scroll_down
-        jmp scroll_up
-scroll_down:
-        jsr scroll_tiles_down
-        ; note - NOT a bug! We intentionally prioritize vertical scroll and let horizontal lag by a frame or two; it's fine
-        jmp no_horizontal_scroll
-scroll_up:
-        jsr scroll_tiles_up
-        ; (Here too, see above)
-        jmp no_horizontal_scroll
-no_vertical_scroll:
-        ; did we move left or right?
-        ; perform a 16-bit compare between target - current, and throw the result away
-        lda CameraXTileCurrent
-        cmp CameraXTileTarget
-        ; if the result is zero, we did not scroll
-        bne horizontal_scroll
-        jmp no_horizontal_scroll
-horizontal_scroll:
-        ; if the subtract here needed to borrow, the result is negative; we moved LEFT
-        bcc scroll_right
-        jmp scroll_left
-scroll_right:
+.proc scroll_tiles_right
         inc CameraXTileCurrent
         mov16 R0, MapUpperRightColumn
         ; the low bit of the scroll tells us if we're doing a left-column or a right-column
@@ -749,15 +717,18 @@ right_side_right_column:
         ; Shift rows right *twice* to advance a complete metatile
         jsr shift_hwrows_right
         jsr shift_hwrows_right
-        jmp no_horizontal_scroll
+        jmp done
 right_side_left_column:
         split_column_across_height_boundary HWScrollUpperRightColumn, draw_left_half_col
 
         ; The map index doesn't change, so we update *only* the column registers here
         ; Shift  hwcolumns right halfway to the next metatile
         jsr shift_hwcolumns_right
-        jmp no_horizontal_scroll
-scroll_left:
+done:
+        rts
+.endproc
+
+.proc scroll_tiles_left
         dec CameraXTileCurrent
         mov16 R0, MapUpperLeftColumn
         ; the low bit of the scroll tells us if we're doing a left-column or a right-column
@@ -769,7 +740,7 @@ left_side_right_column:
         ; The map index doesn't change, so we update *only* the column registers here
         ; Shift hwcolumns left halfway to the next metatile
         jsr shift_hwcolumns_left
-        jmp no_horizontal_scroll
+        jmp done
 left_side_left_column:
         split_column_across_height_boundary HWScrollUpperLeftColumn, draw_left_half_col
         ; Move our map index to the left
@@ -787,7 +758,44 @@ left_side_left_column:
         ; Shift rows left *twice* to advance a complete metatile
         jsr shift_hwrows_left
         jsr shift_hwrows_left
-no_horizontal_scroll:
+done:
+        rts
+.endproc
+
+.proc scroll_camera
+        ; did we move up or down?
+        ; perform a 16-bit compare between target - current, and throw the result away
+        lda CameraYTileCurrent
+        cmp CameraYTileTarget
+        ; if the result is zero, we did not scroll
+        beq no_vertical_scroll
+vertical_scroll:
+        ; if the subtract here needed to borrow, the result is negative; we moved UP
+        bcs scroll_up
+scroll_down:
+        jsr scroll_tiles_down
+        ; note - NOT a bug! We intentionally prioritize vertical scroll and let horizontal lag by a frame or two; it's fine
+        jmp done_scrolling
+scroll_up:
+        jsr scroll_tiles_up
+        ; (Here too, see above)
+        jmp done_scrolling
+no_vertical_scroll:
+        ; did we move left or right?
+        ; perform a 16-bit compare between target - current, and throw the result away
+        lda CameraXTileCurrent
+        cmp CameraXTileTarget
+        ; if the result is zero, we did not scroll
+        beq done_scrolling
+horizontal_scroll:
+        ; if the subtract here needed to borrow, the result is negative; we moved LEFT
+        bcs scroll_left
+scroll_right:
+        jsr scroll_tiles_right
+        jmp done_scrolling
+scroll_left:
+        jsr scroll_tiles_left
+done_scrolling:
         ; Always copy in the new sub-tile scroll position
         ; (this visually hides the fact that we alternately may delay a row / column)
         lda CameraXScrollTarget
