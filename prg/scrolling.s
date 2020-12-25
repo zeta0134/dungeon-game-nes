@@ -32,6 +32,18 @@ HWScrollUpperLeftRow: .word $0000
 HWScrollUpperLeftColumn: .word $0000
 HWScrollUpperRightColumn: .word $0000
 HWScrollLowerLeftRow: .word $0000
+; Current attribute table position
+AttributeUpperLeftRow: .word $0000
+AttributeUpperLeftColumn: .word $0000
+AttributeUpperRightColumn: .word $0000
+AttributeLowerLeftRow: .word $0000
+AttributeXOffset: .byte $00
+AttributeYOffset: .byte $00
+; Hardware scroll tiles within Attribute data
+HWAttributeUpperLeftRow: .word $0000
+HWAttributeUpperLeftColumn: .word $0000
+HWAttributeUpperRightColumn: .word $0000
+HWAttributeLowerLeftRow: .word $0000
 ; Camera-tracking
 CameraXTileCurrent: .byte $00
 CameraXScrollCurrent: .byte $00
@@ -595,19 +607,7 @@ skip:
         rts
 .endproc
 
-.proc scroll_camera
-        ; did we move up or down?
-        ; perform a 16-bit compare between target - current, and throw the result away
-        lda CameraYTileCurrent
-        cmp CameraYTileTarget
-        ; if the result is zero, we did not scroll
-        bne vertical_scroll
-        jmp no_vertical_scroll
-vertical_scroll:
-        ; if the subtract here needed to borrow, the result is negative; we moved UP
-        bcc scroll_down
-        jmp scroll_up
-scroll_down:
+.proc scroll_tiles_down
         inc CameraYTileCurrent
         inc PpuYTileTarget
         lda #28
@@ -626,7 +626,7 @@ lower_edge_upper_row:
         ; The map index doesn't change, so we update *only* the row registers here
         ; We need to leave the columns alone until we cross a metatile boundary
         jsr shift_hwrows_down
-        jmp no_horizontal_scroll
+        jmp done
 lower_edge_lower_row:
         split_row_across_nametables HWScrollLowerLeftRow, draw_lower_half_row
         clc
@@ -647,9 +647,11 @@ shift_registers_down:
         ; Shift columns down *twice* to advance a complete metatile
         jsr shift_hwcolumns_down
         jsr shift_hwcolumns_down
-        ; note - NOT a bug! We intentionally prioritize vertical scroll and let horizontal lag by a frame or two; it's fine
-        jmp no_horizontal_scroll
-scroll_up:
+done:
+        rts
+.endproc
+
+.proc scroll_tiles_up
         dec CameraYTileCurrent
         dec PpuYTileTarget
         bpl no_negative_y_wrap
@@ -666,7 +668,7 @@ upper_edge_lower_row:
         ; The map index doesn't change, so we update *only* the row registers here
         ; We need to leave the columns alone until we cross a metatile boundary
         jsr shift_hwrows_up
-        jmp no_horizontal_scroll
+        jmp done
 upper_edge_upper_row:
         split_row_across_nametables HWScrollUpperLeftRow, draw_upper_half_row
         sec
@@ -685,7 +687,29 @@ shift_registers_up:
         ; Shift columns up *twice* to advance a complete metatile
         jsr shift_hwcolumns_up
         jsr shift_hwcolumns_up
-         ; note - NOT a bug! We intentionally prioritize vertical scroll and let horizontal lag by a frame or two; it's fine
+done:
+        rts
+.endproc
+
+.proc scroll_camera
+        ; did we move up or down?
+        ; perform a 16-bit compare between target - current, and throw the result away
+        lda CameraYTileCurrent
+        cmp CameraYTileTarget
+        ; if the result is zero, we did not scroll
+        bne vertical_scroll
+        jmp no_vertical_scroll
+vertical_scroll:
+        ; if the subtract here needed to borrow, the result is negative; we moved UP
+        bcc scroll_down
+        jmp scroll_up
+scroll_down:
+        jsr scroll_tiles_down
+        ; note - NOT a bug! We intentionally prioritize vertical scroll and let horizontal lag by a frame or two; it's fine
+        jmp no_horizontal_scroll
+scroll_up:
+        jsr scroll_tiles_up
+        ; (Here too, see above)
         jmp no_horizontal_scroll
 no_vertical_scroll:
         ; did we move left or right?
