@@ -1,6 +1,7 @@
         .setcpu "6502"
         .include "nes.inc"
         .include "branch_util.inc"
+        .include "collision.inc"
         .include "mmc3.inc"
         .include "ppu.inc"
         .include "vram_buffer.inc"
@@ -12,6 +13,7 @@
 .scope PRGLAST_E000
         .segment "PRGRAM"
 MapData: .res 4096
+AttributeData: .res 1024
 TilesetData: .res 256
 .export MapData
         .zeropage
@@ -47,7 +49,7 @@ SplitScanlinesToStatus: .byte $00
         .segment "PRGLAST_E000"
         ;.org $e000
 
-.export load_map, load_tileset, init_map, scroll_camera, set_scroll_for_frame, install_irq_handler
+.export load_map, load_tileset, init_map, init_attributes, scroll_camera, set_scroll_for_frame, install_irq_handler
 
 .macro incColumn addr
 .scope
@@ -222,6 +224,9 @@ loop:
 ; Conditions:
 ;   This routine assumes rendering is already disabled.
 
+; Note: Currently BROKEN! This gets the scrolling registers into a sane state,
+; but does not actually initialize the map view. It's on the TODO list.
+
 .proc init_map
 TileOffsetX := R0
 TileOffsetY := R1
@@ -279,6 +284,82 @@ height_loop:
         ; done?
         rts
 .endproc
+
+; With the currently loaded map data and tileset, generates the full
+; attribute buffer in memory for use in the various scrolling routines
+; Note: This is slow, but doesn't touch PPU registers, so it's safe to
+; let it run through several frames if needed
+
+.proc init_attributes
+UpperRowPtr := R0
+LowerRowPtr := R2
+AttributeTablePtr := R4
+AttributeScratchByte := R6
+RowCounter := R7
+ColumnCounter := R8
+        st16 UpperRowPtr, MapData
+        st16 LowerRowPtr, MapData
+        add16 LowerRowPtr, MapWidth
+        st16 AttributeTablePtr, AttributeData
+        lda MapHeight
+        sta RowCounter
+row_loop:
+        ; setup the start of the column loop
+        ldy #0
+column_loop:
+        iny
+        lda (LowerRowPtr),y ; bottom-right
+        tax
+        lda MetatileAttributes+1,x ; a now contains 2-bit palette index
+        asl
+        asl
+        sta AttributeScratchByte
+        
+        dey
+        lda (LowerRowPtr),y ; bottom-left
+        tax
+        lda MetatileAttributes+1,x
+        ora AttributeScratchByte
+        asl
+        asl
+        sta AttributeScratchByte
+
+        iny
+        lda (UpperRowPtr),y ; upper-right
+        tax
+        lda MetatileAttributes+1,x ; a now contains 2-bit palette index
+        ora AttributeScratchByte
+        asl
+        asl
+        sta AttributeScratchByte
+
+        dey
+        lda (UpperRowPtr),y ; upper-left
+        tax
+        lda MetatileAttributes+1,x
+        ora AttributeScratchByte ; a now contains completed attribute byte
+
+        sty ColumnCounter
+        ldy #0
+        sta (AttributeTablePtr),y
+
+        ldy ColumnCounter
+
+        inc16 AttributeTablePtr
+        iny
+        iny
+        cpy MapWidth
+        bne column_loop
+done_with_column:
+        add16 UpperRowPtr, MapWidth
+        add16 LowerRowPtr, MapWidth
+        dec RowCounter
+        dec RowCounter
+        bne row_loop
+entirely_done:
+        rts
+.endproc
+
 
 ; Optimization note: if we can decode tile index data into a
 ; consistent target address, we can do an absolute,y index, and save

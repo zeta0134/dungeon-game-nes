@@ -10,7 +10,8 @@
 
 .scope PRGLAST_E000
         .segment "PRGRAM"
-MetatileAttributes: .res 256        
+MetatileAttributes: .res 256
+.export MetatileAttributes
 
         .segment "PRGLAST_E000"
 

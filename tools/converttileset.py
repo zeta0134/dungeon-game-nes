@@ -117,7 +117,7 @@ def write_meta_tiles(metatiles, filename):
       output_file.write(bytes([0,0,0,0]))
     # Now write all the type data, here separated by 4 bytes
     for tile in metatiles:
-      output_file.write(bytes([tile["type"], 0, 0, 0]))
+      output_file.write(bytes([tile["type"], tile["palette_index"], 0, 0]))
     # Again, pad the remaining space to a full page
     for i in range(len(metatiles), 64):
       output_file.write(bytes([0,0,0,0]))

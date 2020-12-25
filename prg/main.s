@@ -194,6 +194,7 @@ start:
         sta R0
         sta R1
         jsr init_map
+        jsr init_attributes
         jsr install_irq_handler
 
         ; init the statusarea to something not stupid
@@ -201,12 +202,6 @@ start:
 
         ; reset PPUADDR to top-left
         set_ppuaddr #$2000
-
-        ; re-enable graphics
-        lda #$1E
-        sta PPUMASK
-        lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
-        sta PPUCTRL
 
         lda #$00
         sta FrameCounter
@@ -219,6 +214,16 @@ start:
         lda #0
         sta $4010
         cli
+
+        ; re-enable graphics
+        lda #$1E
+        sta PPUMASK
+        lda #(VBLANK_NMI | OBJ_0000 | BG_1000)
+        sta PPUCTRL
+
+        ; immediately wait for one vblank, for sync purposes
+        jmp wait_for_next_vblank
+
 gameloop:
         debug_color LIGHTGRAY
         ;jsr demo_scroll_camera
