@@ -20,6 +20,7 @@ TilesetData: .res 256
 ; Map dimensions
 MapWidth: .byte $00
 MapHeight: .byte $00
+AttributeWidth: .byte $00
 ; Current map position
 MapUpperLeftRow: .word $0000
 MapUpperLeftColumn: .word $0000
@@ -191,6 +192,8 @@ SourceAddr := R4
         lda (SourceAddr),y
         sta MapWidth
         sta TempHeight
+        ror
+        sta AttributeWidth
         inc16 SourceAddr
         lda (SourceAddr),y
         sta MapHeight
