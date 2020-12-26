@@ -207,12 +207,12 @@ loop:
         inc16 SourceAddr
         inc16 DestAddr
         ; check MapWidth
-        dec TempHeight
+        dec TempWidth
         bne loop
         ; reload MapWidth and check MapHeight
         lda MapWidth
-        sta TempHeight
-        dec TempWidth
+        sta TempWidth
+        dec TempHeight
         bne loop
         ; all done
         rts
