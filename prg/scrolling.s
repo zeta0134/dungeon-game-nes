@@ -181,7 +181,7 @@ done:
 ; below functions
 ; https://wiki.nesdev.com/w/index.php/PPU_attribute_tables
 
-; The row component of the attribute address is:
+; The components of the attribute address are:
 ; 7       0
 ; ---- ----
 ; 11rr rccc
@@ -229,6 +229,52 @@ no_overflow:
         lda addr
         sbc #%00001000
         sta addr
+done:
+.endscope
+.endmacro
+
+.macro incAttrColumn addr
+.scope
+        ; are we about to overflow this nametable?
+        lda addr
+        and #%00000111
+        cmp #$07
+        bne no_overflow
+        ; we'll need to zero out the column
+        lda addr
+        and #%11111000
+        sta addr
+        ; then swap nametables
+        lda addr+1
+        eor #%00000100
+        sta addr+1
+        jmp done
+no_overflow:
+        ; simply add 1 to the column and exit
+        inc addr
+done:
+.endscope
+.endmacro
+
+.macro decAttrColumn addr
+.scope
+        ; are we about to overflow this nametable?
+        lda addr
+        and #%00000111
+        cmp #$00
+        bne no_overflow
+        ; we'll need to set the column to $7
+        lda addr
+        ora #%00000111
+        sta addr
+        ; then swap nametables
+        lda addr+1
+        eor #%00000100
+        sta addr+1
+        jmp done
+no_overflow:
+        ; simply subtract 1 from the column and exit
+        dec addr
 done:
 .endscope
 .endmacro
