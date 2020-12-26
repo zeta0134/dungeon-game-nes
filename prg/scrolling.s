@@ -177,6 +177,62 @@ done:
 .endscope
 .endmacro
 
+; Overview of attribute tables, the address layout is exploited by all of the
+; below functions
+; https://wiki.nesdev.com/w/index.php/PPU_attribute_tables
+
+; The row component of the attribute address is:
+; 7       0
+; ---- ----
+; 11rr rccc
+; the high byte of the address shouldn't change, so we can ignore it
+; the highest nybble ranges from C - F
+; 
+
+; in this engine's case, we want to skip over the last value "F8" for
+; the low byte, so we'll detect that byte and treat it as the reset
+; point. (The F8 row is used for the status area instead of the map)
+
+.macro incAttrRow addr
+.scope
+        clc
+        lda addr
+        adc #%00001000
+        sta addr ; result might be wrong at this point
+        ; check for overflow
+        and #%11111000
+        cmp #$F8
+        bne no_overflow
+        ; reload the address, and zero out the row component
+        lda addr
+        and #%11000111
+        sta addr
+no_overflow:
+.endscope
+.endmacro
+
+.macro decAttrRow addr
+.scope
+        ; first check: will a subtract overflow:
+        lda addr
+        and #%00111000
+        bne no_overflow
+        ; set the row component to F0
+        lda addr
+        and #%00000111 ; preserve column
+        ora #$F0 ; set row to bottom of the table
+        sta addr
+        jmp done
+no_overflow:
+        ; simply subtract and move on
+        sec
+        lda addr
+        sbc #%00001000
+        sta addr
+done:
+.endscope
+.endmacro
+
 ; Loads a map into PRG RAM buffer, in preparation for drawing and gameplay
 ; maybe gameplay stuff
 ; Inputs:
@@ -562,6 +618,8 @@ skip:
 .endscope
 .endmacro
 
+
+
 .proc shift_hwrows_right
         incColumn HWScrollUpperLeftRow
         incColumn HWScrollLowerLeftRow
@@ -610,6 +668,20 @@ skip:
         rts
 .endproc
 
+.proc shift_hwattrrows_down
+        incAttrRow HWAttributeUpperLeftRow
+        incAttrRow HWAttributeLowerLeftRow
+        rts
+.endproc
+
+.proc shift_hwattrcolumns_down
+        incAttrRow HWAttributeUpperRightColumn
+        incAttrRow HWAttributeUpperLeftColumn
+        rts
+.endproc
+
+
+
 .proc scroll_tiles_down
         inc CameraYTileCurrent
         inc PpuYTileTarget
@@ -650,6 +722,28 @@ shift_registers_down:
         ; Shift columns down *twice* to advance a complete metatile
         jsr shift_hwcolumns_down
         jsr shift_hwcolumns_down
+done:
+        rts
+.endproc
+
+.proc scroll_attributes_down
+        ;split_attribute_row_across_nametable HWAttributeUpperLeftRow, draw_attribute_col
+        ; move the attribute indices down
+        clc
+        add16 AttributeUpperRightColumn, AttributeWidth
+        add16 AttributeUpperLeftColumn, AttributeWidth
+        add16 AttributeUpperLeftRow, AttributeWidth
+        add16 AttributeLowerLeftRow, AttributeWidth
+        ; Increment AttributeYOffset with wraparound
+        inc AttributeYOffset
+        lda #7
+        cmp AttributeYOffset
+        bne shift_registers_down
+        lda #0
+        sta AttributeYOffset
+shift_registers_down:
+        jsr shift_hwattrrows_down
+        jsr shift_hwattrcolumns_down
 done:
         rts
 .endproc
@@ -778,6 +872,10 @@ vertical_scroll:
 scroll_down:
         jsr scroll_tiles_down
         ; note - NOT a bug! We intentionally prioritize vertical scroll and let horizontal lag by a frame or two; it's fine
+        lda CameraYTileCurrent
+        and #$03
+        bne done_scrolling
+        ;;jsr scroll_attributes_down DOESN'T EXIST YET
         jmp done_scrolling
 scroll_up:
         jsr scroll_tiles_up
