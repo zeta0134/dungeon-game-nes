@@ -10,7 +10,7 @@
 
         
 
-.scope PRGLAST_E000
+.scope PRGLAST_C000
         .segment "PRGRAM"
 MapData: .res 4096
 AttributeData: .res 1024
@@ -59,7 +59,7 @@ PpuYTileTarget: .byte $00
 ; IRQ variable to assist with screen split
 SplitScanlinesToStatus: .byte $00
 
-        .segment "PRGLAST_E000"
+        .segment "PRGLAST_C000"
         ;.org $e000
 
 .export load_map, load_tileset, init_map, init_attributes, scroll_camera, set_scroll_for_frame, install_irq_handler
@@ -714,6 +714,30 @@ skip:
         rts
 .endproc
 
+.proc shift_hwattrrows_left
+        decAttrColumn HWAttributeUpperLeftRow
+        decAttrColumn HWAttributeLowerLeftRow
+        rts
+.endproc
+
+.proc shift_hwattrcolumns_left
+        decAttrColumn HWAttributeUpperRightColumn
+        decAttrColumn HWAttributeUpperLeftColumn
+        rts
+.endproc
+
+.proc shift_hwattrrows_right
+        incAttrColumn HWAttributeUpperLeftRow
+        incAttrColumn HWAttributeLowerLeftRow
+        rts
+.endproc
+
+.proc shift_hwattrcolumns_right
+        incAttrColumn HWAttributeUpperRightColumn
+        incAttrColumn HWAttributeUpperLeftColumn
+        rts
+.endproc
+
 .proc shift_hwattrrows_down
         incAttrRow HWAttributeUpperLeftRow
         incAttrRow HWAttributeLowerLeftRow
@@ -723,6 +747,18 @@ skip:
 .proc shift_hwattrcolumns_down
         incAttrRow HWAttributeUpperRightColumn
         incAttrRow HWAttributeUpperLeftColumn
+        rts
+.endproc
+
+.proc shift_hwattrrows_up
+        decAttrRow HWAttributeUpperLeftRow
+        decAttrRow HWAttributeLowerLeftRow
+        rts
+.endproc
+
+.proc shift_hwattrcolumns_up
+        decAttrRow HWAttributeUpperRightColumn
+        decAttrRow HWAttributeUpperLeftColumn
         rts
 .endproc
 
