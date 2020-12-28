@@ -493,6 +493,9 @@ entirely_done:
 ;   PPUADDR: nametable destination
 ; Note: PPUCTRL should be set to VRAM+1 mode before calling
 
+; It feels really awkward to not be handling the header writing in the draw functions.
+; This is something to consider refactoring maybe
+
 .proc draw_upper_half_row
 MapAddr := R0
 TilesRemaining := R2
@@ -591,6 +594,55 @@ row_loop:
         bne row_loop
         stx VRAM_TABLE_INDEX
         inc VRAM_TABLE_ENTRIES
+        rts
+.endproc
+
+.proc draw_attribute_row
+DestAddr := R0
+AttrAddr := R2
+BytesRemaining := R4
+        write_vram_header_ptr DestAddr, BytesRemaining, VRAM_INC_1        
+        ldx VRAM_TABLE_INDEX
+column_loop:
+        ; copy one byte into the vram buffer
+        ldy #$00
+        lda (AttrAddr),y ; a now holds the attribute byte
+        sta VRAM_TABLE_START,x
+        inx
+        ; increment our address by one, and continue
+        inc16 AttrAddr
+        dec BytesRemaining
+        bne column_loop
+        ; update the 
+        stx VRAM_TABLE_INDEX
+        inc VRAM_TABLE_ENTRIES
+        rts
+.endproc
+
+; Note: for simplicity, this is implemented as a series of 1-byte writes, which in practice
+; should result in 7 transfers altogether. This is inefficient, but not terribly so. Later
+; it would be good to optimize this using some sort of interleaving, using the +32 mode to
+; write every other attribute byte.
+
+.proc draw_attribute_column
+DestAddr := R0
+AttrAddr := R2
+BytesRemaining := R4
+row_loop:
+        write_vram_header_ptr DestAddr, BytesRemaining, VRAM_INC_1        
+        ldx VRAM_TABLE_INDEX
+        ; copy one byte into the vram buffer
+        ldy #$00
+        lda (AttrAddr),y ; a now holds the attribute byte
+        sta VRAM_TABLE_START,x
+        inx
+        stx VRAM_TABLE_INDEX
+        inc VRAM_TABLE_ENTRIES
+        ; increment our address by the map width, and continue
+        clc
+        add16 AttrAddr, AttributeWidth
+        dec BytesRemaining
+        bne row_loop
         rts
 .endproc
 
