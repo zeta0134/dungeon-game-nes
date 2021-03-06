@@ -65,6 +65,17 @@ loop:
         lda #$20
         sta PPUDATA
 
+        ; and this green thing
+
+        lda #$09
+        sta PPUDATA
+        lda #$19
+        sta PPUDATA
+        lda #$29
+        sta PPUDATA
+        lda #$39
+        sta PPUDATA
+
         ; Sprites
         ; gray!
         set_ppuaddr #$3F11
