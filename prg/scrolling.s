@@ -294,6 +294,7 @@ SourceAddr := R4
         lda (SourceAddr),y
         sta MapWidth
         sta TempHeight
+        clc
         ror
         sta AttributeWidth
         inc16 SourceAddr
@@ -344,11 +345,18 @@ loop:
 ; Note: Currently BROKEN! This gets the scrolling registers into a sane state,
 ; but does not actually initialize the map view. It's on the TODO list.
 
+; Future thoughts: The X and Y offsets rather complicate this whole routine.
+; maybe better to ditch them, and have the map always initialize in its top
+; left corner? Then we could separate "scroll all the registers into place"
+; and "initialize the map where the camera is currently pointed", rather than
+; trying to do it all at once
+
 .proc init_map
 TileOffsetX := R0
 TileOffsetY := R1
         ; first, use the Y position to calculate the row offset into MapData
-        st16 MapUpperLeftRow, (MapData)
+        st16 MapUpperLeftRow, MapData
+
         lda TileOffsetY
         beq done_with_y_offset
 y_offset_loop:
@@ -362,6 +370,7 @@ done_with_y_offset:
         ; At this point MapUpperLeft is correct, so use it as the base for
         ; lower left, which needs to advance an extra 24 tiles downwards.
         mov16 MapLowerLeftRow, MapUpperLeftRow
+
         ; While we're at it, we can use the same loop to initialize the nametable
         st16 HWScrollLowerLeftRow, $2000
         lda #$00
@@ -388,7 +397,6 @@ height_loop:
         ; increment the row counter and continue
         add16 MapLowerLeftRow, MapWidth
         dex
-
         bne height_loop
         ; Now initialize the Map variables:
         mov16 MapUpperLeftColumn, MapUpperLeftRow
@@ -399,6 +407,23 @@ height_loop:
         st16 HWScrollUpperLeftColumn, $2000
         st16 HWScrollUpperRightColumn, $2400
         ; done?
+        ; of course not; initialize attribute stuffs
+        st16 AttributeUpperLeftRow, AttributeData
+        st16 AttributeUpperLeftColumn, AttributeData
+        st16 AttributeLowerLeftRow, AttributeData
+        add16 AttributeLowerLeftRow, #(32*6)
+        st16 AttributeUpperRightColumn, AttributeData
+        add16 AttributeUpperRightColumn, #8
+
+        st16 HWAttributeUpperLeftRow, $23C0
+        st16 HWAttributeUpperLeftColumn, $23C0
+        st16 HWAttributeLowerLeftRow, $23F0
+        st16 HWAttributeUpperRightColumn, $27C0
+
+        lda #0 
+        sta AttributeXOffset
+        sta AttributeYOffset
+
         rts
 .endproc
 
@@ -468,6 +493,9 @@ column_loop:
         cpy MapWidth
         bne column_loop
 done_with_column:
+        clc
+        add16 UpperRowPtr, MapWidth
+        add16 LowerRowPtr, MapWidth
         add16 UpperRowPtr, MapWidth
         add16 LowerRowPtr, MapWidth
         dec RowCounter
@@ -598,8 +626,8 @@ row_loop:
 .endproc
 
 .proc draw_attribute_row
-DestAddr := R0
-AttrAddr := R2
+AttrAddr := R0
+DestAddr := R2
 BytesRemaining := R4
         write_vram_header_ptr DestAddr, BytesRemaining, VRAM_INC_1        
         ldx VRAM_TABLE_INDEX
@@ -625,8 +653,8 @@ column_loop:
 ; write every other attribute byte.
 
 .proc draw_attribute_column
-DestAddr := R0
-AttrAddr := R2
+AttrAddr := R0
+DestAddr := R2
 BytesRemaining := R4
 row_loop:
         write_vram_header_ptr DestAddr, BytesRemaining, VRAM_INC_1        
@@ -716,7 +744,36 @@ skip:
 .endscope
 .endmacro
 
+.macro split_attribute_row_across_nametables starting_hw_address, drawing_function
+        lda starting_hw_address
+        sta R2
+        lda starting_hw_address+1
+        sta R2+1
 
+        lda #8
+        sec
+        sbc AttributeXOffset
+        sta R4
+
+        jsr drawing_function
+        ; the right half needs to massage the target address; it should
+        ; switch nametables, and start at the left-most tile, but keep
+        ; the same Y coordinate
+        lda starting_hw_address+1 ; ppuaddr high byte
+        eor #%00000100 ; swap nametables
+        sta R2+1
+
+        lda starting_hw_address ; ppuaddr low byte
+        and #%11111000 ; set X component to 0
+        sta R2
+
+        ; bytes remaining
+        lda AttributeXOffset
+        adc #1
+        sta R4
+
+        jsr drawing_function
+.endmacro
 
 .proc shift_hwrows_right
         incColumn HWScrollUpperLeftRow
@@ -861,7 +918,8 @@ done:
 .endproc
 
 .proc scroll_attributes_down
-        ;split_attribute_row_across_nametable HWAttributeUpperLeftRow, draw_attribute_col
+        mov16 R0, AttributeLowerLeftRow
+        split_attribute_row_across_nametables HWAttributeLowerLeftRow, draw_attribute_row
         ; move the attribute indices down
         clc
         add16 AttributeUpperRightColumn, AttributeWidth
@@ -1009,7 +1067,7 @@ scroll_down:
         lda CameraYTileCurrent
         and #$03
         bne done_scrolling
-        ;;jsr scroll_attributes_down DOESN'T EXIST YET
+        jsr scroll_attributes_down
         jmp done_scrolling
 scroll_up:
         jsr scroll_tiles_up
