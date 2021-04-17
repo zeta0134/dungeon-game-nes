@@ -8,7 +8,7 @@
         .zeropage
 PopSlideAddress: .word $0000
 
-        .segment "PRGLAST_C000"
+        .segment "PRGLAST_E000"
 .export vram_zipper
 
 

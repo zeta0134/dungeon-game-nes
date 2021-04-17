@@ -409,19 +409,28 @@ height_loop:
         ; done?
         ; of course not; initialize attribute stuffs
         st16 AttributeUpperLeftRow, AttributeData
+        sec
+        sub16 AttributeUpperLeftRow, #1
         st16 AttributeUpperLeftColumn, AttributeData
+        sec
+        sub16 AttributeUpperLeftColumn, #1
         st16 AttributeLowerLeftRow, AttributeData
+        sec
+        sub16 AttributeLowerLeftRow, #1
+        clc
         add16 AttributeLowerLeftRow, #(32*6)
         st16 AttributeUpperRightColumn, AttributeData
-        add16 AttributeUpperRightColumn, #8
+        clc
+        add16 AttributeUpperRightColumn, #9
 
-        st16 HWAttributeUpperLeftRow, $23C0
-        st16 HWAttributeUpperLeftColumn, $23C0
-        st16 HWAttributeLowerLeftRow, $23F0
-        st16 HWAttributeUpperRightColumn, $27C0
+        st16 HWAttributeUpperLeftRow, $27C7
+        st16 HWAttributeUpperLeftColumn, $27C7
+        st16 HWAttributeLowerLeftRow, $27F7
+        st16 HWAttributeUpperRightColumn, $27C1
 
-        lda #0 
+        lda #7
         sta AttributeXOffset
+        lda #0
         sta AttributeYOffset
 
         rts
@@ -689,17 +698,37 @@ skip:
 .endproc
 
 .macro split_row_across_nametables starting_hw_address, drawing_function
+.scope
         lda #16
         sec
         sbc MapXOffset
         sta R2
 
+        lda starting_hw_address
+        sta VRAM_SCRATCH
+        lda starting_hw_address+1
+        sta VRAM_SCRATCH+1
+
+
         asl R2
-        write_vram_header_ptr starting_hw_address, R2, VRAM_INC_1
+        write_vram_header_ptr VRAM_SCRATCH, R2, VRAM_INC_1
         ror R2
 
         jsr drawing_function
-        ; the right half needs to massage the target address; it should
+
+        ; bytes remaining + 2
+        lda MapXOffset
+        clc
+        adc #2
+        ; edge case: do we have more than 16 tiles to go?
+        cmp #16
+        bcc last_segment_prep
+middle_segment:
+        ; the middle segment must draw no more than 16 tiles
+        lda #16
+        sta R2
+
+        ; here we need to massage the target address; it should
         ; switch nametables, and start at the left-most tile, but keep
         ; the same Y coordinate
         lda starting_hw_address+1 ; ppuaddr high byte
@@ -710,16 +739,42 @@ skip:
         and #%11100000 ; set X component to 0
         sta VRAM_SCRATCH
 
+        asl R2
+        write_vram_header_ptr VRAM_SCRATCH, R2, VRAM_INC_1
+        ror R2
+
+        jsr drawing_function
+
+        ; now prepare R2 for the last segment
+        lda MapXOffset
+        sec
+        sbc #6
+        sta R2
+        jmp last_segment
+
+last_segment_prep:
         ; bytes remaining
         lda MapXOffset
-        adc #1
+        clc
+        adc #2
         sta R2
+last_segment:
+        ; Same as above; if we drew a middle segment, we are now again on our
+        ; *original* nametable, on the left side
+        lda VRAM_SCRATCH+1 ; ppuaddr high byte
+        eor #%00000100 ; swap nametables
+        sta VRAM_SCRATCH+1
+
+        lda VRAM_SCRATCH ; ppuaddr low byte
+        and #%11100000 ; set X component to 0
+        sta VRAM_SCRATCH
 
         asl R2
         write_vram_header_ptr VRAM_SCRATCH, R2, VRAM_INC_1
         ror R2
 
         jsr drawing_function
+.endscope
 .endmacro
 
 .macro split_column_across_height_boundary starting_hw_address, drawing_function
@@ -931,7 +986,8 @@ no_positive_y_wrap:
         ; the 5th bit of the scroll tells us if we're doing a left-column or a right-column
         lda #%00100000
         bit HWScrollLowerLeftRow
-        bne lower_edge_lower_row
+        ;bne lower_edge_lower_row
+        jne lower_edge_lower_row
 lower_edge_upper_row:
         split_row_across_nametables HWScrollLowerLeftRow, draw_upper_half_row
         ; The map index doesn't change, so we update *only* the row registers here
@@ -996,7 +1052,8 @@ no_negative_y_wrap:
         ; the 5th bit of the scroll tells us if we're doing a left-column or a right-column
         lda #%00100000
         bit HWScrollUpperLeftRow
-        beq upper_edge_upper_row
+        ;beq upper_edge_upper_row
+        jeq upper_edge_upper_row
 upper_edge_lower_row:
         split_row_across_nametables HWScrollUpperLeftRow, draw_lower_half_row
         ; The map index doesn't change, so we update *only* the row registers here
@@ -1090,10 +1147,10 @@ done:
         ; Move our attribute pointers to the right by one
         ; ... note: I'm copying the tile code, but this FEELS WRONG. Shouldn't
         ; these all be inc16, to do a proper multi-byte operation?
-        inc AttributeUpperRightColumn
-        inc AttributeUpperLeftColumn
-        inc AttributeUpperLeftRow
-        inc AttributeLowerLeftRow
+        inc16 AttributeUpperRightColumn
+        inc16 AttributeUpperLeftColumn
+        inc16 AttributeUpperLeftRow
+        inc16 AttributeLowerLeftRow
         ; Increment AttributeXOffset with wraparound
         inc AttributeXOffset
         lda #8
@@ -1149,10 +1206,10 @@ done:
         ; Move our attribute pointers to the left by one
         ; ... note: I'm copying the tile code, but this FEELS WRONG. Shouldn't
         ; these all be inc16, to do a proper multi-byte operation?
-        dec AttributeUpperRightColumn
-        dec AttributeUpperLeftColumn
-        dec AttributeUpperLeftRow
-        dec AttributeLowerLeftRow
+        dec16 AttributeUpperRightColumn
+        dec16 AttributeUpperLeftColumn
+        dec16 AttributeUpperLeftRow
+        dec16 AttributeLowerLeftRow
         ; Decrement AttributeXOffset with wraparound
         dec AttributeXOffset
         lda #$07
