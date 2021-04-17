@@ -980,6 +980,29 @@ done:
         rts
 .endproc
 
+.proc scroll_attributes_up
+        mov16 R0, AttributeUpperLeftRow
+        split_attribute_row_across_nametables HWAttributeUpperLeftRow, draw_attribute_row
+        ; move the attribute indices up
+        sec
+        sub16 AttributeUpperRightColumn, AttributeWidth
+        sub16 AttributeUpperLeftColumn, AttributeWidth
+        sub16 AttributeUpperLeftRow, AttributeWidth
+        sub16 AttributeLowerLeftRow, AttributeWidth
+        ; Decrement AttributeYOffset with wraparound
+        dec AttributeYOffset
+        lda #0
+        cmp AttributeYOffset
+        bne shift_registers_up
+        lda #7
+        sta AttributeYOffset
+shift_registers_up:
+        jsr shift_hwattrrows_up
+        jsr shift_hwattrcolumns_up
+done:
+        rts
+.endproc
+
 .proc scroll_tiles_right
         inc CameraXTileCurrent
         mov16 R0, MapUpperRightColumn
@@ -1062,16 +1085,23 @@ vertical_scroll:
         ; if the subtract here needed to borrow, the result is negative; we moved UP
         bcs scroll_up
 scroll_down:
+        ; Perform the vertical scroll, with attributes if needed, then exit
+        ; note - We intentionally prioritize vertical scroll and let horizontal lag by
+        ; a frame or two; it's fine
         jsr scroll_tiles_down
-        ; note - NOT a bug! We intentionally prioritize vertical scroll and let horizontal lag by a frame or two; it's fine
         lda CameraYTileCurrent
         and #$03
         bne done_scrolling
         jsr scroll_attributes_down
         jmp done_scrolling
 scroll_up:
-        jsr scroll_tiles_up
         ; (Here too, see above)
+        jsr scroll_tiles_up
+        lda CameraYTileCurrent
+        and #$03
+        cmp #$03
+        bne done_scrolling
+        jsr scroll_attributes_up
         jmp done_scrolling
 no_vertical_scroll:
         ; did we move left or right?
