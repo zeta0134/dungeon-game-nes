@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.2" tiledversion="1.3.5" name="Skull Tiles" tilewidth="16" tileheight="16" tilecount="23" columns="4">
+<tileset version="1.5" tiledversion="1.5.0" name="Skull Tiles" tilewidth="16" tileheight="16" tilecount="35" columns="4">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0" type="128">
   <image width="16" height="16" source="../tiles/bricks_inner_bl.png"/>
@@ -69,5 +69,41 @@
  </tile>
  <tile id="22" type="0">
   <image width="16" height="16" source="../tiles/solid_index_1.png"/>
+ </tile>
+ <tile id="23">
+  <image width="16" height="16" source="../tiles/bricks_inner_bl_warm.png"/>
+ </tile>
+ <tile id="24">
+  <image width="16" height="16" source="../tiles/bricks_inner_br_warm.png"/>
+ </tile>
+ <tile id="25">
+  <image width="16" height="16" source="../tiles/bricks_inner_tl_warm.png"/>
+ </tile>
+ <tile id="26">
+  <image width="16" height="16" source="../tiles/bricks_inner_tr_warm.png"/>
+ </tile>
+ <tile id="27">
+  <image width="16" height="16" source="../tiles/bricks_outer_bl_warm.png"/>
+ </tile>
+ <tile id="28">
+  <image width="16" height="16" source="../tiles/bricks_outer_bm_warm.png"/>
+ </tile>
+ <tile id="29">
+  <image width="16" height="16" source="../tiles/bricks_outer_br_warm.png"/>
+ </tile>
+ <tile id="30">
+  <image width="16" height="16" source="../tiles/bricks_outer_mr_warm.png"/>
+ </tile>
+ <tile id="31">
+  <image width="16" height="16" source="../tiles/bricks_outer_tl_warm.png"/>
+ </tile>
+ <tile id="32">
+  <image width="16" height="16" source="../tiles/bricks_outer_tm_warm.png"/>
+ </tile>
+ <tile id="33">
+  <image width="16" height="16" source="../tiles/bricks_outer_tr_warm.png"/>
+ </tile>
+ <tile id="34">
+  <image width="16" height="16" source="../tiles/bricks_outter_ml_warm.png"/>
  </tile>
 </tileset>
