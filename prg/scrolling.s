@@ -629,6 +629,11 @@ row_loop:
 AttrAddr := R0
 DestAddr := R2
 BytesRemaining := R4
+        ; sanity check
+        lda #0
+        cmp BytesRemaining
+        beq skip
+
         write_vram_header_ptr DestAddr, BytesRemaining, VRAM_INC_1        
         ldx VRAM_TABLE_INDEX
 column_loop:
@@ -644,6 +649,7 @@ column_loop:
         ; update the 
         stx VRAM_TABLE_INDEX
         inc VRAM_TABLE_ENTRIES
+skip:
         rts
 .endproc
 
@@ -656,8 +662,12 @@ column_loop:
 AttrAddr := R0
 DestAddr := R2
 BytesRemaining := R4
+        ; sanity check
+        lda #0
+        cmp BytesRemaining
+        beq skip
 row_loop:
-        write_vram_header_ptr DestAddr, BytesRemaining, VRAM_INC_1        
+        write_vram_header_ptr DestAddr, #1, VRAM_INC_1        
         ldx VRAM_TABLE_INDEX
         ; copy one byte into the vram buffer
         ldy #$00
@@ -666,11 +676,15 @@ row_loop:
         inx
         stx VRAM_TABLE_INDEX
         inc VRAM_TABLE_ENTRIES
-        ; increment our address by the map width, and continue
+        ; increment our address by the map width
         clc
         add16 AttrAddr, AttributeWidth
+        ; ... and our target by one HW attribute row
+        clc
+        add16 DestAddr, #8
         dec BytesRemaining
         bne row_loop
+skip:
         rts
 .endproc
 
@@ -750,6 +764,7 @@ skip:
         lda starting_hw_address+1
         sta R2+1
 
+        ; left half
         lda #8
         sec
         sbc AttributeXOffset
@@ -774,6 +789,36 @@ skip:
 
         jsr drawing_function
 .endmacro
+
+.macro split_attribute_column_across_height_boundary starting_hw_address, drawing_function
+.scope
+        lda starting_hw_address
+        sta R2
+        lda starting_hw_address+1
+        sta R2+1
+
+        ; top half
+        lda #7
+        sec
+        sbc AttributeYOffset
+        sta R4
+
+        jsr drawing_function
+        ; set the Y component of the attribute address to zero
+        lda starting_hw_address+1
+        sta R2+1
+        lda starting_hw_address
+        and #%11000111
+        sta R2
+
+        ; bytes remaining
+        lda AttributeYOffset
+        sta R4
+
+        jsr drawing_function
+.endscope
+.endmacro
+
 
 .proc shift_hwrows_right
         incColumn HWScrollUpperLeftRow
@@ -991,10 +1036,8 @@ done:
         sub16 AttributeLowerLeftRow, AttributeWidth
         ; Decrement AttributeYOffset with wraparound
         dec AttributeYOffset
-        lda #0
-        cmp AttributeYOffset
-        bne shift_registers_up
-        lda #7
+        bpl shift_registers_up
+        lda #6
         sta AttributeYOffset
 shift_registers_up:
         jsr shift_hwattrrows_up
@@ -1040,6 +1083,31 @@ done:
         rts
 .endproc
 
+.proc scroll_attributes_right
+        mov16 R0, AttributeUpperRightColumn
+        split_attribute_column_across_height_boundary HWAttributeUpperRightColumn, draw_attribute_column
+
+        ; Move our attribute pointers to the right by one
+        ; ... note: I'm copying the tile code, but this FEELS WRONG. Shouldn't
+        ; these all be inc16, to do a proper multi-byte operation?
+        inc AttributeUpperRightColumn
+        inc AttributeUpperLeftColumn
+        inc AttributeUpperLeftRow
+        inc AttributeLowerLeftRow
+        ; Increment AttributeXOffset with wraparound
+        inc AttributeXOffset
+        lda #8
+        cmp AttributeXOffset
+        bne shift_registers_right
+        lda #0
+        sta AttributeXOffset
+shift_registers_right:
+        jsr shift_hwattrrows_right
+        jsr shift_hwattrcolumns_right
+done:
+        rts
+.endproc
+
 .proc scroll_tiles_left
         dec CameraXTileCurrent
         mov16 R0, MapUpperLeftColumn
@@ -1070,6 +1138,29 @@ left_side_left_column:
         ; Shift rows left *twice* to advance a complete metatile
         jsr shift_hwrows_left
         jsr shift_hwrows_left
+done:
+        rts
+.endproc
+
+.proc scroll_attributes_left
+        mov16 R0, AttributeUpperLeftColumn
+        split_attribute_column_across_height_boundary HWAttributeUpperLeftColumn, draw_attribute_column
+
+        ; Move our attribute pointers to the left by one
+        ; ... note: I'm copying the tile code, but this FEELS WRONG. Shouldn't
+        ; these all be inc16, to do a proper multi-byte operation?
+        dec AttributeUpperRightColumn
+        dec AttributeUpperLeftColumn
+        dec AttributeUpperLeftRow
+        dec AttributeLowerLeftRow
+        ; Decrement AttributeXOffset with wraparound
+        dec AttributeXOffset
+        lda #$07
+        and AttributeXOffset
+        sta AttributeXOffset
+shift_registers_right:
+        jsr shift_hwattrrows_left
+        jsr shift_hwattrcolumns_left
 done:
         rts
 .endproc
@@ -1115,9 +1206,18 @@ horizontal_scroll:
         bcs scroll_left
 scroll_right:
         jsr scroll_tiles_right
+        lda CameraXTileCurrent
+        and #$03
+        bne done_scrolling
+        jsr scroll_attributes_right
         jmp done_scrolling
 scroll_left:
         jsr scroll_tiles_left
+        lda CameraXTileCurrent
+        and #$03
+        cmp #$03
+        bne done_scrolling
+        jsr scroll_attributes_left
 done_scrolling:
         ; Always copy in the new sub-tile scroll position
         ; (this visually hides the fact that we alternately may delay a row / column)
