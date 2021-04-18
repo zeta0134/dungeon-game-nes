@@ -1416,7 +1416,7 @@ setup_irq:
         ; conveniently, A has the number of *pixels* we have scrolled the background down the screen
         ; first off, stash it in R0 (we'll need this a few times)
         sta R0
-        cmp #32
+        cmp #34
         bcc no_midscreen_split
 _midscreen_split:
         cmp #(189 + 32)
@@ -1437,7 +1437,7 @@ _no_midscreen_split:
         set_second_irq_byte #$80
         set_irq_cleanup_handler (post_irq_status_upper_half)
         ; after 192 - 1 frames:
-        lda #193
+        lda #191
         sta MMC3_IRQ_LATCH
 enable_rendering:
         lda #$1E
@@ -1479,7 +1479,7 @@ reload_mmc3_irq:
         ; The IRQ following this is 192 - this number - 2
         clc
         sta R0
-        lda #192
+        lda #190
         sbc R0
         sta SplitScanlinesToStatus
 enable_rendering:
@@ -1506,7 +1506,7 @@ reload_mmc3_irq:
         set_second_irq_byte #$80
         set_irq_cleanup_handler (post_irq_status_upper_half)
         ; after 192 - 1 frames:
-        lda #193
+        lda #191
         sta MMC3_IRQ_LATCH
         ; We will spinwait for this many scanlines to perform a manual scroll split:
         sec
