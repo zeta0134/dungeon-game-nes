@@ -5,6 +5,7 @@
 .import set_scroll_for_frame
 .import scroll_camera
 .import install_irq_handler
+.import render_initial_viewport
 .import MapData
 .importzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget, MapWidth, MapHeight
 

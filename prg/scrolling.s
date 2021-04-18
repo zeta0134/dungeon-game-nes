@@ -63,7 +63,7 @@ SplitScanlinesToStatus: .byte $00
         .segment "PRGLAST_C000"
         ;.org $e000
 
-.export load_map, load_tileset, init_map, init_attributes, scroll_camera, set_scroll_for_frame, install_irq_handler
+.export load_map, load_tileset, init_map, init_attributes, scroll_camera, set_scroll_for_frame, install_irq_handler, render_initial_viewport
 
 .macro incColumn addr
 .scope
@@ -335,10 +335,7 @@ loop:
         rts
 .endproc
 
-; Initializes the scroll registers for the currently loaded map, then
-;   copies the first entire screen worth of map data into the PPU
-; Conditions:
-;   This routine assumes rendering is already disabled.
+; Initializes the scroll registers for the currently loaded map
 
 .proc init_map
         ; upper left should be off the top of the map by -1. The camera won't ever
@@ -909,7 +906,6 @@ last_segment:
 .endscope
 .endmacro
 
-
 .proc shift_hwrows_right
         incColumn HWScrollUpperLeftRow
         incColumn HWScrollLowerLeftRow
@@ -1006,7 +1002,71 @@ last_segment:
         rts
 .endproc
 
+; Copies the first entire screen worth of map data into the PPU
+; Conditions:
+;   This routine assumes rendering is already disabled.
+;   This routine depends on initialization from init_map, and will misbehave
+;     if called with a non-aligned HW scroll
+; Notes:
+;   This routine will flush the VRAM buffer to perform drawing.
+;   Anything queued up for PPU writing will be written immediately.
 
+.proc render_initial_viewport
+RowCounter := R5
+        lda #13
+        sta RowCounter
+        ; basically, start from the top row and render every row, moving down the screen
+tile_height_loop:
+        mov16 R0, MapUpperLeftRow
+        split_row_across_nametables HWScrollUpperLeftRow, draw_lower_half_row
+        incRow HWScrollUpperLeftRow
+        clc
+        add16 MapUpperLeftRow, MapWidth
+        mov16 R0, MapUpperLeftRow
+        split_row_across_nametables HWScrollUpperLeftRow, draw_upper_half_row
+        incRow HWScrollUpperLeftRow
+
+        ; flush the VRAM buffer each row, otherwise we'll smash the stack
+        jsr vram_zipper
+
+        dec RowCounter
+        jne tile_height_loop
+
+        ; now, reverse the changes we made to the scroll registers, to set up for runtime
+        lda #13
+        sta RowCounter
+tile_undo_loop:
+        sec
+        sub16 MapUpperLeftRow, MapWidth
+        decRow HWScrollUpperLeftRow
+        decRow HWScrollUpperLeftRow
+        dec RowCounter
+        bne tile_undo_loop
+        ; done with map tile stuff
+
+        ; lather rinse repeat for attribute stuff
+        lda #7
+        sta RowCounter
+attr_height_loop:
+        incAttrRow HWAttributeUpperLeftRow
+        clc
+        add16 AttributeUpperLeftRow, AttributeWidth
+        mov16 R0, AttributeUpperLeftRow
+        split_attribute_row_across_nametables HWAttributeUpperLeftRow, draw_attribute_row
+        dec RowCounter
+        jne attr_height_loop
+
+        lda #7
+        sta RowCounter
+attr_undo_loop:
+        decAttrRow HWAttributeUpperLeftRow
+        sec
+        sub16 AttributeUpperLeftRow, AttributeWidth
+        dec RowCounter
+        bne attr_undo_loop
+
+        rts
+.endproc
 
 .proc scroll_tiles_down
         inc CameraYTileCurrent

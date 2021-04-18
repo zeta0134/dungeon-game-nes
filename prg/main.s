@@ -24,13 +24,15 @@
         .zeropage
 TestBlobbyDelay: .byte $00
 
-        .segment "PRGLAST_C000"
+
+.segment "PRG0_A000"
+; note: this is probably a bad idea
 test_map:
         .incbin "build/maps/large_test_room.bin"
-
-.segment "PRGLAST_E000"
 test_tileset:
         .incbin "build/tilesets/skull_tiles.mt"
+
+.segment "PRGLAST_E000"
 
 .macro initialize_metasprite index, pos_x, pos_y, palette, tilebase, animation
         st16 R0, pos_x
@@ -141,6 +143,9 @@ start:
         jsr init_map
         jsr init_attributes
         jsr install_irq_handler
+
+        ; render the initial viewport before we turn on graphics
+        jsr render_initial_viewport
 
         ; init the statusarea to something not stupid
         jsr demo_init_statusbar

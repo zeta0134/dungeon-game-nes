@@ -43,6 +43,16 @@
         lda #$02
         sta MMC3_BANK_DATA
 
+        lda #$86 ; PRG0
+        sta MMC3_BANK_SELECT
+        lda #$00
+        sta MMC3_BANK_DATA        
+
+        lda #$87 ; PRG1
+        sta MMC3_BANK_SELECT
+        lda #$00
+        sta MMC3_BANK_DATA        
+
         ; Mirroring mode: vertical
         lda #$00
         sta MMC3_MIRRORING
