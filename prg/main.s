@@ -26,60 +26,10 @@ TestBlobbyDelay: .byte $00
         .segment "PRGLAST_C000"
 test_map:
         .incbin "build/maps/large_test_room.bin"
+
+.segment "PRGLAST_E000"
 test_tileset:
         .incbin "build/tilesets/skull_tiles.mt"
-
-        .segment "PRGLAST_E000"
-
-.proc demo_scroll_camera
-CameraSpeed := $10
-        lda #KEY_RIGHT
-        bit ButtonsHeld
-        beq right_not_held
-        clc
-        lda #CameraSpeed
-        adc CameraXScrollTarget
-        sta CameraXScrollTarget
-        lda #$00
-        adc CameraXTileTarget
-        sta CameraXTileTarget
-right_not_held:
-        lda #KEY_LEFT
-        bit ButtonsHeld
-        beq left_not_held
-        clc
-        lda CameraXScrollTarget
-        sbc #CameraSpeed
-        sta CameraXScrollTarget
-        lda CameraXTileTarget
-        sbc #$00
-        sta CameraXTileTarget
-left_not_held:
-        lda #KEY_DOWN
-        bit ButtonsHeld
-        beq down_not_held
-        clc
-        lda #CameraSpeed
-        adc CameraYScrollTarget
-        sta CameraYScrollTarget
-        lda #$00
-        adc CameraYTileTarget
-        sta CameraYTileTarget
-down_not_held:
-        lda #KEY_UP
-        bit ButtonsHeld
-        beq up_not_held
-        clc
-        lda CameraYScrollTarget
-        sbc #CameraSpeed
-        sta CameraYScrollTarget
-        lda CameraYTileTarget
-        sbc #$00
-        sta CameraYTileTarget
-up_not_held:
-
-        rts
-.endproc
 
 .macro initialize_metasprite index, pos_x, pos_y, palette, tilebase, animation
         st16 R0, pos_x
