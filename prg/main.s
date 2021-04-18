@@ -16,6 +16,7 @@
         .include "statusbar.inc"
         .include "vram_buffer.inc"
         .include "far_call.inc"
+        .include "debug.inc"
 
 .scope PRGLAST_E000
         .export start
@@ -93,10 +94,6 @@ test_tileset:
         rts
 .endproc
 
-.macro debug_color flags
-        lda #(BG_ON | OBJ_ON | BG_CLIP | OBJ_CLIP | flags)
-        sta PPUMASK
-.endmacro
 
 test_vram_data:
         .byte $00, $01, $02, $03, $04, $05, $06, $07

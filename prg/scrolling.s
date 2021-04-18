@@ -7,6 +7,7 @@
         .include "vram_buffer.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
+        .include "debug.inc"
 
         
 
@@ -1416,6 +1417,8 @@ setup_irq:
         ; conveniently, A has the number of *pixels* we have scrolled the background down the screen
         ; first off, stash it in R0 (we'll need this a few times)
         sta R0
+        cmp #33
+        beq _single_scanline_spinwait_split
         cmp #34
         bcc no_midscreen_split
 _midscreen_split:
@@ -1429,6 +1432,9 @@ _spinwait_midscreen_split:
 _no_midscreen_split:
         jsr no_midscreen_split
         rts
+_single_scanline_spinwait_split:
+        jsr single_scanline_spinwait_split
+        rts
 .endproc
 
 .proc no_midscreen_split
@@ -1438,6 +1444,41 @@ _no_midscreen_split:
         set_irq_cleanup_handler (post_irq_status_upper_half)
         ; after 192 - 1 frames:
         lda #191
+        sta MMC3_IRQ_LATCH
+enable_rendering:
+        lda #$1E
+        sta PPUMASK
+        lda #%01000000
+wait_for_sprite_zero_to_clear:
+        bit PPUSTATUS
+        bne wait_for_sprite_zero_to_clear
+reload_mmc3_irq:
+        sta MMC3_IRQ_RELOAD
+        sta MMC3_IRQ_DISABLE
+        sta MMC3_IRQ_ENABLE
+        rts
+.endproc
+
+; very much like no_midscreen_split, except we spinwait for one extra
+; scanline right before the statusbar area; this works around an MMC3 IRQ
+; resolution problem
+.proc single_scanline_spinwait_split
+        ; Set the scroll just like a midscreen split
+        lda CameraXTileTarget
+        and #%00100000
+        lsr ; >> 3
+        lsr
+        lsr
+        sta irq_first_byte - base_irq_handler + MY_IRQ_HANDLER_THAT_SCARES_SMALL_CHILDREN + 1
+        ; The second byte is just coarse X, with the upper bits cleared
+        lda CameraXTileTarget
+        and #%00011111
+        sta irq_second_byte - base_irq_handler + MY_IRQ_HANDLER_THAT_SCARES_SMALL_CHILDREN + 1
+        ; ... but set a spinwait cleanup routine; this will draw the status bar, rather than
+        ; issuing a second IRQ to wait some more
+        set_irq_cleanup_handler (spinwait_then_post_irq_status_upper_half)
+        ; after 192 - 1 frames:
+        lda #190
         sta MMC3_IRQ_LATCH
 enable_rendering:
         lda #$1E
@@ -1586,6 +1627,49 @@ done:
         ; pop a in prep to return
         pla 
         rti        
+.endproc
+
+.proc spinwait_then_post_irq_status_upper_half
+        ; first, spinwait so the previous scanline can finish
+        ; (we can't do this with an IRQ due to MMC3 timing problems)
+
+        jsr burn_some_cycles
+        ; MAGIC.gif
+        .repeat 11
+        nop
+        .endrep
+
+        ; Now, set the scroll position for the top of the status bar:
+        ;set_first_irq_byte #$03
+        lda #$03
+        sta PPUADDR
+        ;set_second_irq_byte #$80
+        lda #$80
+        sta PPUADDR
+
+        ; Here we must correct fine X for status area display,
+        ; which was not fixed during the start of the IRQ handler
+        ; Y is written here, but ignored; its only purpose is to reset the
+        ; write latch for the next IRQ handler
+        lda #$00
+        sta PPUSCROLL 
+        sta PPUSCROLL
+
+        ; on the next IRQ we will set PPUADDR to the middle of the status area
+        set_first_irq_byte #$07
+        set_second_irq_byte #$80
+        ; and run the mid-scanline cleanup function:
+        set_irq_cleanup_handler (post_irq_status_lower_half)
+        ; The upper status area lasts for 16 frames, so we write 16-1 to the latch:
+        lda #14
+        sta MMC3_IRQ_LATCH
+        sta MMC3_IRQ_RELOAD
+        ; and acknowledge the irq:
+        sta MMC3_IRQ_DISABLE
+        sta MMC3_IRQ_ENABLE
+        ; pop a in prep to return
+        pla 
+        rti
 .endproc
 
 .proc post_irq_status_upper_half
