@@ -336,20 +336,8 @@ loop:
 
 ; Initializes the scroll registers for the currently loaded map, then
 ;   copies the first entire screen worth of map data into the PPU
-; Inputs:
-;   R0: X position of the top-left corner of the screen, in map tiles
-;   R1: Y position of the top-left corner of the screen, in map tiles
 ; Conditions:
 ;   This routine assumes rendering is already disabled.
-
-; Note: Currently BROKEN! This gets the scrolling registers into a sane state,
-; but does not actually initialize the map view. It's on the TODO list.
-
-; Future thoughts: The X and Y offsets rather complicate this whole routine.
-; maybe better to ditch them, and have the map always initialize in its top
-; left corner? Then we could separate "scroll all the registers into place"
-; and "initialize the map where the camera is currently pointed", rather than
-; trying to do it all at once
 
 .proc init_map
         ; upper left should be off the top of the map by -1. The camera won't ever
@@ -371,17 +359,19 @@ height_loop:
         bne height_loop
 
         ; Now initialize the Map variables:
-        st16 HWScrollLowerLeftRow, $2340
         st16 MapUpperLeftColumn, MapData
+        dec16 MapUpperLeftColumn ; off the map to the left by -1
+
         st16 MapUpperRightColumn, MapData
         clc
         add16 MapUpperRightColumn, #16
-        ; Initialize the remaining hardware scroll registers
+        ; Initialize the hardware scroll registers
+        st16 HWScrollLowerLeftRow, $2340
         st16 HWScrollUpperLeftRow, $2000
         decRow HWScrollUpperLeftRow
         decRow HWScrollUpperLeftRow
 
-        st16 HWScrollUpperLeftColumn, $2000
+        st16 HWScrollUpperLeftColumn, $241E
         st16 HWScrollUpperRightColumn, $2400
         ; done?
 
@@ -1133,10 +1123,10 @@ right_side_right_column:
         split_column_across_height_boundary HWScrollUpperRightColumn, draw_right_half_col
 
         ; Move our map pointers to the right by one entire tile
-        inc MapUpperRightColumn
-        inc MapUpperLeftColumn
-        inc MapUpperLeftRow
-        inc MapLowerLeftRow
+        inc16 MapUpperRightColumn
+        inc16 MapUpperLeftColumn
+        inc16 MapUpperLeftRow
+        inc16 MapLowerLeftRow
         ; Increment MapXOffset with wrap around
         inc MapXOffset
         lda #$0F
@@ -1199,10 +1189,10 @@ left_side_right_column:
 left_side_left_column:
         split_column_across_height_boundary HWScrollUpperLeftColumn, draw_left_half_col
         ; Move our map index to the left
-        dec MapUpperRightColumn
-        dec MapUpperLeftColumn
-        dec MapUpperLeftRow
-        dec MapLowerLeftRow
+        dec16 MapUpperRightColumn
+        dec16 MapUpperLeftColumn
+        dec16 MapUpperLeftRow
+        dec16 MapLowerLeftRow
         ; Decrement MapXOffset with wraparound
         dec MapXOffset
         lda #$0F
