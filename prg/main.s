@@ -227,7 +227,7 @@ start:
 gameloop:
         debug_color LIGHTGRAY
         ;jsr demo_scroll_camera
-        jsr update_camera
+        far_call update_camera
         debug_color TINT_R | TINT_G
         jsr update_entities
         debug_color TINT_B
@@ -237,8 +237,6 @@ gameloop:
         debug_color TINT_R
         jsr scroll_camera
         debug_color 0 ; disable debug colors
-
-        ;jsr test_vram_transfer
 
         dec TestBlobbyDelay
         bne wait_for_next_vblank
