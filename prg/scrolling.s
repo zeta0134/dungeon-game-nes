@@ -352,21 +352,9 @@ loop:
 ; trying to do it all at once
 
 .proc init_map
-TileOffsetX := R0
-TileOffsetY := R1
         ; first, use the Y position to calculate the row offset into MapData
         st16 MapUpperLeftRow, MapData
 
-        lda TileOffsetY
-        beq done_with_y_offset
-y_offset_loop:
-        clc
-        add16 MapUpperLeftRow, MapWidth
-        dec TileOffsetY
-        bne y_offset_loop
-done_with_y_offset:
-        clc
-        add16 MapUpperLeftRow, TileOffsetX
         ; At this point MapUpperLeft is correct, so use it as the base for
         ; lower left, which needs to advance an extra 24 tiles downwards.
         mov16 MapLowerLeftRow, MapUpperLeftRow
@@ -407,6 +395,8 @@ height_loop:
         st16 HWScrollUpperLeftColumn, $2000
         st16 HWScrollUpperRightColumn, $2400
         ; done?
+
+
         ; of course not; initialize attribute stuffs
         st16 AttributeUpperLeftRow, AttributeData
         sec

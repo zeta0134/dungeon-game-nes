@@ -190,9 +190,7 @@ start:
         jsr load_tileset
         st16 R0, (test_tileset+256)
         jsr load_tileset_attributes
-        lda #0
-        sta R0
-        sta R1
+        
         jsr init_map
         jsr init_attributes
         jsr install_irq_handler
