@@ -352,46 +352,35 @@ loop:
 ; trying to do it all at once
 
 .proc init_map
-        ; first, use the Y position to calculate the row offset into MapData
+        ; upper left should be off the top of the map by -1. The camera won't ever
+        ; scroll that far, but it sets it up to be in the right spot once it scrolls
+        ; down / right
         st16 MapUpperLeftRow, MapData
+        sec
+        sub16 MapUpperLeftRow, MapWidth
 
-        ; At this point MapUpperLeft is correct, so use it as the base for
-        ; lower left, which needs to advance an extra 24 tiles downwards.
-        mov16 MapLowerLeftRow, MapUpperLeftRow
+        ; lower left needs to advance an extra 24 tiles downwards.
+        st16 MapLowerLeftRow, MapData
 
-        ; While we're at it, we can use the same loop to initialize the nametable
-        st16 HWScrollLowerLeftRow, $2000
-        lda #$00
-        lda PPUSTATUS ; reset read/write latch
-        lda #(OBJ_0000 | BG_1000)
-        sta PPUCTRL ; ensure VRAM increment mode is +1
+        ; Advance 13 tiles into the map data, based on the loaded width
         ldx #13
 height_loop:
-        ; draw the upper row
-        mov16 R0, MapLowerLeftRow
-        lda #16
-        sta R2
-        ;set_ppuaddr HWScrollLowerLeftRow
-        ;jsr draw_upper_half_row ; a, y clobbered, x preserved
-        add16 HWScrollLowerLeftRow, #32
-
-        ; draw the lower row
-        mov16 R0, MapLowerLeftRow
-        lda #16
-        sta R2
-        ;set_ppuaddr HWScrollLowerLeftRow
-        ;jsr draw_lower_half_row ; a, y clobbered, x preserved
-        add16 HWScrollLowerLeftRow, #32
-        ; increment the row counter and continue
+        clc
         add16 MapLowerLeftRow, MapWidth
         dex
         bne height_loop
+
         ; Now initialize the Map variables:
-        mov16 MapUpperLeftColumn, MapUpperLeftRow
-        mov16 MapUpperRightColumn, MapUpperLeftRow
+        st16 HWScrollLowerLeftRow, $2340
+        st16 MapUpperLeftColumn, MapData
+        st16 MapUpperRightColumn, MapData
+        clc
         add16 MapUpperRightColumn, #16
         ; Initialize the remaining hardware scroll registers
         st16 HWScrollUpperLeftRow, $2000
+        decRow HWScrollUpperLeftRow
+        decRow HWScrollUpperLeftRow
+
         st16 HWScrollUpperLeftColumn, $2000
         st16 HWScrollUpperRightColumn, $2400
         ; done?
