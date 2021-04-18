@@ -411,6 +411,8 @@ height_loop:
         st16 AttributeUpperLeftRow, AttributeData
         sec
         sub16 AttributeUpperLeftRow, #1
+        sec
+        sub16 AttributeUpperLeftRow, #32
         st16 AttributeUpperLeftColumn, AttributeData
         sec
         sub16 AttributeUpperLeftColumn, #1
@@ -423,7 +425,7 @@ height_loop:
         clc
         add16 AttributeUpperRightColumn, #9
 
-        st16 HWAttributeUpperLeftRow, $27C7
+        st16 HWAttributeUpperLeftRow, $27F7
         st16 HWAttributeUpperLeftColumn, $27C7
         st16 HWAttributeLowerLeftRow, $27C7
         st16 HWAttributeUpperRightColumn, $27C1
@@ -721,7 +723,7 @@ skip:
         clc
         adc #2
         ; edge case: do we have more than 16 tiles to go?
-        cmp #16
+        cmp #17 ; >= 17
         bcc last_segment_prep
 middle_segment:
         ; the middle segment must draw no more than 16 tiles
@@ -834,7 +836,7 @@ skip:
         clc
         adc #2
         ; edge case: do we have more than 8 attribute bytes to go?
-        cmp #8
+        cmp #9 ; >= 9
         bcc last_segment_prep
 middle_segment:
         ; the middle segment must draw no more than 8 tiles
