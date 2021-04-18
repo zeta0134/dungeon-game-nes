@@ -364,7 +364,7 @@ height_loop:
 
         st16 MapUpperRightColumn, MapData
         clc
-        add16 MapUpperRightColumn, #16
+        add16 MapUpperRightColumn, #17
         ; Initialize the hardware scroll registers
         st16 HWScrollLowerLeftRow, $2340
         st16 HWScrollUpperLeftRow, $2000
@@ -372,7 +372,7 @@ height_loop:
         decRow HWScrollUpperLeftRow
 
         st16 HWScrollUpperLeftColumn, $241E
-        st16 HWScrollUpperRightColumn, $2400
+        st16 HWScrollUpperRightColumn, $2402
         ; done?
 
 
