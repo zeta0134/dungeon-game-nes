@@ -346,12 +346,14 @@ loop:
         st16 MapUpperLeftRow, MapData
         sec
         sub16 MapUpperLeftRow, MapWidth
+        dec16 MapUpperLeftRow
 
-        ; lower left needs to advance an extra 24 tiles downwards.
+        ; lower left needs to advance an extra 22 tiles downwards.
         st16 MapLowerLeftRow, MapData
+        dec16 MapLowerLeftRow
 
         ; Advance 13 tiles into the map data, based on the loaded width
-        ldx #13
+        ldx #12
 height_loop:
         clc
         add16 MapLowerLeftRow, MapWidth
@@ -359,21 +361,36 @@ height_loop:
         bne height_loop
 
         ; Now initialize the Map variables:
+        ; off the map to the left by -1,-1
         st16 MapUpperLeftColumn, MapData
-        dec16 MapUpperLeftColumn ; off the map to the left by -1
+        dec16 MapUpperLeftColumn 
 
+        ; off the map to the right by +1, -1  
         st16 MapUpperRightColumn, MapData
         clc
         add16 MapUpperRightColumn, #17
+
         ; Initialize the hardware scroll registers
         st16 HWScrollLowerLeftRow, $2340
+        decColumn HWScrollLowerLeftRow
+        decColumn HWScrollLowerLeftRow
+
+        decRow HWScrollLowerLeftRow
+
+
         st16 HWScrollUpperLeftRow, $2000
         decRow HWScrollUpperLeftRow
-        decRow HWScrollUpperLeftRow
+        decColumn HWScrollUpperLeftRow
+        decColumn HWScrollUpperLeftRow
 
         st16 HWScrollUpperLeftColumn, $241E
         st16 HWScrollUpperRightColumn, $2402
+
         ; done?
+        lda #15
+        sta MapXOffset
+        lda #0
+        sta MapYOffset
 
 
         ; of course not; initialize attribute stuffs
@@ -690,7 +707,7 @@ skip:
         ; bytes remaining + 2
         lda MapXOffset
         clc
-        adc #2
+        adc #4
         ; edge case: do we have more than 16 tiles to go?
         cmp #17 ; >= 17
         bcc last_segment_prep
@@ -719,7 +736,7 @@ middle_segment:
         ; now prepare R2 for the last segment
         lda MapXOffset
         sec
-        sbc #14
+        sbc #12
         sta R2
         jmp last_segment
 
@@ -727,7 +744,7 @@ last_segment_prep:
         ; bytes remaining
         lda MapXOffset
         clc
-        adc #2
+        adc #4
         sta R2
 last_segment:
         ; Same as above; if we drew a middle segment, we are now again on our
@@ -755,6 +772,11 @@ last_segment:
         sbc MapYOffset
         sta R2
 
+        lda MapYOffset
+        bne no_fix
+        dec R2 ; never draw more than 13 tiles in a single run
+no_fix:
+
         asl R2
         write_vram_header_ptr starting_hw_address, R2, VRAM_INC_32
         ror R2
@@ -772,7 +794,11 @@ last_segment:
 
         ; bytes remaining
         lda MapYOffset
+        sec
+        sbc #1
         beq skip
+        bmi skip
+
         sta R2
 
         asl R2
