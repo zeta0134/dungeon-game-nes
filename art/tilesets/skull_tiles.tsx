@@ -55,7 +55,7 @@
  <tile id="17" type="0">
   <image width="16" height="16" source="../tiles/solid_index_0.png"/>
  </tile>
- <tile id="18" type="128">
+ <tile id="18" type="0">
   <image width="16" height="16" source="../tiles/hole.png"/>
  </tile>
  <tile id="19" type="0">
