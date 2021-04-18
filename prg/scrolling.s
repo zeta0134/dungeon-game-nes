@@ -748,7 +748,7 @@ middle_segment:
         ; now prepare R2 for the last segment
         lda MapXOffset
         sec
-        sbc #6
+        sbc #14
         sta R2
         jmp last_segment
 
@@ -816,31 +816,68 @@ skip:
 .macro split_attribute_row_across_nametables starting_hw_address, drawing_function
         lda starting_hw_address
         sta R2
+        sta VRAM_SCRATCH
         lda starting_hw_address+1
         sta R2+1
+        sta VRAM_SCRATCH+1
 
-        ; left half
+        ; first (leftmost) segment
         lda #8
         sec
         sbc AttributeXOffset
         sta R4
 
         jsr drawing_function
-        ; the right half needs to massage the target address; it should
+
+        ; bytes remaining + 2
+        lda AttributeXOffset
+        clc
+        adc #2
+        ; edge case: do we have more than 8 attribute bytes to go?
+        cmp #8
+        bcc last_segment_prep
+middle_segment:
+        ; the middle segment must draw no more than 8 tiles
+        lda #8
+        sta R4
+
+        ; here we need to massage the target address; it should
         ; switch nametables, and start at the left-most tile, but keep
         ; the same Y coordinate
-        lda starting_hw_address+1 ; ppuaddr high byte
+        lda VRAM_SCRATCH+1 ; ppuaddr high byte
+        eor #%00000100 ; swap nametables
+        sta VRAM_SCRATCH+1
+        sta R2+1
+
+        lda VRAM_SCRATCH ; ppuaddr low byte
+        and #%11111000 ; set X component to 0
+        sta VRAM_SCRATCH
+        sta R2
+
+        jsr drawing_function
+
+        ; now prepare R4 for the last segment
+        lda AttributeXOffset
+        sec
+        sbc #6
+        sta R4
+        jmp last_segment
+
+last_segment_prep:
+        lda AttributeXOffset
+        clc
+        adc #2
+        sta R4
+last_segment:
+        ; Same as above; if we drew a middle segment, we are now again on our
+        ; *original* nametable, on the left side
+        lda VRAM_SCRATCH+1 ; ppuaddr high byte
         eor #%00000100 ; swap nametables
         sta R2+1
 
-        lda starting_hw_address ; ppuaddr low byte
+        lda VRAM_SCRATCH ; ppuaddr low byte
         and #%11111000 ; set X component to 0
         sta R2
-
-        ; bytes remaining
-        lda AttributeXOffset
-        adc #1
-        sta R4
 
         jsr drawing_function
 .endmacro
