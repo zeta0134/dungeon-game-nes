@@ -10,6 +10,9 @@ MMC3_IRQ_RELOAD  = $C001
 MMC3_IRQ_DISABLE = $E000
 MMC3_IRQ_ENABLE  = $E001
 
+; project global
+MMC3_BANKING_MODE = $10
+
 .import initialize_mmc3
 
 .endif

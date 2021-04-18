@@ -15,6 +15,7 @@
         .include "blobby.inc"
         .include "statusbar.inc"
         .include "vram_buffer.inc"
+        .include "far_call.inc"
 
 .scope PRGLAST_E000
         .export start
@@ -170,8 +171,7 @@ start:
         jsr clear_memory
         st16 R0, ($0200)
         st16 R2, ($0600)
-        jsr clear_memory        
-
+        jsr clear_memory
 
         jsr initialize_mmc3
         jsr initialize_palettes
