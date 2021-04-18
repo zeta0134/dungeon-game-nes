@@ -1024,30 +1024,32 @@ no_positive_y_wrap:
         jne lower_edge_lower_row
 lower_edge_upper_row:
         split_row_across_nametables HWScrollLowerLeftRow, draw_upper_half_row
-        ; The map index doesn't change, so we update *only* the row registers here
-        ; We need to leave the columns alone until we cross a metatile boundary
-        jsr shift_hwrows_down
-        jmp done
-lower_edge_lower_row:
-        split_row_across_nametables HWScrollLowerLeftRow, draw_lower_half_row
-        clc
-        add16 MapUpperRightColumn, MapWidth
-        add16 MapUpperLeftColumn, MapWidth
-        add16 MapUpperLeftRow, MapWidth
-        add16 MapLowerLeftRow, MapWidth
-        ; Increment MapYOffset with wrap around
-        inc MapYOffset
-        lda #14
-        cmp MapYOffset
-        bne shift_registers_down
-        lda #0
-        sta MapYOffset
-shift_registers_down:
-        ; Finish shifting hwrows down to the next metatile
+        
         jsr shift_hwrows_down
         ; Shift columns down *twice* to advance a complete metatile
         jsr shift_hwcolumns_down
         jsr shift_hwcolumns_down
+        clc
+        add16 MapUpperRightColumn, MapWidth
+        add16 MapUpperLeftColumn, MapWidth
+        ; Increment MapYOffset with wrap around
+        inc MapYOffset
+        lda #14
+        cmp MapYOffset
+        jne done
+        lda #0
+        sta MapYOffset
+
+        jmp done
+lower_edge_lower_row:
+        split_row_across_nametables HWScrollLowerLeftRow, draw_lower_half_row
+        clc
+        add16 MapUpperLeftRow, MapWidth
+        add16 MapLowerLeftRow, MapWidth
+        ; Finish shifting hwrows down to the next metatile
+        ; (We need to leave the columns alone until we cross a metatile boundary)
+        jsr shift_hwrows_down
+        
 done:
         rts
 .endproc
@@ -1090,28 +1092,28 @@ no_negative_y_wrap:
         jeq upper_edge_upper_row
 upper_edge_lower_row:
         split_row_across_nametables HWScrollUpperLeftRow, draw_lower_half_row
-        ; The map index doesn't change, so we update *only* the row registers here
-        ; We need to leave the columns alone until we cross a metatile boundary
-        jsr shift_hwrows_up
-        jmp done
-upper_edge_upper_row:
-        split_row_across_nametables HWScrollUpperLeftRow, draw_upper_half_row
-        sec
-        sub16 MapUpperRightColumn, MapWidth
-        sub16 MapUpperLeftColumn, MapWidth
-        sub16 MapUpperLeftRow, MapWidth
-        sub16 MapLowerLeftRow, MapWidth
-        ; Decrement MapYOffset with wraparound
-        dec MapYOffset
-        bpl shift_registers_up
-        lda #13
-        sta MapYOffset
-shift_registers_up:
-        ; Finish shifting hwrows up to the next metatile
         jsr shift_hwrows_up
         ; Shift columns up *twice* to advance a complete metatile
         jsr shift_hwcolumns_up
         jsr shift_hwcolumns_up
+        sec
+        sub16 MapUpperRightColumn, MapWidth
+        sub16 MapUpperLeftColumn, MapWidth
+        ; Decrement MapYOffset with wraparound
+        dec MapYOffset
+        jpl done
+        lda #13
+        sta MapYOffset
+
+        jmp done
+upper_edge_upper_row:
+        split_row_across_nametables HWScrollUpperLeftRow, draw_upper_half_row
+        sec
+        sub16 MapUpperLeftRow, MapWidth
+        sub16 MapLowerLeftRow, MapWidth
+        ; Finish shifting hwrows up to the next metatile
+        ; (We need to leave the columns alone until we cross a metatile boundary)
+        jsr shift_hwrows_up
 done:
         rts
 .endproc
