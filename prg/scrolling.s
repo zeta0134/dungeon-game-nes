@@ -418,14 +418,14 @@ height_loop:
         sec
         sub16 AttributeLowerLeftRow, #1
         clc
-        add16 AttributeLowerLeftRow, #(32*6)
+        add16 AttributeLowerLeftRow, #(32*7)
         st16 AttributeUpperRightColumn, AttributeData
         clc
         add16 AttributeUpperRightColumn, #9
 
         st16 HWAttributeUpperLeftRow, $27C7
         st16 HWAttributeUpperLeftColumn, $27C7
-        st16 HWAttributeLowerLeftRow, $27F7
+        st16 HWAttributeLowerLeftRow, $27C7
         st16 HWAttributeUpperRightColumn, $27C1
 
         lda #7
