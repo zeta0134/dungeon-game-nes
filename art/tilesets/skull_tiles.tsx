@@ -55,7 +55,7 @@
  <tile id="17" type="0">
   <image width="16" height="16" source="../tiles/solid_index_0.png"/>
  </tile>
- <tile id="18" type="0">
+ <tile id="18" type="128">
   <image width="16" height="16" source="../tiles/hole.png"/>
  </tile>
  <tile id="19" type="0">
@@ -70,40 +70,40 @@
  <tile id="22" type="0">
   <image width="16" height="16" source="../tiles/solid_index_1.png"/>
  </tile>
- <tile id="23">
+ <tile id="23" type="128">
   <image width="16" height="16" source="../tiles/bricks_inner_bl_warm.png"/>
  </tile>
- <tile id="24">
+ <tile id="24" type="128">
   <image width="16" height="16" source="../tiles/bricks_inner_br_warm.png"/>
  </tile>
- <tile id="25">
+ <tile id="25" type="128">
   <image width="16" height="16" source="../tiles/bricks_inner_tl_warm.png"/>
  </tile>
- <tile id="26">
+ <tile id="26" type="128">
   <image width="16" height="16" source="../tiles/bricks_inner_tr_warm.png"/>
  </tile>
- <tile id="27">
+ <tile id="27" type="128">
   <image width="16" height="16" source="../tiles/bricks_outer_bl_warm.png"/>
  </tile>
- <tile id="28">
+ <tile id="28" type="128">
   <image width="16" height="16" source="../tiles/bricks_outer_bm_warm.png"/>
  </tile>
- <tile id="29">
+ <tile id="29" type="128">
   <image width="16" height="16" source="../tiles/bricks_outer_br_warm.png"/>
  </tile>
- <tile id="30">
+ <tile id="30" type="128">
   <image width="16" height="16" source="../tiles/bricks_outer_mr_warm.png"/>
  </tile>
- <tile id="31">
+ <tile id="31" type="128">
   <image width="16" height="16" source="../tiles/bricks_outer_tl_warm.png"/>
  </tile>
- <tile id="32">
+ <tile id="32" type="128">
   <image width="16" height="16" source="../tiles/bricks_outer_tm_warm.png"/>
  </tile>
- <tile id="33">
+ <tile id="33" type="128">
   <image width="16" height="16" source="../tiles/bricks_outer_tr_warm.png"/>
  </tile>
- <tile id="34">
+ <tile id="34" type="128">
   <image width="16" height="16" source="../tiles/bricks_outter_ml_warm.png"/>
  </tile>
 </tileset>
