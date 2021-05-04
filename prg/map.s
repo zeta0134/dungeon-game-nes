@@ -3,8 +3,8 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
-.scope PRGLAST_C000
-        .segment "PRGLAST_C000"
+.scope PRGLAST_E000
+        .segment "PRGLAST_E000"
         ;.org $e000
 
 .export load_map, load_tileset
