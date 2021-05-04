@@ -143,12 +143,12 @@ start:
         st16 R0, (test_tileset+256)
         jsr load_tileset_attributes
         
-        jsr init_map
-        jsr init_attributes
+        far_call FAR_init_map
+        far_call FAR_init_attributes
         jsr install_irq_handler
 
         ; render the initial viewport before we turn on graphics
-        jsr render_initial_viewport
+        far_call FAR_render_initial_viewport
 
         ; init the statusarea to something not stupid
         jsr demo_init_statusbar
@@ -187,7 +187,7 @@ gameloop:
         debug_color TINT_B | TINT_G
         jsr draw_metasprites
         debug_color TINT_R
-        jsr scroll_camera
+        far_call FAR_scroll_camera
         debug_color 0 ; disable debug colors
 
         dec TestBlobbyDelay

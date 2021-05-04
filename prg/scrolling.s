@@ -9,7 +9,7 @@
         .include "zeropage.inc"
         .include "debug.inc"
 
-.scope PRGLAST_C000
+.scope PRG1_A000
         .segment "PRGRAM"
 MapData: .res 4096
 AttributeData: .res 1024
@@ -56,10 +56,9 @@ CameraYTileTarget: .byte $00
 CameraYScrollTarget: .byte $00
 PpuYTileTarget: .byte $00
 
-        .segment "PRGLAST_C000"
-        ;.org $e000
+        .segment "PRG1_A000"
 
-.export init_map, init_attributes, scroll_camera, render_initial_viewport
+.export FAR_init_map, FAR_init_attributes, FAR_scroll_camera, FAR_render_initial_viewport
 
 .macro incColumn addr
 .scope
@@ -278,7 +277,7 @@ done:
 
 ; Initializes the scroll registers for the currently loaded map
 
-.proc init_map
+.proc FAR_init_map
         ; upper left should be off the top of the map by -1. The camera won't ever
         ; scroll that far, but it sets it up to be in the right spot once it scrolls
         ; down / right
@@ -368,7 +367,7 @@ height_loop:
 ; Note: This is slow, but doesn't touch PPU registers, so it's safe to
 ; let it run through several frames if needed
 
-.proc init_attributes
+.proc FAR_init_attributes
 UpperRowPtr := R0
 LowerRowPtr := R2
 AttributeTablePtr := R4
@@ -952,7 +951,7 @@ last_segment:
 ;   This routine will flush the VRAM buffer to perform drawing.
 ;   Anything queued up for PPU writing will be written immediately.
 
-.proc render_initial_viewport
+.proc FAR_render_initial_viewport
 RowCounter := R5
         lda #13
         sta RowCounter
@@ -1260,7 +1259,7 @@ done:
         rts
 .endproc
 
-.proc scroll_camera
+.proc FAR_scroll_camera
         ; did we move up or down?
         ; perform a 16-bit compare between target - current, and throw the result away
         lda CameraYTileCurrent
