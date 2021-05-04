@@ -2,7 +2,7 @@
 
 .include "input.inc"
 .include "memory_util.inc"
-.include "scrolling.inc"
+.include "scrolling_irq.inc"
 .include "vram_buffer.inc"
 
 .scope PRGLAST_E000
