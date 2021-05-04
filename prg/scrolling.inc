@@ -6,6 +6,6 @@
 .import scroll_camera
 .import install_irq_handler
 .import render_initial_viewport
-.import MapData
-.importzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget, MapWidth, MapHeight, PpuYTileTarget
+.import MapData, AttributeData, TilesetData
+.importzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget, MapWidth, MapHeight, AttributeWidth, PpuYTileTarget
 

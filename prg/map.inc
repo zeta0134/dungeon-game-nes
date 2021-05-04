@@ -1,0 +1,1 @@
+.import load_map, load_tileset
