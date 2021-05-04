@@ -11,7 +11,7 @@ DesiredX: .word $0000
 DesiredY: .word $0000
         .segment "PRG0_A000"
 
-.export update_camera
+.export FAR_update_camera
 
 .proc find_desired_follow_camera
         ; start with the position of the entity in slot #0
@@ -247,7 +247,7 @@ done_with_y:
         rts
 .endproc
 
-.proc update_camera
+.proc FAR_update_camera
         jsr find_desired_follow_camera
         jsr clamp_to_map_edges
         jsr lerp_target_to_desired

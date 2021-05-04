@@ -1,5 +1,5 @@
         .setcpu "6502"
-        
+
         .include "blobby.inc"
         .include "camera.inc"
         .include "collision.inc"
@@ -179,8 +179,7 @@ start:
 
 gameloop:
         debug_color LIGHTGRAY
-        ;jsr demo_scroll_camera
-        far_call update_camera
+        far_call FAR_update_camera
         debug_color TINT_R | TINT_G
         jsr update_entities
         debug_color TINT_B
