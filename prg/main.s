@@ -7,6 +7,7 @@
         .include "memory_util.inc"
         .include "ppu.inc"
         .include "scrolling.inc"
+        .include "scrolling_irq.inc"
         .include "sprites.inc"
         .include "entity.inc"
         .include "word_util.inc"

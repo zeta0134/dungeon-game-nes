@@ -7,5 +7,5 @@
 .import install_irq_handler
 .import render_initial_viewport
 .import MapData
-.importzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget, MapWidth, MapHeight
+.importzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget, MapWidth, MapHeight, PpuYTileTarget
 
