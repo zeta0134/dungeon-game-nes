@@ -5,12 +5,12 @@
         .include "ppu.inc"
         .include "zeropage.inc"
 
-.scope PRGLAST_C000
+.scope PRGLAST_E000
         .zeropage
 ; IRQ variable to assist with screen split
 SplitScanlinesToStatus: .byte $00
 
-        .segment "PRGLAST_C000"
+        .segment "PRGLAST_E000"
         ;.org $e000
 
 .export set_scroll_for_frame, install_irq_handler
