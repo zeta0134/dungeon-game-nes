@@ -6,6 +6,8 @@
 .include "vram_buffer.inc"
 
 .scope PRGLAST_E000
+        .segment "PRGRAM"
+
         .segment "PRGLAST_E000"
 
 .macro spinwait_for_vblank
@@ -34,7 +36,7 @@ reset:
         ; Jump to main
         jmp start
 
-        .importzp FrameCounter
+        .importzp GameloopCounter, LastNmi
 nmi:
         ; preserve registers
         pha
@@ -42,11 +44,17 @@ nmi:
         pha
         tya
         pha
-        ; perform sprite OAM
+
+        ; always update sprite OAM right away
         lda #$00
         sta OAMADDR
         lda #$02
         sta OAM_DMA
+
+        lda GameloopCounter
+        cmp LastNmi
+        beq lag_frame
+
 
         ; ===========================================================
         ; Tasks which should be guarded by a successful gameloop
@@ -59,8 +67,10 @@ nmi:
         ; Read controller registers and update button status
         jsr poll_input
         ; This signals to the gameloop that it may continue
-        inc FrameCounter
+        lda GameloopCounter
+        sta LastNmi
 
+lag_frame:
         ; ===========================================================
         ; Tasks which MUST be performed every frame
         ;   - Mostly IRQ setup here, if we miss doing this the render

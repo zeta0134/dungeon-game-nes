@@ -23,7 +23,7 @@
 
 .scope PRGLAST_E000
         .export start
-        .importzp FrameCounter, CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget
+        .importzp GameloopCounter, LastNmi, CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget
         .zeropage
 TestBlobbyDelay: .byte $00
 
@@ -157,7 +157,8 @@ start:
         set_ppuaddr #$2000
 
         lda #$00
-        sta FrameCounter
+        sta GameloopCounter
+        sta LastNmi
         lda #$20
         sta TestBlobbyDelay
 
@@ -203,10 +204,11 @@ gameloop:
         sta $0209
         sta $020D        
 wait_for_next_vblank:
-        lda FrameCounter
+        inc GameloopCounter
 @loop:
-        cmp FrameCounter
-        beq @loop
+        lda LastNmi
+        cmp GameloopCounter
+        bne @loop
         jmp gameloop
 
 .endscope
