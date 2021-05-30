@@ -48,17 +48,31 @@ nmi:
         lda #$02
         sta OAM_DMA
 
-        ; Tasks dependent on PPU not rendering
+        ; ===========================================================
+        ; Tasks which should be guarded by a successful gameloop
+        ;   - Running these twice (or in the middle of the gameloop)
+        ;     could break things
+        ; ===========================================================
+
+        ; Copy buffered PPU bytes into PPU address space, as quickly as possible
         jsr vram_zipper
-
-        ; Cleanup PPU tasks, set registers for next frame
-        jsr set_scroll_for_frame
-
-        ; Other tasks that should run once per frame with consistent-ish timing
+        ; Read controller registers and update button status
         jsr poll_input
-        
         ; This signals to the gameloop that it may continue
         inc FrameCounter
+
+        ; ===========================================================
+        ; Tasks which MUST be performed every frame
+        ;   - Mostly IRQ setup here, if we miss doing this the render
+        ;     will glitch pretty badly
+        ; ===========================================================
+
+        ; Set PPUSCROLL and also configure IRQ for screen split
+        jsr set_scroll_for_frame
+
+        ; todo: we might wish to update the audio engine here? That way music
+        ; continues to play at the proper speed even if the game lags, ie, we
+        ; trade potentially worse lag for maintaining the tempo
 
         ; restore registers
         pla
