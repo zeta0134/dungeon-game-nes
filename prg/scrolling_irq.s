@@ -67,6 +67,15 @@ loop:
         sta irq_cleanup_handler - base_irq_handler + MY_IRQ_HANDLER_THAT_SCARES_SMALL_CHILDREN + 2
 .endmacro
 
+.macro wait_for_sprite_zero_to_clear
+.scope
+        ;lda #%01000000
+;keep_waiting:
+        ;bit PPUSTATUS
+        ;bne keep_waiting
+.endscope
+.endmacro
+
 ; Based on the target hardware scroll position, write the appropriate PPU registers
 ; in advance of the next frame to draw. Typically meant to be called once at the tail
 ; end of NMI, but could potentially be useful for mid-frame shenanigans.
@@ -141,10 +150,7 @@ _single_scanline_spinwait_split:
 enable_rendering:
         lda #$1E
         sta PPUMASK
-        lda #%01000000
-wait_for_sprite_zero_to_clear:
-        bit PPUSTATUS
-        bne wait_for_sprite_zero_to_clear
+        wait_for_sprite_zero_to_clear
 reload_mmc3_irq:
         sta MMC3_IRQ_RELOAD
         sta MMC3_IRQ_DISABLE
@@ -176,10 +182,7 @@ reload_mmc3_irq:
 enable_rendering:
         lda #$1E
         sta PPUMASK
-        lda #%01000000
-wait_for_sprite_zero_to_clear:
-        bit PPUSTATUS
-        bne wait_for_sprite_zero_to_clear
+        wait_for_sprite_zero_to_clear
 reload_mmc3_irq:
         sta MMC3_IRQ_RELOAD
         sta MMC3_IRQ_DISABLE
@@ -219,10 +222,7 @@ reload_mmc3_irq:
 enable_rendering:
         lda #$1E
         sta PPUMASK
-        lda #%01000000
-wait_for_sprite_zero_to_clear:
-        bit PPUSTATUS
-        bne wait_for_sprite_zero_to_clear
+        wait_for_sprite_zero_to_clear
 reload_mmc3_irq:
         sta MMC3_IRQ_RELOAD
         sta MMC3_IRQ_DISABLE
@@ -265,10 +265,7 @@ reload_mmc3_irq:
 enable_rendering:
         lda #$1E
         sta PPUMASK
-        lda #%01000000
-wait_for_sprite_zero_to_clear:
-        bit PPUSTATUS
-        bne wait_for_sprite_zero_to_clear
+        wait_for_sprite_zero_to_clear
 reload_mmc3_irq:
         sta MMC3_IRQ_RELOAD
         sta MMC3_IRQ_DISABLE
