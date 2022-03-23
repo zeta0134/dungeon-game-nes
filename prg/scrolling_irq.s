@@ -82,6 +82,14 @@ loop:
 ; Clobbers: R0
 
 .proc set_scroll_for_frame
+        ; clear PPUADDR to $2000 before we begin; this ensures the value for A12 is locked into place *before* we go
+        ; mucking around with IRQ enablement later
+        lda PPUSTATUS
+        lda #$20
+        sta PPUADDR
+        lda #$00
+        sta PPUADDR
+        
         ; First, set the nametable based on the 6th bit of the X tile position
         lda #%00100000
         bit CameraXTileTarget
@@ -96,13 +104,6 @@ left_nametable:
 done_with_nametables:
         ; Reset PPU write latch
         lda PPUSTATUS
-        ; clear PPUADDR to $2000 before we begin; this ensures the value for A12 is locked into place *before* we go
-        ; mucking around with IRQ enablement later
-        lda PPUSTATUS
-        lda #$20
-        sta PPUADDR
-        lda #$00
-        sta PPUADDR
         ; now set the scroll properly, using the camera's position
         lda CameraXScrollTarget
         sta R0
