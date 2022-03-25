@@ -36,6 +36,8 @@ irq_table_chr0_bank: .res IRQ_TABLE_SIZE
 
         .segment "PRGLAST_E000"
 
+.align 32
+
 ; Credit: @PinoBatch, https://github.com/pinobatch
 ; Technically burns 12.664 cycles on average, which is
 ; good enough for our purposes here, we have a fairly generous

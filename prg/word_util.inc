@@ -143,4 +143,27 @@ positive:
         sta addr+1
 .endmacro
 
+.macro cmp16 op_a, op_b
+.if (.match (.left (1, {op_a}), #))
+        lda #>(.right (.tcount ({op_a})-1, {op_a}))
+        cmp op_b+1
+        bne done
+        lda #<(.right (.tcount ({op_a})-1, {op_a}))
+        cmp op_b
+.elseif (.match (.left (1, {op_b}), #))
+        lda op_a+1
+        cmp #>(.right (.tcount ({op_b})-1, {op_b}))
+        bne done
+        lda op_a
+        cmp #<(.right (.tcount ({op_b})-1, {op_b}))
+.else
+        lda op_a+1
+        cmp op_b+1
+        bne done
+        lda op_a
+        cmp op_b
+.endif
+done:
+.endmacro
+
 .endif

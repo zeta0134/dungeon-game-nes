@@ -11,6 +11,9 @@
 
         .segment "PRGLAST_E000"
 
+; in pixels from the top of the nametable
+SCROLL_SEAM = 224
+
 ; Side note: the initial blank 8px region is configured globally for the project. 
 ; Each generator here is concerned with the very first *visible* split.
 
@@ -21,6 +24,17 @@
 .export generate_basic_playfield
 .proc generate_basic_playfield
 IrqGenerationIndex = R0
+ScratchWord = R1
+; DEBUG: lock the playfield height here to 192. Eventually to support the dialog
+; system, we'll want this to be a parameter instead of an immediate.
+PlayfieldHeight = 192
+; DEBUG: fix the CHR0 bank to $0 for the playfield. Later we'll want this to
+; be configurable as a generator argument
+ChrBank = 0
+; In theory we could allow making this a parameter as well, so the basic generator
+; gains access to screen tinting abilities affecting the whole playfield. Might be
+; useful for magic effects.
+PpuMaskSetting = $1E
         ldx IrqGenerationIndex
         ; First, set the nametable based on the 6th bit of the X tile position
         lda #%00100000
@@ -29,13 +43,13 @@ IrqGenerationIndex = R0
 right_nametable:
         ;lda #(VBLANK_NMI | OBJ_1000 | BG_0000 | NT_2400)
         ;sta PPUCTRL
-        lda #%01
+        lda #%0100
         sta irq_table_nametable_high, x
         jmp done_with_nametables
 left_nametable:
         ;lda #(VBLANK_NMI | OBJ_1000 | BG_0000 | NT_2000)
         ;sta PPUCTRL
-        lda #%00
+        lda #%0000
         sta irq_table_nametable_high, x
 done_with_nametables:
         ; now set the scroll properly, using the camera's position
@@ -60,21 +74,66 @@ done_with_nametables:
         .endrep
         ;sta PPUSCROLL
         sta irq_table_scroll_y, x
+        ; we'll use this for scanline calculations in a moment
+        sta ScratchWord
 
         ; This is a normal playfield, so use standard PPUMASK
-        lda #$1E
+        lda #PpuMaskSetting
         sta irq_table_ppumask, x
-        ; DEBUG: use all 255 scanlines, so this becomes our final entry in the table
-        lda #$FF
-        sta irq_table_scanlines, x
-        ; DEBUG: fix the CHR0 bank to $0 for the playfield. Later we'll want this to
-        ; be configurable as a generator argument
-        lda #0
+        lda #ChrBank
         sta irq_table_chr0_bank, x
 
-        ; TODO: Split the playfield over the HUD region
+        ; Okay now for the split.
+        ; Determine the Y coordinate of the bottom of the playfield, based on the Y scroll position we saved earlier
+        lda #0
+        sta ScratchWord+1
+        clc
+        add16 ScratchWord, #PlayfieldHeight
+        ; If this would exceed the scroll seam...
+        cmp16 #SCROLL_SEAM, ScratchWord
+        bcc hud_split
+single_split:
+        ; There is no need to generate a second split. Finalize this one with the full
+        ; playfield height and bail
+        lda #PlayfieldHeight
+        sta irq_table_scanlines, x
         inc IrqGenerationIndex
-
-        ; Done for now?
+        rts
+hud_split:
+        ; First compute the number of pixels by which we have exceeded the SCROLL_SEAM
+        sec
+        sub16 ScratchWord, #SCROLL_SEAM
+        ; Scratch word now contains the height of our *second* split. The height of the
+        ; first is the size of our playfield minus this height
+        lda #PlayfieldHeight
+        sec
+        sbc ScratchWord ; if we somehow have nonzero in the high byte at this point
+                        ; then something has gone terribly, terribly wrong
+        sta irq_table_scanlines, x
+        inc IrqGenerationIndex
+        ; Now set up the second split point. We'll use the same X coordinate as before,
+        ; but set the Y coordinate to 0
+        ; note: x still points to our old value, which is convenient
+        lda irq_table_scroll_x, x
+        inx
+        sta irq_table_scroll_x, x
+        ; we need the old nametable too
+        dex
+        lda irq_table_nametable_high, x
+        inx
+        sta irq_table_nametable_high, x 
+        lda #0
+        sta irq_table_scroll_y, x
+        ; ppumask and chr are the same as before
+        lda #PpuMaskSetting
+        sta irq_table_ppumask, x
+        lda #ChrBank
+        sta irq_table_chr0_bank, x
+        ; finally, the size of the second split is the lower byte of ScratchWord
+        lda ScratchWord
+        sta irq_table_scanlines, x
+        ; and we're done with the second split
+        inc IrqGenerationIndex
         rts
 .endproc
+
