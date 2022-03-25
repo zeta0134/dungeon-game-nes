@@ -194,6 +194,7 @@ gameloop:
         lda inactive_irq_index
         sta R0
         jsr generate_basic_playfield
+        jsr generate_standard_hud
         jsr swap_irq_buffers
 
         dec TestBlobbyDelay

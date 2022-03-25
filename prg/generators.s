@@ -11,8 +11,11 @@
 
         .segment "PRGLAST_E000"
 
-; in pixels from the top of the nametable
-SCROLL_SEAM = 224
+; various useful constants
+SCROLL_SEAM = 224 ; in pixels from the top of the nametable
+LEFT_NAMETABLE = %0000
+RIGHT_NAMETABLE = %0100
+HUD_BANK = 0
 
 ; Side note: the initial blank 8px region is configured globally for the project. 
 ; Each generator here is concerned with the very first *visible* split.
@@ -23,14 +26,15 @@ SCROLL_SEAM = 224
 
 .export generate_basic_playfield
 .proc generate_basic_playfield
-IrqGenerationIndex = R0
-ScratchWord = R1
+IrqGenerationIndex := R0
+ScratchWord := R1
+ScratchByte := R3
 ; DEBUG: lock the playfield height here to 192. Eventually to support the dialog
 ; system, we'll want this to be a parameter instead of an immediate.
-PlayfieldHeight = 192
+PlayfieldHeight := 192
 ; DEBUG: fix the CHR0 bank to $0 for the playfield. Later we'll want this to
 ; be configurable as a generator argument
-ChrBank = 0
+ChrBank := 0
 ; In theory we could allow making this a parameter as well, so the basic generator
 ; gains access to screen tinting abilities affecting the whole playfield. Might be
 ; useful for magic effects.
@@ -43,21 +47,21 @@ PpuMaskSetting = $1E
 right_nametable:
         ;lda #(VBLANK_NMI | OBJ_1000 | BG_0000 | NT_2400)
         ;sta PPUCTRL
-        lda #%0100
+        lda #RIGHT_NAMETABLE
         sta irq_table_nametable_high, x
         jmp done_with_nametables
 left_nametable:
         ;lda #(VBLANK_NMI | OBJ_1000 | BG_0000 | NT_2000)
         ;sta PPUCTRL
-        lda #%0000
+        lda #LEFT_NAMETABLE
         sta irq_table_nametable_high, x
 done_with_nametables:
         ; now set the scroll properly, using the camera's position
         lda CameraXScrollTarget
-        sta R0
+        sta ScratchByte
         lda CameraXTileTarget
         .repeat 3
-        rol R0
+        rol ScratchByte
         rol a
         .endrep
         ; a now contains low 5 bits of scroll tile, and upper 3 bits of sub-tile scroll
@@ -66,10 +70,10 @@ done_with_nametables:
         sta irq_table_scroll_x, x
         ; now do the same for Y scroll
         lda CameraYScrollTarget
-        sta R0
+        sta ScratchByte
         lda PpuYTileTarget
         .repeat 3
-        rol R0
+        rol ScratchByte
         rol a
         .endrep
         ;sta PPUSCROLL
@@ -137,3 +141,56 @@ hud_split:
         rts
 .endproc
 
+.export generate_standard_hud
+.proc generate_standard_hud
+IrqGenerationIndex := R0
+        ldx IrqGenerationIndex
+        ; the standard HUD consists of two simple splits, showing the bottom-most metatile
+        ; in each nametable, left to right.
+        lda #0
+        sta irq_table_scroll_x, x
+        lda #224
+        sta irq_table_scroll_y, x
+        lda #LEFT_NAMETABLE
+        sta irq_table_nametable_high, x
+        lda #HUD_BANK
+        sta irq_table_chr0_bank, x
+        ; the HUD should not show sprites in the first 16px, which is the entire first segment
+        lda #(BG_ON)
+        sta irq_table_ppumask, x
+        lda #16
+        sta irq_table_scanlines, x
+        inc IrqGenerationIndex
+        inx
+        ; now do it all again for the second segment
+        lda #0
+        sta irq_table_scroll_x, x
+        lda #224
+        sta irq_table_scroll_y, x
+        lda #RIGHT_NAMETABLE
+        sta irq_table_nametable_high, x
+        lda #HUD_BANK
+        sta irq_table_chr0_bank, x
+        lda #(BG_ON)
+        sta irq_table_ppumask, x
+        lda #16
+        sta irq_table_scanlines, x
+        inc IrqGenerationIndex
+        inx
+        ; Finally, generate a terminal segment with rendering disabled. This will also stop the
+        ; MMC3 IRQ counter, so no more interrupts will be fired on this frame.
+        ; DEBUG: make this greyscale with red emphasis, so we can see the section
+        lda #(LIGHTGRAY | TINT_R)
+        sta irq_table_ppumask, x
+        lda #$FF
+        sta irq_table_scanlines, x
+        ; Note: these aren't strictly necessary, but we're doing them anyway for debugging purposes
+        lda #0
+        sta irq_table_scroll_x, x
+        sta irq_table_scroll_y, x
+        sta irq_table_nametable_high, x
+        sta irq_table_chr0_bank, x
+        ; Also not strictly necessary, but we should conform to our own guidelines
+        inc IrqGenerationIndex 
+        rts
+.endproc
