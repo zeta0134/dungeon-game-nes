@@ -16,12 +16,12 @@ JumpTarget: .word $0000
         ; preserve the current bank
         lda CurrentBank
         pha
-        ; switch to the target bank
-        lda #(MMC3_BANKING_MODE | 7) ; select bank at 0xA000
-        sta MMC3_BANK_SELECT
+
+        mmc3_select_bank 7, TargetBank
+
         lda TargetBank
-        sta MMC3_BANK_DATA
         sta CurrentBank
+        
         ; setup indirect jump to the far call address
         lda #>(return_from_indirect-1)
         pha

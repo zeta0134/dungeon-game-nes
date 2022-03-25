@@ -1,6 +1,12 @@
+_MMC3_INC := 1
+
         .setcpu "6502"
         .include "mmc3.inc"
         .include "nes.inc"
+
+        .zeropage
+mmc3_bank_select_shadow: .byte $00
+.exportzp mmc3_bank_select_shadow
 
 .scope PRGLAST_E000
         .segment "PRGLAST_E000"
