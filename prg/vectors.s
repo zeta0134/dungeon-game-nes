@@ -2,7 +2,7 @@
 
 .include "input.inc"
 .include "memory_util.inc"
-.include "scrolling_irq.inc"
+.include "scrolling.inc"
 .include "vram_buffer.inc"
 
 .scope PRGLAST_E000
@@ -78,7 +78,7 @@ lag_frame:
         ; ===========================================================
 
         ; Set PPUSCROLL and also configure IRQ for screen split
-        jsr set_scroll_for_frame
+        jsr set_scroll_for_entire_frame
 
         ; todo: we might wish to update the audio engine here? That way music
         ; continues to play at the proper speed even if the game lags, ie, we

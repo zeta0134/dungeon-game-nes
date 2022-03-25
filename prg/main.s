@@ -14,7 +14,6 @@
         .include "nes.inc"
         .include "ppu.inc"
         .include "scrolling.inc"
-        .include "scrolling_irq.inc"
         .include "sprites.inc"
         .include "statusbar.inc"
         .include "vram_buffer.inc"
@@ -145,7 +144,7 @@ start:
         
         far_call FAR_init_map
         far_call FAR_init_attributes
-        jsr install_irq_handler
+        ;jsr install_irq_handler
 
         ; render the initial viewport before we turn on graphics
         far_call FAR_render_initial_viewport

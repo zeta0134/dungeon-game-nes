@@ -3,6 +3,8 @@
 .import FAR_scroll_camera
 .import FAR_render_initial_viewport
 
+.import set_scroll_for_entire_frame
+
 .import MapData, AttributeData, TilesetData
 .importzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget, MapWidth, MapHeight, AttributeWidth, PpuYTileTarget
 
