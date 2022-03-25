@@ -56,7 +56,7 @@ loop:
         set_ppuaddr #$3F00
 
         ; level regions use this greyscale thing
-        lda #$2D
+        lda #$0F
         sta PPUDATA
         lda #$00
         sta PPUDATA
