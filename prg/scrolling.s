@@ -1346,11 +1346,11 @@ done_scrolling:
         bit CameraXTileTarget
         beq left_nametable
 right_nametable:
-        lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | NT_2400)
+        lda #(VBLANK_NMI | OBJ_1000 | BG_0000 | NT_2400)
         sta PPUCTRL
         jmp done_with_nametables
 left_nametable:
-        lda #(VBLANK_NMI | OBJ_0000 | BG_1000 | NT_2000)
+        lda #(VBLANK_NMI | OBJ_1000 | BG_0000 | NT_2000)
         sta PPUCTRL
 done_with_nametables:
         ; Reset PPU write latch
