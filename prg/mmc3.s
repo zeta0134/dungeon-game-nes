@@ -18,46 +18,16 @@ mmc3_bank_select_shadow: .byte $00
         ; Note: the high bits of MMC3_BANK_SELECT determine the mode.
         ; We have this at %10 on purpose, which puts CHR1 in 2k mode,
         ; and leaves both fixed banks at $C000 - $FFFF
-        
-        lda #$82 ; CHR0_A
-        sta MMC3_BANK_SELECT
-        lda #$04
-        sta MMC3_BANK_DATA
 
-        lda #$83 ; CHR0_B
-        sta MMC3_BANK_SELECT
-        lda #$05
-        sta MMC3_BANK_DATA
+        mmc3_select_bank $0, #$00 ; CHR 2K LOW
+        mmc3_select_bank $1, #$02 ; CHR 2K HIGH
+        mmc3_select_bank $2, #$04 ; CHR 1K A
+        mmc3_select_bank $3, #$05 ; CHR 1K B
+        mmc3_select_bank $4, #$06 ; CHR 1K C
+        mmc3_select_bank $5, #$07 ; CHR 1K D
 
-        lda #$84 ; CHR0_C
-        sta MMC3_BANK_SELECT
-        lda #$06
-        sta MMC3_BANK_DATA
-
-        lda #$85 ; CHR0_D
-        sta MMC3_BANK_SELECT
-        lda #$07
-        sta MMC3_BANK_DATA
-
-        lda #$80 ; CHR1_LOW
-        sta MMC3_BANK_SELECT
-        lda #$00
-        sta MMC3_BANK_DATA
-
-        lda #$81 ; CHR1_HIGH
-        sta MMC3_BANK_SELECT
-        lda #$02
-        sta MMC3_BANK_DATA
-
-        lda #$86 ; PRG0
-        sta MMC3_BANK_SELECT
-        lda #$00
-        sta MMC3_BANK_DATA        
-
-        lda #$87 ; PRG1
-        sta MMC3_BANK_SELECT
-        lda #$00
-        sta MMC3_BANK_DATA        
+        mmc3_select_bank $6, #$00 ; PRG0
+        mmc3_select_bank $7, #$00 ; PRG1
 
         ; Mirroring mode: vertical
         lda #$00
