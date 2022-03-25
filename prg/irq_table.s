@@ -36,6 +36,7 @@ irq_table_chr0_bank: .res IRQ_TABLE_SIZE
 
         .segment "PRGLAST_E000"
 
+; tweak this until the branch asserts go away :P
 .align 32
 
 ; Credit: @PinoBatch, https://github.com/pinobatch

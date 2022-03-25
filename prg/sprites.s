@@ -115,6 +115,7 @@ y_positive:
         ; a now contains the modified high byte of the Y position
         ; sanity check: is this sprite onscreen vertically?
         bne skip_oam_entry
+        ; TODO: also skip fragments that are below the HUD line at 192+8px
 draw_oam_fragment:
         ; the low bytes we stashed earlier are the on-screen position for this sprite
         txa ; we need to use x for the index here, so grab our value out of X first thing
@@ -318,6 +319,12 @@ metasprite_loop:
         lda MetaspritePosX+1
         sbc CameraScrollPixelsX+1
         sta MetaspritePosX+1
+
+        ; the Y coordinate must additionally be offset by 8px to account for the
+        ; top segment of the screen, which is blanked
+        ; TODO: If we make this user configurable, we should use that value here
+        clc
+        add16 MetaspritePosY, #8
 
         sec
         lda MetaspritePosY
