@@ -20,11 +20,11 @@ mmc3_bank_select_shadow: .byte $00
         ; and leaves both fixed banks at $C000 - $FFFF
 
         mmc3_select_bank $0, #$00 ; CHR 2K LOW
-        mmc3_select_bank $1, #$02 ; CHR 2K HIGH
-        mmc3_select_bank $2, #$04 ; CHR 1K A
-        mmc3_select_bank $3, #$05 ; CHR 1K B
-        mmc3_select_bank $4, #$06 ; CHR 1K C
-        mmc3_select_bank $5, #$07 ; CHR 1K D
+        mmc3_select_bank $1, #$00 ; CHR 2K HIGH
+        mmc3_select_bank $2, #$0C ; CHR 1K A
+        mmc3_select_bank $3, #$0D ; CHR 1K B
+        mmc3_select_bank $4, #$0E ; CHR 1K C
+        mmc3_select_bank $5, #$0F ; CHR 1K D
 
         mmc3_select_bank $6, #$00 ; PRG0
         mmc3_select_bank $7, #$00 ; PRG1

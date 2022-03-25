@@ -15,7 +15,7 @@
 SCROLL_SEAM = 224 ; in pixels from the top of the nametable
 LEFT_NAMETABLE = %0000
 RIGHT_NAMETABLE = %0100
-HUD_BANK = 0
+HUD_BANK = 2
 
 ; Side note: the initial blank 8px region is configured globally for the project. 
 ; Each generator here is concerned with the very first *visible* split.
@@ -27,14 +27,14 @@ HUD_BANK = 0
 .export generate_basic_playfield
 .proc generate_basic_playfield
 IrqGenerationIndex := R0
-ScratchWord := R1
-ScratchByte := R3
+ChrBank := R1
+ScratchByte := R2
+ScratchWord := R3
 ; DEBUG: lock the playfield height here to 192. Eventually to support the dialog
 ; system, we'll want this to be a parameter instead of an immediate.
 PlayfieldHeight := 192
 ; DEBUG: fix the CHR0 bank to $0 for the playfield. Later we'll want this to
 ; be configurable as a generator argument
-ChrBank := 0
 ; In theory we could allow making this a parameter as well, so the basic generator
 ; gains access to screen tinting abilities affecting the whole playfield. Might be
 ; useful for magic effects.
@@ -179,8 +179,7 @@ IrqGenerationIndex := R0
         inx
         ; Finally, generate a terminal segment with rendering disabled. This will also stop the
         ; MMC3 IRQ counter, so no more interrupts will be fired on this frame.
-        ; DEBUG: make this greyscale with red emphasis, so we can see the section
-        lda #(LIGHTGRAY | TINT_R)
+        lda #0
         sta irq_table_ppumask, x
         lda #$FF
         sta irq_table_scanlines, x

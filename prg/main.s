@@ -191,8 +191,12 @@ gameloop:
         far_call FAR_scroll_camera
         debug_color 0 ; disable debug colors
 
+        ; starting IRQ index for the playfield
         lda inactive_irq_index
         sta R0
+        ; CHR bank to use for BG graphics
+        lda #4
+        sta R1
         jsr generate_basic_playfield
         jsr generate_standard_hud
         jsr swap_irq_buffers

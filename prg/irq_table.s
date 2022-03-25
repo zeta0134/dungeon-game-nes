@@ -111,21 +111,20 @@ loop:
         lda #(VBLANK_NMI | OBJ_1000 | BG_0000)
         sta PPUCTRL
 
-        ; EVENTUALLY we want PPUMASK here to hide sprites, show backgrounds,
-        ; and switch to a completely blank CHR bank. We need to leave rendering
-        ; enabled so that MMC3 continues to count scanlines.
-        ; FOR NOW, we will instead enable everything and turn on greyscale and
-        ; a red tint. (Note that we are also about to lose debug colors. So sad.)
-        lda #(OBJ_ON | BG_ON | LIGHTGRAY | TINT_R)
+        ; PPUMASK should hide sprites, but we need to display backgrounds otherwise MMC3's
+        ; IRQ counter braks. To facilitate this, we'll display the HUD row again here, but
+        ; with a completely empty CHR bank loaded instead of the usual HUD tiles
+        lda #(BG_ON)
         sta PPUMASK
 
-        ; EVENTUALLY we want to use the HUD for the top 8px, since its tiles will
-        ; exclusively use the switchable CHR bank that our IRQ table can control.
-        ; FOR NOW, just set this to 0,0. (We don't have the pattern data set up yet
-        ; to support the trickery.) This should show some of the playfield graphics
-        ; in a greyscale + red tinge for debugging.
+        ; Switch the blank bank in instead of the HUD graphics, guaranteeing that the
+        ; top 8px will draw the background color and nothing else:
+        mmc3_select_bank $0, #$00
+
+        ; Now scroll to the HUD region for this first segment
         lda #$00
         sta PPUSCROLL ; x
+        lda #224
         sta PPUSCROLL ; y
 
         ; reset the irq table

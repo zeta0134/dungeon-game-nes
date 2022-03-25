@@ -7,16 +7,27 @@
 
 .export demo_init_statusbar
 
-BLANK = 128
-FILL = 129
-BORDER_ML = 130
-BORDER_BL = 131
-BORDER_BM = 132
-BORDER_MR = 133
-BORDER_BR = 134
-BORDER_TL = 135
-BORDER_TM = 136
-BORDER_TR = 137
+;BLANK = 128
+;FILL = 129
+;BORDER_ML = 130
+;BORDER_BL = 131
+;BORDER_BM = 132
+;BORDER_MR = 133
+;BORDER_BR = 134
+;BORDER_TL = 135
+;BORDER_TM = 136
+;BORDER_TR = 137
+
+BLANK = 0
+FILL = 1
+BORDER_ML = 2
+BORDER_BL = 3
+BORDER_BM = 4
+BORDER_MR = 5
+BORDER_BR = 6
+BORDER_TL = 7
+BORDER_TM = 8
+BORDER_TR = 9
 
 .proc demo_init_statusbar
         ; first, blank out this whole region
