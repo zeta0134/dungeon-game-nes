@@ -1,6 +1,7 @@
         .setcpu "6502"
 
         .include "blobby.inc"
+        .include "animations/blobby.inc"
         .include "camera.inc"
         .include "collision.inc"
         .include "debug.inc"
@@ -46,6 +47,27 @@ test_tileset:
         set_metasprite_palette_offset #.sizeof(MetaSpriteState)*index, #palette
         set_metasprite_animation #.sizeof(MetaSpriteState)*index, animation
 .endmacro
+
+.proc spawn_static_sprite
+MetaspriteIndex := R0
+PosX := R1
+PosY := R3
+
+        jsr find_unused_metasprite
+        lda #$FF
+        cmp MetaspriteIndex
+        beq failed_to_spawn
+
+        set_metasprite_x MetaspriteIndex, PosX
+        set_metasprite_y MetaspriteIndex, PosY
+        set_metasprite_animation MetaspriteIndex, blobby_anim_idle
+        set_metasprite_tile_offset MetaspriteIndex, #0
+        set_metasprite_palette_offset MetaspriteIndex, #1
+
+failed_to_spawn:
+        ; do nothing!
+        rts
+.endproc
 
 .proc demo_init
         ; Setup a demo blob; this happens to also be sprite zero, which is needed for scrolling
@@ -95,7 +117,18 @@ test_tileset:
         lda #5
         sta entity_table + EntityState::PositionX+1, y
         sta entity_table + EntityState::PositionY+1, y
-        ; in theory, blobby is now ready to go        
+        ; in theory, blobby is now ready to go.
+
+        ; Spawn some more static sprites in, to test sprite clipping
+        st16 R1, 100
+        st16 R3, 100
+        jsr spawn_static_sprite
+        st16 R1, 300
+        st16 R3, 300
+        jsr spawn_static_sprite
+        st16 R1, 900
+        st16 R3, 900
+        jsr spawn_static_sprite
         rts
 .endproc
 

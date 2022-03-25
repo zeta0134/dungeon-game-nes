@@ -63,10 +63,11 @@ MetaSpriteIndex := R0
         lda #0
         sta MetaSpriteIndex
 loop:
-        lda MetaSpriteIndex
+        ldx MetaSpriteIndex
         lda metasprite_table + MetaSpriteState::AnimationAddr + 1, x
         beq found
         lda #.sizeof(MetaSpriteState)
+        clc
         adc MetaSpriteIndex
         bvs table_is_full
         sta MetaSpriteIndex
