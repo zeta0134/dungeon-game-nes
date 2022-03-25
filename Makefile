@@ -46,6 +46,9 @@ run: dir $(ROM_NAME)
 mesen: dir $(ROM_NAME)
 	mono vendor/Mesen-X-v1.0.0.exe $(ROM_NAME)
 
+everdrive: dir $(ROM_NAME)
+	mono vendor/edlink-n8.exe $(ROM_NAME)
+
 $(ROM_NAME): $(SOURCEDIR)/mmc3.cfg $(O_FILES)
 	ld65 -m $(BUILDDIR)/map.txt --dbgfile $(DBG_NAME) -o $@ -C $^
 
