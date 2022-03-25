@@ -125,7 +125,7 @@ TileY := R8
         lda #2
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
 
-
+        ldy CurrentEntityIndex
         clc
         lda entity_table + EntityState::PositionY, y
         sbc SubtileY
@@ -249,7 +249,7 @@ TileY := R8
         lda #3
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
 
-
+        ldy CurrentEntityIndex
         clc
         lda entity_table + EntityState::PositionX, y
         sbc SubtileX
