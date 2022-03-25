@@ -6,8 +6,9 @@
         .include "debug.inc"
         .include "entity.inc"
         .include "far_call.inc"
+        .include "generators.inc"
         .include "input.inc"
-        .include "input.inc"
+        .include "irq_table.inc"
         .include "map.inc"
         .include "memory_util.inc"
         .include "mmc3.inc"
@@ -129,6 +130,7 @@ start:
         jsr initialize_oam
         jsr demo_init
         jsr initialize_ppu
+        jsr initialize_irq_table
 
         lda #$00
         sta PPUMASK ; disable rendering (again)
@@ -188,6 +190,11 @@ gameloop:
         debug_color TINT_R
         far_call FAR_scroll_camera
         debug_color 0 ; disable debug colors
+
+        lda inactive_irq_index
+        sta R0
+        jsr generate_basic_playfield
+        jsr swap_irq_buffers
 
         dec TestBlobbyDelay
         bne wait_for_next_vblank

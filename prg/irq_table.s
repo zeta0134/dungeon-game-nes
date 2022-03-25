@@ -16,11 +16,14 @@ irq_stash: .byte $00
 
         .segment "PRGRAM"
 
+
 ; note: for timing purpuses, ensure no table crosses a page boundary! align / relocate individual tables
 ; as required. It is NOT important for these tables to be adjacent in memory, but they MUST each reside
 ; on one page. (If they are sized as a power of 2, simply aligning the entire section to a page start
 ; should be sufficient.)
 .align 256
+; Sets the total size of the IRQ table. Note that when using double-buffering (recommended),
+; the maximum available scanlines will be (IRQ_TABLE_SIZE / 2).
 IRQ_TABLE_SIZE = 128
 irq_table_scanlines: .res IRQ_TABLE_SIZE
 irq_table_nametable_high: .res IRQ_TABLE_SIZE
@@ -34,6 +37,7 @@ irq_table_chr0_bank: .res IRQ_TABLE_SIZE
         .segment "PRGLAST_E000"
 
 .export setup_irq_for_frame, irq
+.export initialize_irq_table, swap_irq_buffers
 
 ; Credit: @PinoBatch, https://github.com/pinobatch
 ; Technically burns 12.664 cycles on average, which is
@@ -50,6 +54,52 @@ continue:
 .endscope
 .endmacro
 
+; Note that the active index now defaults to 0. If for some reason we are comfortable
+; ditching the double-buffering technique, then it is sufficient to remove all calls to
+; swap_irq_buffers, and instead use the full size of the table as the only active index.
+; Beware race conditions! Double-buffering is *much* safer.
+.proc initialize_irq_table
+        jsr clear_irq_table
+        lda #0
+        sta active_irq_index
+        lda #(IRQ_TABLE_SIZE / 2)
+        sta inactive_irq_index
+        rts
+.endproc
+
+; we don't really "clear" this so much as configure every entry
+; to take more scanlines than there are in a single frame
+; (note that irqs should be disabled during NMI if we go with this
+; technique in a real project)
+.proc clear_irq_table
+        ldx #(IRQ_TABLE_SIZE & $FF)
+loop:
+        lda #$FF
+        sta irq_table_scanlines, x
+        ; this is unnecessarily inefficient, and should be redundant with
+        ; memory already zeroed out by our reset routine. Still, we only
+        ; ever need to do this once and it won't hurt to leave it in.
+        lda #$00
+        sta irq_table_scroll_x, x
+        sta irq_table_scroll_y, x
+        sta irq_table_nametable_high, x
+        sta irq_table_chr0_bank, x
+        lda #$1F
+        sta irq_table_ppumask, x
+        dex
+        bne loop
+        rts
+.endproc
+
+.proc swap_irq_buffers
+        lda inactive_irq_index
+        ldx active_irq_index
+        stx inactive_irq_index
+        sta active_irq_index
+        rts
+.endproc
+
+; Sets up the render to use the IRQ table
 .proc setup_irq_for_frame
         ; reset PPU latch
         lda PPUSTATUS
@@ -58,11 +108,19 @@ continue:
         lda #(VBLANK_NMI | OBJ_1000 | BG_0000)
         sta PPUCTRL
 
-        ; reset PPUMASK to something sane
-        lda #$1E
+        ; EVENTUALLY we want PPUMASK here to hide sprites, show backgrounds,
+        ; and switch to a completely blank CHR bank. We need to leave rendering
+        ; enabled so that MMC3 continues to count scanlines.
+        ; FOR NOW, we will instead enable everything and turn on greyscale and
+        ; a red tint. (Note that we are also about to lose debug colors. So sad.)
+        lda #(OBJ_ON | BG_ON | LIGHTGRAY | TINT_R)
         sta PPUMASK
 
-        ; static scroll registers, for now
+        ; EVENTUALLY we want to use the HUD for the top 8px, since its tiles will
+        ; exclusively use the switchable CHR bank that our IRQ table can control.
+        ; FOR NOW, just set this to 0,0. (We don't have the pattern data set up yet
+        ; to support the trickery.) This should show some of the playfield graphics
+        ; in a greyscale + red tinge for debugging.
         lda #$00
         sta PPUSCROLL ; x
         sta PPUSCROLL ; y
@@ -75,6 +133,9 @@ continue:
         sta MMC3_IRQ_DISABLE
 
         ; enable interrupts; the first one shall occur after 8 scanlines
+        ; fancy TODO: once we have a settings screen, we could allow the user
+        ; to adjust the timing of the first offset, allowing software-based
+        ; calibration for varying amounts of vertical overscan
         lda #(8 - 1)
         sta MMC3_IRQ_LATCH
         sta MMC3_IRQ_RELOAD
