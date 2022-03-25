@@ -1,5 +1,6 @@
 .include "nes.inc"
 
+.include "irq_table.inc"
 .include "input.inc"
 .include "memory_util.inc"
 .include "scrolling.inc"
@@ -78,7 +79,7 @@ lag_frame:
         ; ===========================================================
 
         ; Set PPUSCROLL and also configure IRQ for screen split
-        jsr set_scroll_for_entire_frame
+        jsr setup_irq_table_for_frame
 
         ; todo: we might wish to update the audio engine here? That way music
         ; continues to play at the proper speed even if the game lags, ie, we
@@ -99,5 +100,5 @@ lag_frame:
         .segment "VECTORS"
         .addr nmi
         .addr reset
-        .addr $00E0
+        .addr irq
 .endscope

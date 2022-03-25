@@ -36,9 +36,6 @@ irq_table_chr0_bank: .res IRQ_TABLE_SIZE
 
         .segment "PRGLAST_E000"
 
-.export setup_irq_for_frame, irq
-.export initialize_irq_table, swap_irq_buffers
-
 ; Credit: @PinoBatch, https://github.com/pinobatch
 ; Technically burns 12.664 cycles on average, which is
 ; good enough for our purposes here, we have a fairly generous
@@ -58,6 +55,7 @@ continue:
 ; ditching the double-buffering technique, then it is sufficient to remove all calls to
 ; swap_irq_buffers, and instead use the full size of the table as the only active index.
 ; Beware race conditions! Double-buffering is *much* safer.
+.export initialize_irq_table
 .proc initialize_irq_table
         jsr clear_irq_table
         lda #0
@@ -71,6 +69,7 @@ continue:
 ; to take more scanlines than there are in a single frame
 ; (note that irqs should be disabled during NMI if we go with this
 ; technique in a real project)
+.export clear_irq_table
 .proc clear_irq_table
         ldx #(IRQ_TABLE_SIZE & $FF)
 loop:
@@ -91,6 +90,7 @@ loop:
         rts
 .endproc
 
+.export swap_irq_buffers
 .proc swap_irq_buffers
         lda inactive_irq_index
         ldx active_irq_index
@@ -100,7 +100,8 @@ loop:
 .endproc
 
 ; Sets up the render to use the IRQ table
-.proc setup_irq_for_frame
+.export setup_irq_table_for_frame
+.proc setup_irq_table_for_frame
         ; reset PPU latch
         lda PPUSTATUS
 
@@ -144,6 +145,7 @@ loop:
         rts
 .endproc
 
+.export irq
 .proc irq
         ; earliest cycle: 285
         ; latest possible cycle: 305
