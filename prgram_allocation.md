@@ -19,14 +19,20 @@ structures. We will certainly need to be efficient with SRAM use, as we need the
 for game engine purposes.
 
 ## Map Data
-Current Room: 64 metatiles x 32 metatiles* = **2048 bytes**
-Tilemap: 256 tiles x (4 CHR tiles + 4 Collision data + 1 flags) = **2304 bytes**
+Current Room, Graphics: 64 metatiles x 24 metatiles* = **1536 bytes**
+Current Room, Nav: 64 metatiles x 24 metatiles* = **1536 bytes**
+Graphics Tilemap: 256 tiles x (4 CHR tiles + 1 palette) = **1280 bytes**
+Navigation Tilemap: 256 tiles x (1 collision + 1 type) = **512 bytes**
 Attribute Shadow = 32 4x4 metatiles x 16 4x4 metatiles = **512 bytes**
 
-Note: Rooms can be any arbitrary rectangle shape that fits in this space, the width/height is not constrained
-by the engine.
-Theoretical widest room: 170x12 (10.6 screens wide)
-Theoretical tallest room: 16x128 (10.6 playfields tall, or around 9.14 "screens" tall)
+Ponder: the navigation tilemap might be sharable between all maps. If so, it could be PRG ROM
+Ponder: The attribute byte in the graphics tileset might be redundant, once it has been used to
+        build the shadow attribute table. Perhaps it could be reclaimed post load.
+
+Note: Rooms can be any arbitrary rectangle shape that fits in this space, the width/height is
+      not constrained by the engine.
+Theoretical widest room: 128x12 (8 screens wide)
+Theoretical tallest room: 16x96 (8 playfields tall, or around 6.4 "screens" tall)
 
 ## Sound Engine
 "bhop" is likely our engine of choice here. It consumes around 1 page but is still under development.
@@ -65,10 +71,14 @@ Arbitrary Data: 9 bytes
 Total: 16 bytes
 All Entities: **256 bytes**
 
+## Other
+
+IRQ Table: 64 entries x 2 buffers x 6 bytes per entry = **768 bytes**
+
 ## Total (so far)
 
 Total Available RAM: 9472 bytes (9.25k)
-Map Data (too big for WRAM): 4864 bytes
+Map Data and IRQ table (too big for WRAM): 5376 + 768 = 6144 bytes
 Other Structures: 1020 bytes
-Remaining in PRG RAM / potential SRAM: 3328 bytes
+Remaining in PRG RAM / potential SRAM: 2048 bytes
 Remaining in WRAM: 260 bytes
