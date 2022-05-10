@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict
 
+from ca65 import pretty_print_table, ca65_label, ca65_byte_literal
+
 # === Data Types ===
 # Note: concerned with data for map conversion only. We ignore everything else.
 # Graphics conversion is a separate step entirely.
@@ -129,32 +131,6 @@ def read_map(map_filename):
 
     return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles)
 
-def ca65_byte_literal(value):
-  return "$%02x" % (value & 0xFF)
-
-def ca65_comment(text):
-    return f"; {text}"
-
-def ca65_label(label_name):
-    return f"{label_name}:"
-
-def pretty_print_table(raw_bytes, output_file, width=16):
-  """ Formats a byte array as a big block of ca65 literals
-
-  Just for style purposes, I'd like to collapse the table so that 
-  only so many bytes are printed on each line. This is nicer than one 
-  giant line or tons of individual .byte statements.
-  """
-  formatted_bytes = [ca65_byte_literal(byte) for byte in raw_bytes]
-  for table_row in range(0, int(len(formatted_bytes) / width)):
-    row_text = ", ".join(formatted_bytes[table_row * width : table_row * width + width])
-    print("  .byte %s" % row_text, file=output_file)
-
-  final_row = formatted_bytes[int(len(formatted_bytes) / width) * width : ]
-  if len(final_row) > 0:
-    final_row_text = ", ".join(final_row)
-    print("  .byte %s" % final_row_text, file=output_file)
-
 def write_map_header(tilemap, output_file):
     output_file.write(ca65_label(tilemap.name) + "\n")
     output_file.write("  .byte %s ; width\n" % ca65_byte_literal(tilemap.width))
@@ -170,18 +146,70 @@ def write_graphics_tiles(tilemap, output_file):
     raw_graphics_bytes = [tile.ordinal_index for tile in tilemap.tiles]
     pretty_print_table(raw_graphics_bytes, output_file, tilemap.width)
 
+def generate_collision_tileset():
+    tiles = []
+    # First off, there is a permanent wall tile, with no walkable surfaces:
+    tiles.append(BLANK_TILE)
+
+    # There are 16 visible surface heights, 0-15
+    for visible_surface_height in range(0, 16):
+        vislble_surface_tile = TiledTile(
+            tiled_index=len(tiles), 
+            ordinal_index=len(tiles), 
+            integer_properties={
+                "floor_height": visible_surface_height
+            }, 
+            boolean_properties={
+                "is_floor": True
+            }
+        )
+        tiles.append(vislble_surface_tile)
+    # There are 15 occluded surface heights, 0-14
+    for hidden_surface_height in range(0, 15):
+        hidden_surface_tile = TiledTile(
+            tiled_index=len(tiles), 
+            ordinal_index=len(tiles), 
+            integer_properties={
+                "hidden_floor_height": hidden_surface_height
+            }, 
+            boolean_properties={
+                "is_hidden_floor": True
+            }
+        )
+        tiles.append(hidden_surface_tile)
+
+    # There are a multitude of combinations, but not all combinations are needed.
+    # occluded surfaces must always appear "behind" a visible surface, that is:
+    # occluded surface < visible surface
+    for visible_surface_height in range(1, 16):
+        for hidden_surface_height in range(0, visible_surface_height):
+            combined_surface_tile = TiledTile(
+                tiled_index=len(tiles), 
+                ordinal_index=len(tiles), 
+                integer_properties={
+                    "hidden_floor_height": hidden_surface_height,
+                    "floor_height": visible_surface_height
+                }, 
+                boolean_properties={
+                    "is_hidden_floor": True,
+                    "is_floor": True
+                }
+            )
+            tiles.append(combined_surface_tile)
+
+    return tiles
 
 
+if __name__ == '__main__':
+    # DEBUG TEST THINGS
+    if len(sys.argv) != 3:
+      print("Usage: convert3dmap.py input.tmx output.bin")
+      sys.exit(-1)
+    input_filename = sys.argv[1]
+    output_filename = sys.argv[2]
 
-# DEBUG TEST THINGS
-if len(sys.argv) != 3:
-  print("Usage: 3dconvertmap.py input.tmx output.bin")
-  sys.exit(-1)
-input_filename = sys.argv[1]
-output_filename = sys.argv[2]
+    tilemap = read_map(input_filename)
 
-tilemap = read_map(input_filename)
-
-with open(output_filename, "w") as output_file:
-    write_map_header(tilemap, output_file)
-    write_graphics_tiles(tilemap, output_file)
+    with open(output_filename, "w") as output_file:
+        write_map_header(tilemap, output_file)
+        write_graphics_tiles(tilemap, output_file)
