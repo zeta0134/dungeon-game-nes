@@ -82,10 +82,15 @@ def read_layer(layer_element, tilesets):
     exiterror("Non-csv encoding is not supported.")
 
 def combine_properties(graphics_tile, supplementary_tiles):
-    combined_tile = graphics_tile
+    combined_tile = TiledTile(
+        ordinal_index=graphics_tile.ordinal_index,
+        tiled_index=graphics_tile.tiled_index,
+        boolean_properties=dict(graphics_tile.boolean_properties),
+        integer_properties=dict(graphics_tile.integer_properties)
+    )
     for supplementary_tile in supplementary_tiles:
-        combined_tile.integer_properties = graphics_tile.integer_properties | supplementary_tile.integer_properties
-        combined_tile.boolean_properties = graphics_tile.boolean_properties | supplementary_tile.boolean_properties
+        combined_tile.integer_properties = combined_tile.integer_properties | supplementary_tile.integer_properties
+        combined_tile.boolean_properties = combined_tile.boolean_properties | supplementary_tile.boolean_properties
     return combined_tile
 
 def read_map(map_filename):
@@ -145,6 +150,7 @@ def write_graphics_tiles(tilemap, output_file):
     output_file.write("  .byte %s ; compression type\n" % ca65_byte_literal(0))
     raw_graphics_bytes = [tile.ordinal_index for tile in tilemap.tiles]
     pretty_print_table(raw_graphics_bytes, output_file, tilemap.width)
+    output_file.write("\n")
 
 def generate_collision_tileset():
     tiles = []
@@ -199,6 +205,29 @@ def generate_collision_tileset():
 
     return tiles
 
+def find_collision_index(combined_tile, collision_tiles):
+    for candidate_tile in collision_tiles:
+        if (
+            candidate_tile.integer_properties.get("floor_height") == combined_tile.integer_properties.get("floor_height") and
+            candidate_tile.integer_properties.get("hidden_floor_height") == combined_tile.integer_properties.get("hidden_floor_height") and
+            candidate_tile.boolean_properties.get("is_floor") == combined_tile.boolean_properties.get("is_floor") and
+            candidate_tile.boolean_properties.get("is_hidden_floor") == combined_tile.boolean_properties.get("is_hidden_floor")
+        ):
+            return candidate_tile.ordinal_index
+    # no valid collision tile was found! BAIL, we cannot generate this map.
+    print("Invalid collision tile encountered:")
+    print(combined_tile)
+    print("This tile is not in preset in the global collision set.")
+    sys.exit(-1)
+
+def write_collision_tiles(tilemap, output_file):
+    collision_tiles = generate_collision_tileset()
+    output_file.write(ca65_label(tilemap.name + "_collision") + "\n")
+    # for now, compression type 0 == identity, raw bytes with no compression
+    output_file.write("  .byte %s ; compression type\n" % ca65_byte_literal(0))
+    raw_collision_bytes = [find_collision_index(tile, collision_tiles) for tile in tilemap.tiles]
+    pretty_print_table(raw_collision_bytes, output_file, tilemap.width)
+    output_file.write("\n")
 
 if __name__ == '__main__':
     # DEBUG TEST THINGS
@@ -213,3 +242,4 @@ if __name__ == '__main__':
     with open(output_filename, "w") as output_file:
         write_map_header(tilemap, output_file)
         write_graphics_tiles(tilemap, output_file)
+        write_collision_tiles(tilemap, output_file)

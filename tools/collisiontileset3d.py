@@ -4,6 +4,11 @@ import sys
 from ca65 import pretty_print_table, ca65_label, ca65_byte_literal
 from convert3dmap import generate_collision_tileset
 
+# A short utility script to generate the lookup table for the collision system,
+# using the same tiles and in the same order that the map exporter uses to generate
+# the map. This ensures that the indexes are always in sync, even if I change the
+# exact tile makeup down the road.
+
 collision_tiles = generate_collision_tileset()
 
 def height_byte(tile):
