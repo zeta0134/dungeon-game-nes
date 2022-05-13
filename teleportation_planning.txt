@@ -1,0 +1,44 @@
+# Teleportation Planning
+
+## Detection
+Teleportation is a special type of tile, but just one type. The tile itself encodes no information about the destination, rather this is stored in a separate table and indexed when the teleport needs to be used.
+
+Simple: If the player's shadow hitbox overlaps a teleportation tile on this frame, then the teleport begins. This is how we'll initially implement the behavior for testing. No logic, no special case, just collide and go.
+
+Grounded: The teleportation doesn't begin unless the player's shadow hitbox is touching the tile *and* they are currently on the ground. The player is able to jump over teleports of this type.
+
+Conditional: The teleporter is only active based on game logic. We'll probably accomplish this with an "inactive teleport" graphical tile, so the player can visually tell them apart. In this case, the inactive teleport behaves like a standard floor.
+
+## Data format
+Within Tiled, we'll have a teleportation layer that encodes the relevant properties. Each map has a separate set of incoming and outgoing teleportation spots. All maps must have at least one incoming teleportation spot, which is the default player spawn position if this map is loaded normally. (We'll be using this a lot while debugging.)
+
+In Tiled, an outgoing teleport defines:
+- Target map (2-3 bytes, probably pointer and bank to load the new map)
+- Destination index (1 byte, min 0, max: num teleports in destination)
+Once converted, the tool adds the following information:
+- coordinates within the map (2 bytes, x and y in tiles)
+
+In Tiled, an incoming teleport spot must specify:
+- Destination index (1 byte, 0 must exist, any additional spots are optional, max 255)
+Once converted, the tool will spit these out in a list for easy indexing, and add the following:
+- coordinates within the map (2 bytes, x and y in tiles)
+
+## Travel Logic
+Once the game engine has determined that a teleportation must take place, the following steps happen in order:
+
+- The list of outgoing teleports in the map data is scanned
+- Once an entry is found which has coordinates matching the player's current position, that map and target index become the new spawn point
+  - If no matching entry is found, the teleportation is canceled. Play a "canceled" SFX if we have one, for debug purposes.
+- All entities besides the players will now freeze
+- The player plays an appropriate teleportation animation, while the map fades to black with a palette fade
+- Rendering is disabled. Using the data from the table, the next map is loaded normally
+- Immediately after loading, before ticking any object update functions, the destination list for the now loaded map is scanned for a matching destination index. If one is found, these coordinates become the player's new position.
+  - If no destination is found, use index 0 instead, and play a "canceled" SFX if we have one for debugging.
+  - Note: rather than editing the player entity, we could stash these coordinates somewhere and have the player check for them during their init function.
+- From here, fade in the map normally and resume gameplay. The player should be positioned at the appropriate destination.
+
+## Notes:
+For game logic detection purposes, the player's shadow hitbox is a single pixel roughly centered within their sprite. Regardless of any other points used for collision with walls and entities, this one point will unambiguously resolve to a single tile type that the player is "standing over" at any give moment.
+
+
+
