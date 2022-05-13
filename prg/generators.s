@@ -84,7 +84,7 @@ done_with_nametables:
         ; This is a normal playfield, so use standard PPUMASK
         lda #PpuMaskSetting
         sta irq_table_ppumask, x
-        lda #ChrBank
+        lda ChrBank
         sta irq_table_chr0_bank, x
 
         ; Okay now for the split.
@@ -131,7 +131,7 @@ hud_split:
         ; ppumask and chr are the same as before
         lda #PpuMaskSetting
         sta irq_table_ppumask, x
-        lda #ChrBank
+        lda ChrBank
         sta irq_table_chr0_bank, x
         ; finally, the size of the second split is the lower byte of ScratchWord
         lda ScratchWord
