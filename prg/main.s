@@ -25,8 +25,6 @@
 .scope PRGLAST_E000
         .export start
         .importzp GameloopCounter, LastNmi, CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget
-        .zeropage
-TestBlobbyDelay: .byte $00
 
 
 .segment "PRG0_A000"
@@ -70,43 +68,6 @@ failed_to_spawn:
 .endproc
 
 .proc demo_init
-        ; Setup a demo blob; this happens to also be sprite zero, which is needed for scrolling
-        lda #200
-        sta $0200 ;sprite[0].Y
-        lda #00
-        sta $0201 ;sprite[0].Tile
-        lda #$00
-        sta $0202 ;sprite[0].Palette + Attributes
-        lda #24
-        sta $0203 ;sprite[0].X
-
-        lda #200
-        sta $0204 ;sprite[1].Y
-        lda #00
-        sta $0205 ;sprite[1].Tile
-        lda #$40
-        sta $0206 ;sprite[1].Palette + Attributes
-        lda #32
-        sta $0207 ;sprite[1].X
-
-        lda #208
-        sta $0208 ;sprite[0].Y
-        lda #01
-        sta $0209 ;sprite[0].Tile
-        lda #$00
-        sta $020A ;sprite[0].Palette + Attributes
-        lda #24
-        sta $020B ;sprite[0].X
-
-        lda #208
-        sta $020C ;sprite[1].Y
-        lda #01
-        sta $020D ;sprite[1].Tile
-        lda #$40
-        sta $020E ;sprite[1].Palette + Attributes
-        lda #32
-        sta $020F ;sprite[1].X
-
         st16 R0, blobby_init
         jsr spawn_entity
         ; y now contains the entity index. Use this to set the tile
@@ -192,8 +153,6 @@ start:
         lda #$00
         sta GameloopCounter
         sta LastNmi
-        lda #$20
-        sta TestBlobbyDelay
 
         ; disable unusual IRQ sources
         lda #%01000000
@@ -233,19 +192,6 @@ gameloop:
         jsr generate_basic_playfield
         jsr generate_standard_hud
         jsr swap_irq_buffers
-
-        dec TestBlobbyDelay
-        bne wait_for_next_vblank
-        lda #$20
-        sta TestBlobbyDelay
-        lda $0201
-        eor #%00000010
-        sta $0201
-        sta $0205
-        lda $0209
-        eor #%00000010
-        sta $0209
-        sta $020D        
 wait_for_next_vblank:
         inc GameloopCounter
 @loop:
