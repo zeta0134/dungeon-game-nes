@@ -36,16 +36,6 @@ test_tileset:
 
 .segment "PRGLAST_E000"
 
-.macro initialize_metasprite index, pos_x, pos_y, palette, tilebase, animation
-        st16 R0, pos_x
-        set_metasprite_x #.sizeof(MetaSpriteState)*index, R0
-        st16 R0, pos_y
-        set_metasprite_y #.sizeof(MetaSpriteState)*index, R0
-        set_metasprite_tile_offset #.sizeof(MetaSpriteState)*index, #tilebase
-        set_metasprite_palette_offset #.sizeof(MetaSpriteState)*index, #palette
-        set_metasprite_animation #.sizeof(MetaSpriteState)*index, animation
-.endmacro
-
 .proc spawn_static_sprite
 MetaspriteIndex := R0
 PosX := R1
@@ -79,17 +69,6 @@ failed_to_spawn:
         sta entity_table + EntityState::PositionX+1, y
         sta entity_table + EntityState::PositionY+1, y
         ; in theory, blobby is now ready to go.
-
-        ; Spawn some more static sprites in, to test sprite clipping
-        st16 R1, 100
-        st16 R3, 100
-        jsr spawn_static_sprite
-        st16 R1, 300
-        st16 R3, 300
-        jsr spawn_static_sprite
-        st16 R1, 900
-        st16 R3, 900
-        jsr spawn_static_sprite
         rts
 .endproc
 
