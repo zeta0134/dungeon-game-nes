@@ -58,6 +58,9 @@ failed_to_spawn:
 .endproc
 
 .proc demo_init
+        ; actually nah
+        rts
+
         st16 R0, blobby_init
         jsr spawn_entity
         ; y now contains the entity index. Use this to set the tile
