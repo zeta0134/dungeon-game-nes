@@ -16,4 +16,7 @@ hud_graphics:
         .segment "OBJ0"
 blobby_graphics:
         .incbin "build/sprites/blobby.chr"
+        .segment "OBJ1"
+boxgirl_graphics:
         .incbin "build/sprites/greybox.chr"
+        .incbin "build/sprites/shadow.chr"
