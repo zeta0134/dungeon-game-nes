@@ -14,9 +14,10 @@ hud_graphics:
         .incbin "build/tilesets/skull_tiles.chr"
 
         .segment "OBJ0"
-blobby_graphics:
-        .incbin "build/sprites/blobby.chr"
-        .segment "OBJ1"
 boxgirl_graphics:
         .incbin "build/sprites/greybox.chr"
         .incbin "build/sprites/shadow.chr"
+
+        .segment "OBJ1"
+blobby_graphics:
+        .incbin "build/sprites/blobby.chr"

@@ -8,7 +8,7 @@ shadow_solid:
 
 shadow_frames_solid:
         .word shadow_oam_solid
-        .byte $01, $04, $FF; oam length, mapper, delay frames
+        .byte $01, $05, $FF; oam length, mapper, delay frames
 
 ; flicker - standard 30 Hz on/off pattern
 
@@ -18,9 +18,9 @@ shadow_flicker:
 
 shadow_frames_flicker:
         .word shadow_oam_solid
-        .byte $01, $04, $0; oam length, mapper, delay frames
+        .byte $01, $05, $0; oam length, mapper, delay frames
         .word shadow_oam_solid
-        .byte $00, $04, $0; oam length, mapper, delay frames
+        .byte $00, $05, $0; oam length, mapper, delay frames
 ; NOTE: OAM length of 0 here is untested!
 
 ; checkerboard - alternating dither pattern at 30 Hz
@@ -31,9 +31,9 @@ shadow_checkerboard:
 
 shadow_frames_checkerboard:
         .word shadow_oam_checkerboard_left
-        .byte $01, $04, $0; oam length, mapper, delay frames
+        .byte $01, $05, $0; oam length, mapper, delay frames
         .word shadow_oam_checkerboard_right
-        .byte $01, $04, $0; oam length, mapper, delay frames
+        .byte $01, $05, $0; oam length, mapper, delay frames
 
 ; horizontal - alternating rows at 30 Hz
 
@@ -43,9 +43,9 @@ shadow_horizontal_stripes:
 
 shadow_frames_horizontal_stripes:
         .word shadow_oam_horiz_even
-        .byte $01, $04, $0; oam length, mapper, delay frames
+        .byte $01, $05, $0; oam length, mapper, delay frames
         .word shadow_oam_horiz_odd
-        .byte $01, $04, $0; oam length, mapper, delay frames
+        .byte $01, $05, $0; oam length, mapper, delay frames
 
 shadow_vertical_stripes:
         .word shadow_frames_vertical_stripes
@@ -53,9 +53,9 @@ shadow_vertical_stripes:
 
 shadow_frames_vertical_stripes:
         .word shadow_oam_vert_even
-        .byte $01, $04, $0; oam length, mapper, delay frames
+        .byte $01, $05, $0; oam length, mapper, delay frames
         .word shadow_oam_vert_odd
-        .byte $01, $04, $0; oam length, mapper, delay frames\
+        .byte $01, $05, $0; oam length, mapper, delay frames\
 
 ; sprite tiles for above
 

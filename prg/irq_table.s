@@ -109,7 +109,7 @@ loop:
         lda PPUSTATUS
 
         ; explicitly set bank locations and nametable (to 0)
-        lda #(VBLANK_NMI | OBJ_1000 | BG_0000)
+        lda #(VBLANK_NMI | OBJ_1000 | BG_0000 | OBJ_8X16)
         sta PPUCTRL
 
         ; PPUMASK should hide sprites, but we need to display backgrounds otherwise MMC3's

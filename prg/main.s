@@ -1,6 +1,7 @@
         .setcpu "6502"
 
         .include "blobby.inc"
+        .include "boxgirl.inc"
         .include "animations/blobby.inc"
         .include "camera.inc"
         .include "collision.inc"
@@ -58,10 +59,7 @@ failed_to_spawn:
 .endproc
 
 .proc demo_init
-        ; actually nah
-        rts
-
-        st16 R0, blobby_init
+        st16 R0, boxgirl_init
         jsr spawn_entity
         ; y now contains the entity index. Use this to set the tile
         ; coordinate to 5, 5 for testing
@@ -146,7 +144,7 @@ start:
         ; re-enable graphics
         lda #$1E
         sta PPUMASK
-        lda #(VBLANK_NMI | BG_0000 | OBJ_1000)
+        lda #(VBLANK_NMI | BG_0000 | OBJ_1000 | OBJ_8X16)
         sta PPUCTRL
 
         ; immediately wait for one vblank, for sync purposes

@@ -2,5 +2,5 @@
 ; the planned size for player characters and taller enemies. Her animation is extremely minimal
 ; while still maintaining a separate visual state for all 4 cardinal directions.
 
-.import boxgirl_anim_idle
+.import boxgirl_anim_idle_right, boxgirl_anim_idle_left
 .import boxgirl_anim_move_right, boxgirl_anim_move_left, boxgirl_anim_move_down, boxgirl_anim_move_up
