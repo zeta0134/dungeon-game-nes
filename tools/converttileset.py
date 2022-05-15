@@ -52,7 +52,6 @@ def hardware_tile_to_bitplane(index_array):
 
 def read_tile(filename, nespalette):
   im = Image.open(filename)
-  print(filename)
   assert im.getpalette() != None, "Non-paletted tile found! This is unsupported: " + filename
   rgb_palette = bytes_to_palette(im.getpalette()[0:12])
   nes_palette = [rgb_to_nes(color, nespalette) for color in rgb_palette]
@@ -139,11 +138,11 @@ scriptdir = os.path.dirname(__file__)
 nespalette = read_nes_palette(os.path.join(scriptdir,"ntscpalette.pal"))
 tiles = read_tileset(input_tileset, nespalette)
         
-print("Read:", len(tiles), "tiles!")
+#print("Read:", len(tiles), "tiles!")
 palettes = generate_base_palettes(tiles)
-print("Found", len(palettes), "unique palettes!")
+#print("Found", len(palettes), "unique palettes!")
 chr_tiles = generate_chr_tiles(tiles)
-print("Found", len(chr_tiles), "unique 8x8 tiles!")
+#print("Found", len(chr_tiles), "unique 8x8 tiles!")
 
 write_chr_tiles(chr_tiles, output_chr)
 write_meta_tiles(tiles, output_mt)
