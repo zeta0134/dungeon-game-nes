@@ -64,9 +64,8 @@ TopY := R2
 RightX := R3
 BottomY := R4
         ; set our palette index to 0 by default, for debugging
-        ldy CurrentEntityIndex
-        lda entity_table + EntityState::MetaSpriteIndex
-        tay
+        ldx CurrentEntityIndex
+        ldy entity_table + EntityState::MetaSpriteIndex, x
         lda #0
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
 
