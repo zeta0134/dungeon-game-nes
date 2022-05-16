@@ -1,6 +1,9 @@
 def ca65_byte_literal(value):
   return "$%02x" % (value & 0xFF)
 
+def ca65_word_literal(value):
+  return "$%04x" % (value & 0xFFFF)
+
 def ca65_comment(text):
     return f"; {text}"
 
