@@ -55,35 +55,20 @@ failed_to_spawn:
         rts
 .endproc
 
+; draws the player's sprite set based on a few things
+.proc set_metasprite_positions
+        
+.endproc
+
+; Note: the structure here is a little strange, that's because all of the
+; collision code is now missing. We're going to add those back, just...
+; ... y'know, not yet. Patience.
 .proc apply_speed
-; these parameters define the bounds of a collision box around
-; the blob's feet, which determines where it exists for wall
-; tile purposes
-LeftX := R1
-TopY := R2
-RightX := R3
-BottomY := R4
         ; set our palette index to 0 by default, for debugging
         ldx CurrentEntityIndex
         ldy entity_table + EntityState::MetaSpriteIndex, x
         lda #0
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
-
-        ; load in our bounding box; for now this should perfectly
-        ; line up with the sprite edge (of idle, frame 1)
-
-        ; left
-        lda #(3 << 4)
-        sta LeftX
-        ; top
-        lda #(8 << 4)
-        sta TopY
-        ; right
-        lda #(12 << 4)
-        sta RightX
-        ; bottom
-        lda #(14 << 4)
-        sta BottomY
 
         ; apply speed to position for each axis, then check the
         ; tilemap and correct for any tile collisions
@@ -93,11 +78,9 @@ BottomY := R4
         bmi move_left
 move_right:
         sadd16x entity_table + EntityState::PositionX, R0
-        jsr collide_right_with_map
         jmp done_with_x
 move_left:
         sadd16x entity_table + EntityState::PositionX, R0
-        jsr collide_left_with_map
 done_with_x:
         ldx CurrentEntityIndex
         lda entity_table + EntityState::Data + DATA_SPEED_Y, x
@@ -105,11 +88,9 @@ done_with_x:
         bmi move_up
 move_down:
         sadd16x entity_table + EntityState::PositionY, R0
-        jsr collide_down_with_map
         jmp done
 move_up:
         sadd16x entity_table + EntityState::PositionY, R0
-        jsr collide_up_with_map
 
 done:
         rts
