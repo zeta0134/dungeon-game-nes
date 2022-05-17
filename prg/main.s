@@ -31,9 +31,12 @@
 .segment "PRG0_A000"
 ; note: this is probably a bad idea
 test_map:
-        .incbin "build/maps/large_test_room.bin"
+        ;.incbin "build/maps/large_test_room.bin"
+        .include "debug_maps/test_room_3d.incs"
 test_tileset:
-        .incbin "build/tilesets/skull_tiles.mt"
+        ;.incbin "build/tilesets/skull_tiles.mt"
+        .incbin "build/tilesets/tiles_3d.mt"
+
 
 .segment "PRGLAST_E000"
 
@@ -111,7 +114,7 @@ start:
         sta PPUCTRL ; and NMI
 
         ; less demo map init
-        st16 R4, (test_map)
+        st16 R4, (test_room_3d)
         jsr load_map
         st16 R0, (test_tileset)
         jsr load_tileset

@@ -74,7 +74,7 @@ continue:
 ; technique in a real project)
 .export clear_irq_table
 .proc clear_irq_table
-        ldx #(IRQ_TABLE_SIZE & $FF)
+        ldx #0
 loop:
         lda #$FF
         sta irq_table_scanlines, x
@@ -88,7 +88,8 @@ loop:
         sta irq_table_chr0_bank, x
         lda #$1F
         sta irq_table_ppumask, x
-        dex
+        inx
+        cpx #(IRQ_TABLE_SIZE & $FF)
         bne loop
         rts
 .endproc

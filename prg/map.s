@@ -1,4 +1,5 @@
         .setcpu "6502"
+        .include "compression.inc"
         .include "scrolling.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
@@ -9,6 +10,13 @@
 
 .export load_map, load_tileset
 
+.struct MapHeader
+        width .byte
+        height .byte
+        graphics_ptr .word
+        collision_ptr .word
+.endstruct
+
 ; Loads a map into PRG RAM buffer, in preparation for drawing and gameplay
 ; maybe gameplay stuff
 ; Inputs:
@@ -16,38 +24,33 @@
 ; Clobbers: R0 - R4
 
 .proc load_map
-TempHeight := R0
-TempWidth := R1
+SourceAddr := R0
 DestAddr := R2
-SourceAddr := R4
-        ldy #$00 ; we'll use indirect mode, but without an offset
-        lda (SourceAddr),y
+MapAddr := R4
+        ; First read in the map's dimensions in tiles, and store them. The scrolling engine and
+        ; several other game mechanics rely on these values
+        ldy #MapHeader::width
+        lda (MapAddr), y
         sta MapWidth
-        sta TempHeight
+        ; the attribute width is half of the map width
         clc
         ror
         sta AttributeWidth
-        inc16 SourceAddr
-        lda (SourceAddr),y
+        ldy #MapHeader::height
+        lda (MapAddr), y
         sta MapHeight
-        sta TempWidth
-        inc16 SourceAddr
+
+        ; Next decompress the blocks of data, starting with the graphics map
+        ldy #MapHeader::graphics_ptr
+        lda (MapAddr), y
+        sta SourceAddr
+        iny
+        lda (MapAddr), y
+        sta SourceAddr+1
         st16 DestAddr, (MapData)
-loop:
-        ; copy in one byte
-        lda (SourceAddr),y
-        sta (DestAddr),y
-        inc16 SourceAddr
-        inc16 DestAddr
-        ; check MapWidth
-        dec TempWidth
-        bne loop
-        ; reload MapWidth and check MapHeight
-        lda MapWidth
-        sta TempWidth
-        dec TempHeight
-        bne loop
-        ; all done
+        jsr decompress
+
+        ; For now that is all, we need to make sure that worked.
         rts
 .endproc
 

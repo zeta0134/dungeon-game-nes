@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.8" tiledversion="1.8.2" name="3d_hidden_floor_heights" tilewidth="16" tileheight="16" tilecount="17" columns="0">
+<tileset version="1.8" tiledversion="1.8.2" name="hidden_floor_heights_3d" tilewidth="16" tileheight="16" tilecount="17" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image width="16" height="16" source="../technical/blank.png"/>

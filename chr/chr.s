@@ -11,7 +11,7 @@ hud_graphics:
         .incbin "build/tilesets/statusbar.chr"
 
         .segment "BG2"
-        .incbin "build/tilesets/skull_tiles.chr"
+        .incbin "build/tilesets/tiles_3d.chr"
 
         .segment "OBJ0"
 boxgirl_graphics:
