@@ -5,6 +5,6 @@
 
 .import set_scroll_for_entire_frame
 
-.import MapData, AttributeData, TilesetData
+.import MapData, TilesetTopLeft, TilesetTopRight, TilesetBottomLeft, TilesetBottomRight, TilesetAttributes
 .importzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget, MapWidth, MapHeight, AttributeWidth, PpuYTileTarget
 

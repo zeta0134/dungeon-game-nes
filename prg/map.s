@@ -54,16 +54,83 @@ MapAddr := R4
         rts
 .endproc
 
-; Load a tilemap into memory; these always have a fixed size of 256 bytes
+; Load a tilemap into memory. Important: This uses the map data area
+; as scratch space! Make sure this is called when it is okay to clobber
+; this area.
 ; Inputs:
-;   R0: 16bit address of the map to load
+;   R0: 16bit address of the tileset to load
 .proc load_tileset
-        ldy #$00
-loop:
-        lda (R0),y
-        sta TilesetData,y
-        iny
-        bne loop
+SourceAddr := R0
+DestAddr := R2
+TilesetAddress := R6
+MetatileCount := R8
+        ; first grab the metatile count, since we'll need it to unzip the data properly later
+        ldy #0
+        lda (TilesetAddress), y
+        sta MetatileCount
+        ; now skip past it, so our TilesetAddress points to the start of the decompression header
+        inc16 TilesetAddress
+        ; set that header up as the source
+        lda TilesetAddress
+        sta SourceAddr
+        lda TilesetAddress+1
+        sta SourceAddr+1
+        ; set MapData up as the destination, and perform the decompression
+        st16 DestAddr, (MapData)
+        jsr decompress
+
+        ; okay, now our tileset is in memory at MapData, but it's collapsed. We need to
+        ; run through it one segment at a time and unzip it into its final location
+
+        ; TODO: We want to eventually load two tilesets at once. The second one needs to get
+        ; unzipped *after* the first one, so we need a way to set an offset for this routine.
+
+        st16 SourceAddr, (MapData)
+        ldx #0
+top_left_loop:
+        lda (SourceAddr), y
+        sta TilesetTopLeft, x
+        inc16 SourceAddr
+        inx
+        cpx MetatileCount
+        bne top_left_loop
+
+        ldx #0
+top_right_loop:
+        lda (SourceAddr), y
+        sta TilesetTopRight, x
+        inc16 SourceAddr
+        inx
+        cpx MetatileCount
+        bne top_right_loop   
+
+        ldx #0
+bottom_left_loop:
+        lda (SourceAddr), y
+        sta TilesetBottomLeft, x
+        inc16 SourceAddr
+        inx
+        cpx MetatileCount
+        bne bottom_left_loop
+
+        ldx #0
+bottom_right_loop:
+        lda (SourceAddr), y
+        sta TilesetBottomRight, x
+        inc16 SourceAddr
+        inx
+        cpx MetatileCount
+        bne bottom_right_loop
+
+        ldx #0
+attribute_loop:
+        lda (SourceAddr), y
+        sta TilesetAttributes, x
+        inc16 SourceAddr
+        inx
+        cpx MetatileCount
+        bne attribute_loop
+
         rts
 .endproc
 

@@ -35,7 +35,7 @@ test_map:
         .include "debug_maps/test_room_3d.incs"
 test_tileset:
         ;.incbin "build/tilesets/skull_tiles.mt"
-        .incbin "build/tilesets/tiles_3d.mt"
+        .include "../build/tilesets/tiles_3d.mt"
 
 
 .segment "PRGLAST_E000"
@@ -114,12 +114,10 @@ start:
         sta PPUCTRL ; and NMI
 
         ; less demo map init
+        st16 R6, (tiles_3d)
+        jsr load_tileset
         st16 R4, (test_room_3d)
         jsr load_map
-        st16 R0, (test_tileset)
-        jsr load_tileset
-        st16 R0, (test_tileset+256)
-        jsr load_tileset_attributes
         
         far_call FAR_init_map
         far_call FAR_init_attributes

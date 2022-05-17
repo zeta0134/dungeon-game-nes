@@ -11,10 +11,16 @@
 
 .scope PRG1_A000
         .segment "PRGRAM"
+MAX_METATILES = 128
+
 MapData: .res 4096
 AttributeData: .res 1024
-TilesetData: .res 256
-.export MapData, AttributeData, TilesetData
+TilesetTopLeft: .res MAX_METATILES
+TilesetTopRight: .res MAX_METATILES
+TilesetBottomLeft: .res MAX_METATILES
+TilesetBottomRight: .res MAX_METATILES
+TilesetAttributes: .res MAX_METATILES
+.export MapData, TilesetTopLeft, TilesetTopRight, TilesetBottomLeft, TilesetBottomRight, TilesetAttributes
         .zeropage
 ; Map dimensions
 MapWidth: .byte $00
@@ -336,15 +342,17 @@ height_loop:
         sec
         sub16 AttributeUpperLeftRow, #1
         sec
-        sub16 AttributeUpperLeftRow, #32
+        sub16 AttributeUpperLeftRow, AttributeWidth
         st16 AttributeUpperLeftColumn, AttributeData
         sec
         sub16 AttributeUpperLeftColumn, #1
         st16 AttributeLowerLeftRow, AttributeData
         sec
         sub16 AttributeLowerLeftRow, #1
+        .repeat 7
         clc
-        add16 AttributeLowerLeftRow, #(32*7)
+        add16 AttributeLowerLeftRow, AttributeWidth
+        .endrepeat
         st16 AttributeUpperRightColumn, AttributeData
         clc
         add16 AttributeUpperRightColumn, #9
@@ -387,7 +395,7 @@ column_loop:
         iny
         lda (LowerRowPtr),y ; bottom-right
         tax
-        lda MetatileAttributes+1,x ; a now contains 2-bit palette index
+        lda TilesetAttributes,x ; a now contains 2-bit palette index
         asl
         asl
         sta AttributeScratchByte
@@ -395,7 +403,7 @@ column_loop:
         dey
         lda (LowerRowPtr),y ; bottom-left
         tax
-        lda MetatileAttributes+1,x
+        lda TilesetAttributes,x
         ora AttributeScratchByte
         asl
         asl
@@ -404,7 +412,7 @@ column_loop:
         iny
         lda (UpperRowPtr),y ; upper-right
         tax
-        lda MetatileAttributes+1,x ; a now contains 2-bit palette index
+        lda TilesetAttributes,x ; a now contains 2-bit palette index
         ora AttributeScratchByte
         asl
         asl
@@ -413,7 +421,7 @@ column_loop:
         dey
         lda (UpperRowPtr),y ; upper-left
         tax
-        lda MetatileAttributes+1,x
+        lda TilesetAttributes,x
         ora AttributeScratchByte ; a now contains completed attribute byte
 
         sty ColumnCounter
@@ -467,10 +475,10 @@ column_loop:
         ldy #$00
         lda (MapAddr),y ; a now holds the tile index
         tay
-        lda TilesetData,y ; a now holds CHR index of the top-left tile
+        lda TilesetTopLeft,y ; a now holds CHR index of the top-left tile
         sta VRAM_TABLE_START,x
         inx
-        lda TilesetData+1,y ; a now holds CHR index of the top-right tile
+        lda TilesetTopRight,y ; a now holds CHR index of the top-right tile
         sta VRAM_TABLE_START,x
         inx
 
@@ -490,10 +498,10 @@ column_loop:
         ldy #$00
         lda (MapAddr),y ; a now holds the tile index
         tay
-        lda TilesetData+2,y ; a now holds CHR index of the top-left tile
+        lda TilesetBottomLeft,y ; a now holds CHR index of the bottom-left tile
         sta VRAM_TABLE_START,x
         inx
-        lda TilesetData+3,y ; a now holds CHR index of the top-right tile
+        lda TilesetBottomRight,y ; a now holds CHR index of the bottom-right tile
         sta VRAM_TABLE_START,x
         inx
 
@@ -520,10 +528,10 @@ row_loop:
         ldy #$00
         lda (MapAddr),y ; a now holds the tile index
         tay
-        lda TilesetData+0,y ; a now holds CHR index of the top-left tile
+        lda TilesetTopLeft,y ; a now holds CHR index of the top-left tile
         sta VRAM_TABLE_START,x
         inx
-        lda TilesetData+2,y ; a now holds CHR index of the top-right tile
+        lda TilesetBottomLeft,y ; a now holds CHR index of the bottom-left tile
         sta VRAM_TABLE_START,x
         inx
 
@@ -544,10 +552,10 @@ row_loop:
         ldy #$00
         lda (MapAddr),y ; a now holds the tile index
         tay
-        lda TilesetData+1,y ; a now holds CHR index of the top-left tile
+        lda TilesetTopRight,y ; a now holds CHR index of the top-right tile
         sta VRAM_TABLE_START,x
         inx
-        lda TilesetData+3,y ; a now holds CHR index of the top-right tile
+        lda TilesetBottomRight,y ; a now holds CHR index of the bottom-right tile
         sta VRAM_TABLE_START,x
         inx
 

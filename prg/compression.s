@@ -67,6 +67,7 @@ loop:
         sta (TargetAddr), y
         inc16 TargetAddr
         dec16 Length
+        cmp16 Length, #0
         bne loop
 
         rts
