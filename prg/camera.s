@@ -89,6 +89,7 @@ x_less_than_maximum:
         lda MapHeight
         asl a
         ; now subtract *playfield* height (ignoring the status area)
+        sec
         sbc #24
         ; stash in x temporarily
         tax
