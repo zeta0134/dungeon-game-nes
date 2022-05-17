@@ -6,7 +6,9 @@
 from PIL import Image
 from pathlib import Path
 import xml.etree.ElementTree as ElementTree
-import sys, os
+import os, re, sys
+
+from ca65 import pretty_print_table, ca65_label, ca65_byte_literal, ca65_word_literal
 
 def bytes_to_palette(byte_array):
   return [(byte_array[i], byte_array[i+1], byte_array[i+2]) for i in range(0, len(byte_array), 3)]
@@ -106,7 +108,7 @@ def write_chr_tiles(chr_tiles, filename):
     for tile in chr_tiles:
       output_file.write(bytes(tile))
 
-def write_meta_tiles(metatiles, filename):
+def write_meta_tiles_old(metatiles, filename):
   with open(filename, "wb") as output_file:
     # First write all the CHR data as one page
     for tile in metatiles:
@@ -120,6 +122,38 @@ def write_meta_tiles(metatiles, filename):
     # Again, pad the remaining space to a full page
     for i in range(len(metatiles), 64):
       output_file.write(bytes([0,0,0,0]))
+
+def nice_label(full_path_and_filename):
+  (_, plain_filename) = os.path.split(full_path_and_filename)
+  (base_filename, _) = os.path.splitext(plain_filename)
+  safe_label = re.sub(r'[^A-Za-z0-9\-\_]', '_', base_filename)
+  return safe_label
+
+def attribute_byte(metatile):
+  return ((metatile["type"]) << 2 | metatile["palette_index"]) & 0xFF
+
+def write_meta_tiles(metatiles, filename):
+  with open(filename, "w") as output_file:
+    top_left_corners = []
+    top_right_corners = []
+    bottom_left_corners = []
+    bottom_right_corners = []
+    attribute_bytes = []
+    for tile in metatiles:
+      top_left_corners.append(tile["chr_indices"][0])
+      top_right_corners.append(tile["chr_indices"][1])
+      bottom_left_corners.append(tile["chr_indices"][2])
+      bottom_right_corners.append(tile["chr_indices"][3])
+      attribute_bytes.append(attribute_byte(tile))
+    raw_metatile_bytes = top_left_corners + top_right_corners + bottom_left_corners + bottom_right_corners + attribute_bytes
+    # If we were to compress the data, this is where that would happen
+    output_file.write(ca65_label(nice_label(filename)) + "\n")
+    output_file.write("  .byte %s ; metatile count\n" % len(metatiles))
+    # here we output a standard compression header, using type 0 for uncompressed
+    output_file.write("  .byte %s ; compression type\n" % ca65_byte_literal(0))
+    output_file.write("  .word %s ; length in bytes\n" % ca65_word_literal(len(raw_metatile_bytes)))
+    pretty_print_table(raw_metatile_bytes, output_file, 16)
+    output_file.write("\n")
 
 def write_palettes(palettes, filename):
   with open(filename, "wb") as output_file:
