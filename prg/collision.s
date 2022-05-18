@@ -10,25 +10,16 @@
 
 .scope PRGLAST_E000
         .segment "PRGRAM"
-MetatileAttributes: .res 256
-.export MetatileAttributes
+
+; old dead pointer, remove when you are done refactoring
+MetatileAttributes:
+
+NavMapData: .res 1536
+.export NavMapData
 
         .segment "PRGLAST_E000"
 
-.export load_tileset_attributes
 
-; Load tile attributes into memory; these always have a fixed size of 256 bytes
-; Inputs:
-;   R0: 16bit address of the tileset data to load
-.proc load_tileset_attributes
-        ldy #$00
-loop:
-        lda (R0),y
-        sta MetatileAttributes,y
-        iny
-        bne loop
-        rts
-.endproc
 
 .macro map_index TileX, TileY, DestAddr
         ; goal is to turn TileY into %00111111 11000000

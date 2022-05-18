@@ -1,4 +1,5 @@
         .setcpu "6502"
+        .include "collision.inc"
         .include "compression.inc"
         .include "scrolling.inc"
         .include "word_util.inc"
@@ -48,6 +49,16 @@ MapAddr := R4
         lda (MapAddr), y
         sta SourceAddr+1
         st16 DestAddr, (MapData)
+        jsr decompress
+
+        ; And finally the collision map
+        ldy #MapHeader::collision_ptr
+        lda (MapAddr), y
+        sta SourceAddr
+        iny
+        lda (MapAddr), y
+        sta SourceAddr+1
+        st16 DestAddr, (NavMapData)
         jsr decompress
 
         ; For now that is all, we need to make sure that worked.

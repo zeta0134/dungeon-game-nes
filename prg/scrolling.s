@@ -13,8 +13,8 @@
         .segment "PRGRAM"
 MAX_METATILES = 128
 
-MapData: .res 4096
-AttributeData: .res 1024
+MapData: .res 1536
+AttributeData: .res 384
 TilesetTopLeft: .res MAX_METATILES
 TilesetTopRight: .res MAX_METATILES
 TilesetBottomLeft: .res MAX_METATILES

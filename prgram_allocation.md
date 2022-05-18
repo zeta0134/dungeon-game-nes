@@ -23,7 +23,7 @@ Current Room, Graphics: 64 metatiles x 24 metatiles* = **1536 bytes**
 Current Room, Nav: 64 metatiles x 24 metatiles* = **1536 bytes**
 Graphics Tilemap: 256 tiles x (4 CHR tiles + 1 palette) = **1280 bytes**
 Navigation Tilemap: 256 tiles x (1 collision + 1 type) = **512 bytes**
-Attribute Shadow = 32 4x4 metatiles x 16 4x4 metatiles = **512 bytes**
+Attribute Shadow = 32 4x4 metatiles x 16 4x4 metatiles = **384 bytes**
 
 Ponder: the navigation tilemap might be sharable between all maps. If so, it could be PRG ROM
 Ponder: The attribute byte in the graphics tileset might be redundant, once it has been used to
