@@ -171,7 +171,7 @@ def write_map_header(tilemap, output_file):
     output_file.write("  .byte %s ; height\n" % ca65_byte_literal(tilemap.height))
     output_file.write("  .word %s_graphics\n" % tilemap.name)
     output_file.write("  .word %s_collision\n" % tilemap.name)
-    output_file.write("  .word %s ; first tileset \n" % tilemap.graphics_tilesets[0].name)
+    output_file.write("  .word %s_tileset ; first tileset \n" % tilemap.graphics_tilesets[0].name)
     output_file.write("\n")
 
 def write_graphics_tiles(tilemap, output_file):

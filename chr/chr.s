@@ -8,10 +8,10 @@ blank_index_0:
 
         .segment "BG1"
 hud_graphics:
-        .incbin "build/tilesets/statusbar.chr"
+        .include "../build/tilesets/statusbar.chr"
 
         .segment "BG2"
-        .incbin "build/tilesets/tiles_3d.chr"
+        .include "../build/tilesets/tiles_3d.chr"
 
         .segment "OBJ0"
 boxgirl_graphics:
