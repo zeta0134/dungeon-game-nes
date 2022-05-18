@@ -16,6 +16,7 @@
         height .byte
         graphics_ptr .word
         collision_ptr .word
+        first_tileset .word
 .endstruct
 
 ; Loads a map into PRG RAM buffer, in preparation for drawing and gameplay
@@ -28,6 +29,7 @@
 SourceAddr := R0
 DestAddr := R2
 MapAddr := R4
+TilesetAddress := R6
         ; First read in the map's dimensions in tiles, and store them. The scrolling engine and
         ; several other game mechanics rely on these values
         ldy #MapHeader::width
@@ -40,6 +42,16 @@ MapAddr := R4
         ldy #MapHeader::height
         lda (MapAddr), y
         sta MapHeight
+
+        ; First, decompress the tileset. This will clobber MapData, but that's okay since we're about to
+        ; overwrite it anyway
+        ldy #MapHeader::first_tileset
+        lda (MapAddr), y
+        sta TilesetAddress
+        iny
+        lda (MapAddr), y
+        sta TilesetAddress+1
+        jsr load_tileset
 
         ; Next decompress the blocks of data, starting with the graphics map
         ldy #MapHeader::graphics_ptr

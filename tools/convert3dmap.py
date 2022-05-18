@@ -22,6 +22,7 @@ class TiledTile:
 
 @dataclass
 class TiledTileSet:
+    name: str
     first_gid: int
     tiles: Dict[int, TiledTile]
 
@@ -32,6 +33,7 @@ class CombinedMap:
     name: str
     width: int
     height: int
+    graphics_tilesets: [TiledTileSet]
     tiles: [TiledTile]
 
 def read_boolean_properties(tile_element):
@@ -52,7 +54,7 @@ def read_integer_properties(tile_element):
                 integer_properties[prop.get("name")] = int(prop.get("value"))
     return integer_properties
 
-def read_tileset(tileset_filename, first_gid=0):
+def read_tileset(tileset_filename, first_gid=0, name=""):
     tileset_element = ElementTree.parse(tileset_filename).getroot()
     tile_elements = tileset_element.findall("tile")
     tiles = {}
@@ -63,7 +65,7 @@ def read_tileset(tileset_filename, first_gid=0):
         integer_properties = read_integer_properties(tile_element)
         tiled_tile = TiledTile(ordinal_index=ordinal_index, tiled_index=tiled_index, boolean_properties=boolean_properties, integer_properties=integer_properties)
         tiles[tiled_index] = tiled_tile
-    tileset = TiledTileSet(first_gid=first_gid, tiles=tiles)
+    tileset = TiledTileSet(first_gid=first_gid, tiles=tiles, name=name)
     return tileset
 
 def tile_from_gid(tile_index, tilesets):
@@ -72,6 +74,12 @@ def tile_from_gid(tile_index, tilesets):
             tileset_index = tile_index - tileset.first_gid
             return tileset.tiles.get(tileset_index, BLANK_TILE)
     return BLANK_TILE
+
+def tileset_from_gid(tile_index, tilesets):
+    for tileset in reversed(tilesets):
+        if tileset.first_gid <= tile_index:
+            return tileset
+    return None
 
 def read_layer(layer_element, tilesets):
     data = layer_element.find("data")
@@ -93,6 +101,25 @@ def combine_properties(graphics_tile, supplementary_tiles):
         combined_tile.boolean_properties = combined_tile.boolean_properties | supplementary_tile.boolean_properties
     return combined_tile
 
+def nice_label(full_path_and_filename):
+  (_, plain_filename) = os.path.split(full_path_and_filename)
+  (base_filename, _) = os.path.splitext(plain_filename)
+  safe_label = re.sub(r'[^A-Za-z0-9\-\_]', '_', base_filename)
+  return safe_label
+
+def identity_graphics_tilesets(layer_elements, tilesets):
+    graphics_tilesets = []
+    for layer_element in layer_elements:
+        if layer_element.get("name") == "Graphics":
+            data = layer_element.find("data")
+            if data.get("encoding") == "csv":
+                cell_values = [int(x) for x in data.text.split(",")]
+                for tile_id in cell_values:
+                    tileset = tileset_from_gid(tile_id, tilesets)
+                    if tileset and tileset not in graphics_tilesets:
+                        graphics_tilesets.append(tileset)
+    return graphics_tilesets
+
 def read_map(map_filename):
     map_element = ElementTree.parse(map_filename).getroot()
     map_width = int(map_element.get("width"))
@@ -107,7 +134,7 @@ def read_map(map_filename):
         relative_path = tileset_element.get("source")
         base_path = Path(map_filename).parent
         tileset_path = (base_path / relative_path).resolve()
-        tileset = read_tileset(tileset_path, first_gid)
+        tileset = read_tileset(tileset_path, first_gid, nice_label(tileset_path))
         tilesets.append(tileset)
     
     # then read in all map layers. Using the raw index data and the first gids, we can
@@ -116,6 +143,8 @@ def read_map(map_filename):
     layer_elements = map_element.findall("layer")
     for layer_element in layer_elements:
         layers[layer_element.get("name")] = read_layer(layer_element, tilesets)
+
+    graphics_tilesets = identity_graphics_tilesets(layer_elements, tilesets)
 
     # At this point we should have at least one layer named "Graphics", if we don't
     # we can't continue and must bail
@@ -134,7 +163,7 @@ def read_map(map_filename):
     (base_filename, _) = os.path.splitext(plain_filename)
     safe_label = re.sub(r'[^A-Za-z0-9\-\_]', '_', base_filename)
 
-    return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles)
+    return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles, graphics_tilesets=graphics_tilesets)
 
 def write_map_header(tilemap, output_file):
     output_file.write(ca65_label(tilemap.name) + "\n")
@@ -142,6 +171,7 @@ def write_map_header(tilemap, output_file):
     output_file.write("  .byte %s ; height\n" % ca65_byte_literal(tilemap.height))
     output_file.write("  .word %s_graphics\n" % tilemap.name)
     output_file.write("  .word %s_collision\n" % tilemap.name)
+    output_file.write("  .word %s ; first tileset \n" % tilemap.graphics_tilesets[0].name)
     output_file.write("\n")
 
 def write_graphics_tiles(tilemap, output_file):

@@ -114,8 +114,6 @@ start:
         sta PPUCTRL ; and NMI
 
         ; less demo map init
-        st16 R6, (tiles_3d)
-        jsr load_tileset
         st16 R4, (test_room_3d)
         jsr load_map
         

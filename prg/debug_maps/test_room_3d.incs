@@ -3,6 +3,7 @@ test_room_3d:
   .byte $18 ; height
   .word test_room_3d_graphics
   .word test_room_3d_collision
+  .word tiles_3d ; first tileset 
 
 test_room_3d_graphics:
   .byte $00 ; compression type
