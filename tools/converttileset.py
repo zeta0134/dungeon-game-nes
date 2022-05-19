@@ -108,7 +108,10 @@ def write_chr_tiles(chr_tiles, filename):
   for tile in chr_tiles:
     chr_bytes = chr_bytes + tile
   with open(filename, "w") as output_file:
-    output_file.write(ca65_label(nice_label(filename)+"_chr") + "\n")
+    chr_label = nice_label(filename)+"_chr"
+
+    output_file.write(".export %s\n\n" % chr_label)
+    output_file.write(ca65_label(chr_label) + "\n")
     pretty_print_table(chr_bytes, output_file, 16)
     output_file.write("\n")
 
@@ -151,7 +154,13 @@ def write_meta_tiles(metatiles, filename):
       attribute_bytes.append(attribute_byte(tile))
     raw_metatile_bytes = top_left_corners + top_right_corners + bottom_left_corners + bottom_right_corners + attribute_bytes
     # If we were to compress the data, this is where that would happen
-    output_file.write(ca65_label(nice_label(filename)+"_tileset") + "\n")
+
+    metatile_label = nice_label(filename)+"_tileset"
+    chr_label = nice_label(filename)+"_chr"
+
+    output_file.write(".import %s\n\n" % chr_label)
+    output_file.write(ca65_label(metatile_label) + "\n")
+    output_file.write("  .byte <.bank(%s) ; CHR bank\n" % chr_label)
     output_file.write("  .byte %s ; metatile count\n" % len(metatiles))
     # here we output a standard compression header, using type 0 for uncompressed
     output_file.write("  .byte %s ; compression type\n" % ca65_byte_literal(0))

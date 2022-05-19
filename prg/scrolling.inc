@@ -6,5 +6,6 @@
 .import set_scroll_for_entire_frame
 
 .import MapData, TilesetTopLeft, TilesetTopRight, TilesetBottomLeft, TilesetBottomRight, TilesetAttributes
+.import DynamicChrBank, StaticChrBank
 .importzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget, MapWidth, MapHeight, AttributeWidth, PpuYTileTarget
 

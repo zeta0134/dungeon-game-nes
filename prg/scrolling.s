@@ -13,6 +13,7 @@
         .segment "PRGRAM"
 MAX_METATILES = 128
 
+; Various large working blocks of map data
 MapData: .res 1536
 AttributeData: .res 384
 TilesetTopLeft: .res MAX_METATILES
@@ -21,6 +22,10 @@ TilesetBottomLeft: .res MAX_METATILES
 TilesetBottomRight: .res MAX_METATILES
 TilesetAttributes: .res MAX_METATILES
 .export MapData, TilesetTopLeft, TilesetTopRight, TilesetBottomLeft, TilesetBottomRight, TilesetAttributes
+; CHR banks to display the selected tileset(s)
+DynamicChrBank: .byte $00
+StaticChrBank: .byte $00
+.export DynamicChrBank, StaticChrBank
         .zeropage
 ; Map dimensions
 MapWidth: .byte $00

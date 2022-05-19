@@ -166,7 +166,7 @@ gameloop:
         lda inactive_irq_index
         sta R0
         ; CHR bank to use for BG graphics
-        lda #4
+        lda DynamicChrBank
         sta R1
         jsr generate_basic_playfield
         jsr generate_standard_hud

@@ -30,6 +30,7 @@ SourceAddr := R0
 DestAddr := R2
 MapAddr := R4
 TilesetAddress := R6
+TilesetChrBank := R9
         ; First read in the map's dimensions in tiles, and store them. The scrolling engine and
         ; several other game mechanics rely on these values
         ldy #MapHeader::width
@@ -52,6 +53,8 @@ TilesetAddress := R6
         lda (MapAddr), y
         sta TilesetAddress+1
         jsr load_tileset
+        lda TilesetChrBank
+        sta DynamicChrBank
 
         ; Next decompress the blocks of data, starting with the graphics map
         ldy #MapHeader::graphics_ptr
@@ -87,13 +90,19 @@ SourceAddr := R0
 DestAddr := R2
 TilesetAddress := R6
 MetatileCount := R8
-        ; first grab the metatile count, since we'll need it to unzip the data properly later
+TilesetChrBank := R9
         ldy #0
+
+        ; first grab the chr bank and the metatile count, since we'll need it to unzip the data properly later
+        lda (TilesetAddress), y
+        sta TilesetChrBank
+        inc16 TilesetAddress
+
         lda (TilesetAddress), y
         sta MetatileCount
-        ; now skip past it, so our TilesetAddress points to the start of the decompression header
         inc16 TilesetAddress
-        ; set that header up as the source
+
+        ; now TilesetAddress points at the decompression header; set that header up as the source
         lda TilesetAddress
         sta SourceAddr
         lda TilesetAddress+1
