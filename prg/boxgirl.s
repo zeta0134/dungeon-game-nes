@@ -1,6 +1,6 @@
         .setcpu "6502"
         .include "nes.inc"
-        .include "collision.inc"
+        .include "collision_3d.inc"
         .include "input.inc"
         .include "sprites.inc"
         .include "entity.inc"
@@ -9,7 +9,7 @@
         .include "zeropage.inc"
 
 .scope PRGLAST_E000
-        .segment "PRGLAST_E000"
+        .segment "PRGLAST_C000"
         ;.org $e000
         .include "animations/boxgirl/idle.inc"
         .include "animations/boxgirl/move.inc"
@@ -78,9 +78,11 @@ failed_to_spawn:
         bmi move_left
 move_right:
         sadd16x entity_table + EntityState::PositionX, R0
+        jsr collide_right_with_map_3d
         jmp done_with_x
 move_left:
         sadd16x entity_table + EntityState::PositionX, R0
+        jsr collide_left_with_map_3d
 done_with_x:
         ldx CurrentEntityIndex
         lda entity_table + EntityState::Data + DATA_SPEED_Y, x
@@ -88,9 +90,11 @@ done_with_x:
         bmi move_up
 move_down:
         sadd16x entity_table + EntityState::PositionY, R0
+        jsr collide_down_with_map_3d
         jmp done
 move_up:
         sadd16x entity_table + EntityState::PositionY, R0
+        jsr collide_up_with_map_3d
 
 done:
         rts

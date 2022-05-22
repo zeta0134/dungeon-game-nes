@@ -14,6 +14,9 @@
 ; old dead pointer, remove when you are done refactoring
 MetatileAttributes:
 
+NavMapData: .res 1536
+.export NavMapData
+
         .segment "PRGLAST_E000"
 
 
@@ -58,7 +61,7 @@ MetatileAttributes:
         sta DestY+1 ; now contains map tile for top-left
 .endmacro
 
-.macro if_solid TileAddr, HandleResponse, NudgeResponse
+.macro if_solid TileAddr, HandleResponse
 .scope
         ldy #0
         lda (TileAddr), y ; now contains collision index
@@ -66,7 +69,6 @@ MetatileAttributes:
         lda MetatileAttributes, y; a now contains tile type
         bpl no_response
         jsr HandleResponse
-        jsr NudgeResponse
 no_response:
 .endscope
 .endmacro
@@ -154,72 +156,6 @@ TileY := R8
         rts
 .endproc
 
-.proc nudge_right
-TileAddr := R9
-        ldy #1
-        lda (TileAddr), y ; now contains collision index
-        tay
-        lda MetatileAttributes, y; a now contains tile type to our right
-        bmi no_nudge
-        ldx CurrentEntityIndex
-        inc entity_table + EntityState::PositionX, x
-        bne no_nudge
-        inc entity_table + EntityState::PositionX+1, x
-no_nudge:
-        rts
-.endproc
-
-.proc nudge_left
-TileAddr := R9
-        dec16 TileAddr
-        ldy #0
-        lda (TileAddr), y ; now contains collision index
-        tay
-        lda MetatileAttributes, y; a now contains tile type to our left
-        bmi no_nudge
-        ldx CurrentEntityIndex
-        dec entity_table + EntityState::PositionX, x
-        lda #$FF
-        cmp entity_table + EntityState::PositionX, x
-        bne no_nudge
-        dec entity_table + EntityState::PositionX+1, x
-no_nudge:
-        rts
-.endproc
-
-.proc nudge_down
-TileAddr := R9
-        ldy #64
-        lda (TileAddr), y ; now contains collision index
-        tay
-        lda MetatileAttributes, y; a now contains tile type below us
-        bmi no_nudge
-        ldx CurrentEntityIndex
-        inc entity_table + EntityState::PositionY, x
-        bne no_nudge
-        inc entity_table + EntityState::PositionY+1, x
-no_nudge:
-        rts
-.endproc
-
-.proc nudge_up
-TileAddr := R9
-        sub16 TileAddr, #64
-        ldy #0
-        lda (TileAddr), y ; now contains collision index
-        tay
-        lda MetatileAttributes, y; a now contains tile type above us
-        bmi no_nudge
-        ldx CurrentEntityIndex
-        dec entity_table + EntityState::PositionY, x
-        lda #$FF
-        cmp entity_table + EntityState::PositionY, x
-        bne no_nudge
-        dec entity_table + EntityState::PositionY+1, x
-no_nudge:
-        rts
-.endproc
-
 .proc dummy
         rts
 .endproc
@@ -260,8 +196,8 @@ TileY := R8
 ;   - R3 - height in subtiles
 ; Clobbers:
 ;   - yes
-.export collide_up_with_map
-.proc collide_up_with_map
+.export collide_up_with_map_3d
+.proc collide_up_with_map_3d
 LeftX := R1
 TopY := R2
 RightX := R3
@@ -273,17 +209,17 @@ TileY := R8
 TileAddr := R9
         tile_offset LeftX, TopY, SubtileX, SubtileY
         map_index TileX, TileY, TileAddr
-        if_solid TileAddr, collision_response_push_down, nudge_right
+        if_solid TileAddr, collision_response_push_down
 
         tile_offset RightX, TopY, SubtileX, SubtileY
         map_index TileX, TileY, TileAddr
-        if_solid TileAddr, collision_response_push_down, nudge_left
+        if_solid TileAddr, collision_response_push_down
 
         rts
 .endproc
 
-.export collide_down_with_map
-.proc collide_down_with_map
+.export collide_down_with_map_3d
+.proc collide_down_with_map_3d
 LeftX := R1
 TopY := R2
 RightX := R3
@@ -295,17 +231,17 @@ TileY := R8
 TileAddr := R9
         tile_offset LeftX, BottomY, SubtileX, SubtileY
         map_index TileX, TileY, TileAddr
-        if_solid TileAddr, collision_response_push_up, nudge_right
+        if_solid TileAddr, collision_response_push_up
 
         tile_offset RightX, BottomY, SubtileX, SubtileY
         map_index TileX, TileY, TileAddr
-        if_solid TileAddr, collision_response_push_up, nudge_left
+        if_solid TileAddr, collision_response_push_up
 
         rts
 .endproc
 
-.export collide_left_with_map
-.proc collide_left_with_map
+.export collide_left_with_map_3d
+.proc collide_left_with_map_3d
 LeftX := R1
 TopY := R2
 RightX := R3
@@ -317,17 +253,17 @@ TileY := R8
 TileAddr := R9
         tile_offset LeftX, TopY, SubtileX, SubtileY
         map_index TileX, TileY, TileAddr
-        if_solid TileAddr, collision_response_push_right, nudge_down
+        if_solid TileAddr, collision_response_push_right
 
         tile_offset LeftX, BottomY, SubtileX, SubtileY
         map_index TileX, TileY, TileAddr
-        if_solid TileAddr, collision_response_push_right, nudge_up
+        if_solid TileAddr, collision_response_push_right
 
         rts
 .endproc
 
-.export collide_right_with_map
-.proc collide_right_with_map
+.export collide_right_with_map_3d
+.proc collide_right_with_map_3d
 LeftX := R1
 TopY := R2
 RightX := R3
@@ -339,11 +275,11 @@ TileY := R8
 TileAddr := R9
         tile_offset RightX, TopY, SubtileX, SubtileY
         map_index TileX, TileY, TileAddr
-        if_solid TileAddr, collision_response_push_left, nudge_down
+        if_solid TileAddr, collision_response_push_left
 
         tile_offset RightX, BottomY, SubtileX, SubtileY
         map_index TileX, TileY, TileAddr
-        if_solid TileAddr, collision_response_push_left, nudge_up
+        if_solid TileAddr, collision_response_push_left
 
         rts
 .endproc
