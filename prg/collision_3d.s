@@ -17,7 +17,45 @@ MetatileAttributes:
 NavMapData: .res 1536
 .export NavMapData
 
-        .segment "PRGLAST_E000"
+        .zeropage
+nav_lut_ptr_low: .res 2
+nav_lut_ptr_high: .res 2
+
+        .segment "PRGLAST_C000"
+
+nav_lut_width_128_low:
+        .repeat 128, i
+        .byte <(NavMapData + (128 * i))
+        .endrep
+nav_lut_width_64_low:
+        .repeat 64, i
+        .byte <(NavMapData + (64 * i))
+        .endrep
+nav_lut_width_32_low:
+        .repeat 32, i
+        .byte <(NavMapData + (32 * i))
+        .endrep
+nav_lut_width_16_low:
+        .repeat 16, i
+        .byte <(NavMapData + (16 * i))
+        .endrep
+
+nav_lut_width_128_high:
+        .repeat 128, i
+        .byte >(NavMapData + (128 * i))
+        .endrep
+nav_lut_width_64_high:
+        .repeat 64, i
+        .byte >(NavMapData + (64 * i))
+        .endrep
+nav_lut_width_32_high:
+        .repeat 32, i
+        .byte >(NavMapData + (32 * i))
+        .endrep
+nav_lut_width_16_high:
+        .repeat 16, i
+        .byte >(NavMapData + (16 * i))
+        .endrep
 
 
 
