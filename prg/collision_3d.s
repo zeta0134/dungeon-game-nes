@@ -18,8 +18,9 @@ NavMapData: .res 1536
 .export NavMapData
 
         .zeropage
-nav_lut_ptr_low: .res 2
-nav_lut_ptr_high: .res 2
+NavLutPtrLow: .res 2
+NavLutPtrHigh: .res 2
+.exportzp NavLutPtrLow, NavLutPtrHigh
 
         .segment "PRGLAST_C000"
 
@@ -57,7 +58,44 @@ nav_lut_width_16_high:
         .byte >(NavMapData + (16 * i))
         .endrep
 
+.export update_nav_lut_ptr
+.proc update_nav_lut_ptr
+        lda MapWidth
+        cmp #128
+        bne check_64
+        st16 NavLutPtrHigh, nav_lut_width_128_high
+        st16 NavLutPtrLow, nav_lut_width_128_low
+        rts
+check_64:
+        lda MapWidth
+        cmp #64
+        bne check_32
+        st16 NavLutPtrHigh, nav_lut_width_64_high
+        st16 NavLutPtrLow, nav_lut_width_64_low
+        rts
+check_32:
+        lda MapWidth
+        cmp #32
+        bne must_be_16
+        st16 NavLutPtrHigh, nav_lut_width_32_high
+        st16 NavLutPtrLow, nav_lut_width_32_low
+        rts
+must_be_16:
+        st16 NavLutPtrHigh, nav_lut_width_16_high
+        st16 NavLutPtrLow, nav_lut_width_16_low
+        rts
+.endproc
 
+; clobbers a and y
+.macro nav_map_index TileX, TileY, DestAddr
+        ldy TileY
+        lda (NavLutPtrHigh), y
+        sta DestAddr+1
+        lda (NavLutPtrLow), y
+        clc
+        adc TileX
+        sta DestAddr
+.endmacro
 
 .macro map_index TileX, TileY, DestAddr
         ; goal is to turn TileY into %00111111 11000000

@@ -1,5 +1,6 @@
         .setcpu "6502"
         .include "collision.inc"
+        .include "collision_3d.inc"
         .include "compression.inc"
         .include "scrolling.inc"
         .include "word_util.inc"
@@ -43,6 +44,8 @@ TilesetChrBank := R9
         ldy #MapHeader::height
         lda (MapAddr), y
         sta MapHeight
+
+        jsr update_nav_lut_ptr
 
         ; First, decompress the tileset. This will clobber MapData, but that's okay since we're about to
         ; overwrite it anyway
