@@ -256,15 +256,11 @@ TileY := R7
         rts
 .endproc
 
-; Handles collision response of an AABB against map tiles which are exclusively
-; fully solid, or fully impassable.
-; Restrictions: AABB maximum size is 16px x 16px
+; Handles collision response of an axis aligned line segment.
+; Restrictions: line segment maximum offset in any direction is 16px
 ; Inputs:
 ;   - CurrentEntityIndex
-;   - R0 - X Offset in subtiles (4.4 pixels)
-;   - R1 - Y Offset in subtiles
-;   - R2 - width in subtiles
-;   - R3 - height in subtiles
+;   - R0 - R8: various (see below)
 ; Clobbers:
 ;   - yes
 .export collide_up_with_map_3d
@@ -309,6 +305,9 @@ TileAddr := R8
         rts
 .endproc
 
+; For the left and right directions, since our line segment is aligned to an axis, we
+; can safely ignore the opposite point of the direction of movement. The response for such
+; a collision would be wrong anyway. This cuts down on 25% of collision checks per entity
 .export collide_left_with_map_3d
 .proc collide_left_with_map_3d
 LeftX := R1
@@ -322,11 +321,6 @@ TileAddr := R8
         tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_right
-
-        tile_offset RightX, VerticalOffset, SubtileX, SubtileY
-        nav_map_index TileX, TileY, TileAddr
-        if_solid TileAddr, collision_response_push_right
-
         rts
 .endproc
 
@@ -340,14 +334,9 @@ TileX := R5
 SubtileY := R6
 TileY := R7
 TileAddr := R8
-        tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
-        nav_map_index TileX, TileY, TileAddr
-        if_solid TileAddr, collision_response_push_left
-
         tile_offset RightX, VerticalOffset, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_left
-
         rts
 .endproc
 
