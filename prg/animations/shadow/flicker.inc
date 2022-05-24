@@ -60,23 +60,23 @@ shadow_frames_vertical_stripes:
 ; sprite tiles for above
 
 shadow_oam_solid:
-        ;     Y-offset  Tile  Attr   X-offset
-        .byte 0,        0,    $00,    0
+        ;     Y-offset   Tile  Attr   X-offset
+        .byte ($FF - 1), 1,    $00,   4
 shadow_oam_checkerboard_left:
-        ;     Y-offset  Tile  Attr   X-offset
-        .byte 0,        1,    $00,    0
+        ;     Y-offset   Tile  Attr   X-offset
+        .byte ($FF - 1), 3,    $00,   4
 shadow_oam_checkerboard_right:
-        ;     Y-offset  Tile  Attr   X-offset
-        .byte 0,        1,    $00,    1
+        ;     Y-offset   Tile  Attr   X-offset
+        .byte ($FF - 1), 3,    $00,   5
 shadow_oam_horiz_even:
-        ;     Y-offset  Tile  Attr   X-offset
-        .byte 0,        2,    $00,    0
+        ;     Y-offset   Tile  Attr   X-offset
+        .byte ($FF - 1), 5,    $00,   4
 shadow_oam_horiz_odd:
-        ;     Y-offset  Tile  Attr   X-offset
-        .byte 0,        3,    $00,    0
+        ;     Y-offset   Tile  Attr   X-offset
+        .byte ($FF - 1), 7,    $00,   4
 shadow_oam_vert_even:
-        ;     Y-offset  Tile  Attr   X-offset
-        .byte 0,        4,    $00,    0
+        ;     Y-offset   Tile  Attr   X-offset
+        .byte ($FF - 1), 9,    $00,   4
 shadow_oam_vert_odd:
-        ;     Y-offset  Tile  Attr   X-offset
-        .byte 0,        5,    $00,    0
+        ;     Y-offset   Tile  Attr   X-offset
+        .byte ($FF - 1), 11,   $00,   4

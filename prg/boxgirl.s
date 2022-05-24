@@ -1,4 +1,5 @@
         .setcpu "6502"
+        .include "branch_util.inc"
         .include "nes.inc"
         .include "collision_3d.inc"
         .include "input.inc"
@@ -13,6 +14,7 @@
         ;.org $e000
         .include "animations/boxgirl/idle.inc"
         .include "animations/boxgirl/move.inc"
+        .include "animations/shadow/flicker.inc"
         .export boxgirl_init
 
 WALKING_SPEED = 16
@@ -53,20 +55,33 @@ FACING_RIGHT = %00000000
 ; mostly performs a whole bunch of one-time setup
 ; expects the entity position to have been set by whatever did the initial spawning
 .proc boxgirl_init
+        ; allocate our main character sprite
+        jsr find_unused_metasprite
+        lda #$FF
+        cmp R0
+        jeq failed_to_spawn
+        ldy CurrentEntityIndex
+        lda R0
+        sta entity_table + EntityState::MetaSpriteIndex, y
+        ; basic initialization of the main sprite
+        set_metasprite_animation R0, boxgirl_anim_idle_right
+        set_metasprite_tile_offset R0, #0
+        set_metasprite_palette_offset R0, #0
+        ; allocate a shadow sprite
         jsr find_unused_metasprite
         lda #$FF
         cmp R0
         beq failed_to_spawn
         ldy CurrentEntityIndex
-        sty R1 ; used to set entity position in a moment
         lda R0
-        sta entity_table + EntityState::MetaSpriteIndex, y
-        set_metasprite_animation R0, boxgirl_anim_idle_right
-        ; uses the EntityIndex in R1 and the MetaSprite index, still in R0 at this point
-        jsr set_metasprite_pos
-        ; ensure the rest of the metasprite attributes are sensibly defaulted
-        set_metasprite_tile_offset R0, #0
+        sta entity_table + EntityState::ShadowSpriteIndex, y
+        ; basic init for the shadow sprite
+        set_metasprite_animation R0, shadow_solid
+        set_metasprite_tile_offset R0, #$18 ; note: probably move this to its own bank later
         set_metasprite_palette_offset R0, #0
+
+        jsr set_3d_metasprite_pos
+
         ; use data bytes 0 and 1 to track speed
         lda #0
         ldy CurrentEntityIndex
@@ -178,7 +193,31 @@ done:
         ror metasprite_table + MetaSpriteState::PositionY, x
         .endrepeat
 
-        ; Okay now we would draw the shadow here, but we're gonna do that later
+        ; Alright now, repeat most of the above but for the shadow sprite
+        ; TODO: should we display the shadow sprite at all when not airbourne?
+        ldx entity_table + EntityState::ShadowSpriteIndex, y
+
+        ; copy the coordinates into place
+        lda entity_table + EntityState::PositionX, y
+        sta metasprite_table + MetaSpriteState::PositionX, x
+        lda entity_table + EntityState::PositionX+1, y
+        sta metasprite_table + MetaSpriteState::PositionX+1, x
+        lda entity_table + EntityState::PositionY, y
+        sta metasprite_table + MetaSpriteState::PositionY, x
+        lda entity_table + EntityState::PositionY+1, y
+        sta metasprite_table + MetaSpriteState::PositionY+1, x
+
+        ; now, shift the metasprite position to the right by 4, taking
+        ; the coordinates from *subtile* space to *pixel* space
+        .repeat 4
+        lsr metasprite_table + MetaSpriteState::PositionX+1, x
+        ror metasprite_table + MetaSpriteState::PositionX, x
+        .endrepeat
+        .repeat 4
+        lsr metasprite_table + MetaSpriteState::PositionY+1, x
+        ror metasprite_table + MetaSpriteState::PositionY, x
+        .endrepeat
+
         rts
 .endproc
 
