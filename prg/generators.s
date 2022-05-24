@@ -177,18 +177,18 @@ IrqGenerationIndex := R0
         sta irq_table_scanlines, x
         inc IrqGenerationIndex
         inx
-        ; Finally, generate a terminal segment with rendering disabled. This will also stop the
-        ; MMC3 IRQ counter, so no more interrupts will be fired on this frame.
-        lda #0
+        ; Finally, generate a terminal segment with the CHR bank switched to blank tiles
+        lda #(BG_ON)
         sta irq_table_ppumask, x
         lda #$FF
         sta irq_table_scanlines, x
-        ; Note: these aren't strictly necessary, but we're doing them anyway for debugging purposes
         lda #0
         sta irq_table_scroll_x, x
+        lda #224
         sta irq_table_scroll_y, x
+        lda #0
         sta irq_table_nametable_high, x
-        sta irq_table_chr0_bank, x
+        sta irq_table_chr0_bank, x ; index 0 is blank
         ; Also not strictly necessary, but we should conform to our own guidelines
         inc IrqGenerationIndex 
         rts

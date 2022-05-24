@@ -8,27 +8,33 @@
   <image width="16" height="16" source="../tiles/solid_index_1.png"/>
  </tile>
  <tile id="2">
-  <image width="16" height="16" source="../tiles/rounded_border_bl.png"/>
+  <image width="16" height="16" source="../tiles/solid_index_2.png"/>
  </tile>
  <tile id="3">
-  <image width="16" height="16" source="../tiles/rounded_border_bm.png"/>
+  <image width="16" height="16" source="../tiles/solid_index_3.png"/>
  </tile>
  <tile id="4">
-  <image width="16" height="16" source="../tiles/rounded_border_br.png"/>
+  <image width="16" height="16" source="../tiles/rounded_border_bl.png"/>
  </tile>
  <tile id="5">
-  <image width="16" height="16" source="../tiles/rounded_border_ml.png"/>
+  <image width="16" height="16" source="../tiles/rounded_border_bm.png"/>
  </tile>
  <tile id="6">
-  <image width="16" height="16" source="../tiles/rounded_border_mr.png"/>
+  <image width="16" height="16" source="../tiles/rounded_border_br.png"/>
  </tile>
  <tile id="7">
-  <image width="16" height="16" source="../tiles/rounded_border_tl.png"/>
+  <image width="16" height="16" source="../tiles/rounded_border_ml.png"/>
  </tile>
  <tile id="8">
-  <image width="16" height="16" source="../tiles/rounded_border_tm.png"/>
+  <image width="16" height="16" source="../tiles/rounded_border_mr.png"/>
  </tile>
  <tile id="9">
+  <image width="16" height="16" source="../tiles/rounded_border_tl.png"/>
+ </tile>
+ <tile id="10">
+  <image width="16" height="16" source="../tiles/rounded_border_tm.png"/>
+ </tile>
+ <tile id="11">
   <image width="16" height="16" source="../tiles/rounded_border_tr.png"/>
  </tile>
 </tileset>

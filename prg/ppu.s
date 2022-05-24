@@ -56,36 +56,46 @@ loop:
         set_ppuaddr #$3F00
 
         ; level regions use this greyscale thing
-        lda #$0F
+        lda #$37
         sta PPUDATA
-        lda #$00
+        lda #$27
         sta PPUDATA
-        lda #$10
+        lda #$17
         sta PPUDATA
-        lda #$20
+        lda #$06
         sta PPUDATA
 
         ; and this green thing
 
-        lda #$09
-        sta PPUDATA
-        lda #$19
+        lda #$39
         sta PPUDATA
         lda #$29
         sta PPUDATA
-        lda #$39
+        lda #$19
+        sta PPUDATA
+        lda #$09
         sta PPUDATA
 
-        ; and now also this "warm" thing
+        ; and now also this "warm" thing (again?)
 
-        lda #$06
-        sta PPUDATA
-        lda #$17
+        lda #$37
         sta PPUDATA
         lda #$27
         sta PPUDATA
+        lda #$17
+        sta PPUDATA
+        lda #$06
+        sta PPUDATA
+
+        ; finally for now, the HUD uses plain greyscale
         lda #$37
-        sta PPUDATA        
+        sta PPUDATA
+        lda #$30
+        sta PPUDATA
+        lda #$00
+        sta PPUDATA
+        lda #$0F
+        sta PPUDATA
 
         ; Sprites
         ; gray!

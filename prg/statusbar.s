@@ -18,16 +18,16 @@
 ;BORDER_TM = 136
 ;BORDER_TR = 137
 
-BLANK = 0
-FILL = 1
-BORDER_ML = 2
-BORDER_BL = 3
-BORDER_BM = 4
-BORDER_MR = 5
-BORDER_BR = 6
-BORDER_TL = 7
-BORDER_TM = 8
-BORDER_TR = 9
+BLANK = 3
+FILL = 2
+BORDER_ML = 4
+BORDER_BL = 5
+BORDER_BM = 6
+BORDER_MR = 7
+BORDER_BR = 8
+BORDER_TL = 9
+BORDER_TM = 10
+BORDER_TR = 11
 
 .proc demo_init_statusbar
         ; first, blank out this whole region
@@ -130,7 +130,20 @@ loop4:
         bne loop4
         lda #BORDER_BR
         sta PPUDATA
-        ; all done
+        
+        ; finally, set the attribute for this whole status region to palette 3
+        set_ppuaddr #$23F8
+        lda #$FF
+        .repeat 8
+        sta PPUDATA
+        .endrepeat
+
+        set_ppuaddr #$27F8
+        lda #$FF
+        .repeat 8
+        sta PPUDATA
+        .endrepeat
+
         rts
 .endproc
 

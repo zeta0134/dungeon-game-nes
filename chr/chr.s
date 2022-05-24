@@ -3,7 +3,7 @@
         .segment "BG0"
 blank_index_0:
         .repeat $800
-        .byte $00
+        .byte $FF
         .endrepeat
 
         .segment "BG1"
