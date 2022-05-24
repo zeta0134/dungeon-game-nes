@@ -36,7 +36,6 @@ function byte_value(address)
 end
 
 function draw_entity_labels(entity_index)
-  emu.log(entity_index)
   y_offset = 10
   for i,v in ipairs(struct_members) do
     address = entity_table + (entity_index * ENTITY_SIZE) + v.offset
@@ -51,8 +50,23 @@ function draw_entity_labels(entity_index)
   end
 end
 
+buttons_held_addr = emu.getLabelAddress("ButtonsHeld")
+buttons_down_addr = emu.getLabelAddress("ButtonsDown")
+buttons_up_addr = emu.getLabelAddress("ButtonsUp")
+
+function draw_input_vars()
+  y_offset = 160
+  local buttons_held = byte_value(buttons_held_addr)
+  local buttons_down = byte_value(buttons_down_addr)
+  local buttons_up = byte_value(buttons_up_addr)
+  draw_parameter("InputButtonsHeld", buttons_held)
+  draw_parameter("InputButtonsDown", buttons_down) 
+  draw_parameter("InputButtonsUp", buttons_up) 
+end
+
 function draw()
     draw_entity_labels(0)
+    --draw_input_vars()
 end
 
 emu.addEventCallback(draw, emu.eventType.nmi)
