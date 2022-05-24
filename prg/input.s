@@ -64,12 +64,12 @@ check_release:
         ; ButtonsThisFrame is already in a
         eor #$FF ; If NOT pressed this frame
         and ButtonsLastFrame ; AND pressed last frame
-        sta ButtonsDown ; register a button release
+        sta ButtonsUp ; register a button release
 check_down:
         lda ButtonsLastFrame
         eor #$FF ; If NOT pressed last frame
         and ButtonsThisFrame ; AND pressed this frame
-        sta ButtonsUp ; register a down press
+        sta ButtonsDown ; register a down press
 check_held:
         lda ButtonsThisFrame ; If pressed this frame
         and ButtonsLastFrame ; AND last frame

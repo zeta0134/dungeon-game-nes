@@ -22,9 +22,14 @@ WALKING_ACCEL = 2
 ; this must be a define and not a numeric constant
 .define SLIPPERINESS 4
 
+; Reminder: Data only goes up to 5
+; Some of these probably need to be global
+; ... the entity struct is gonna need to be bigger
+; (other musings, etc)
 DATA_SPEED_X = 0
 DATA_SPEED_Y = 1
-DATA_FLAGS = 2
+DATA_SPEED_Z = 2
+DATA_FLAGS = 3
 
 FLAG_FACING =  %00000001
 FACING_LEFT =  %00000001
@@ -135,6 +140,79 @@ done:
         rts
 .endproc
 
+; works out the proper location to display the character and shadow metasprite, based
+; on the character's position and current height relative to the ground
+.proc set_3d_metasprite_pos
+        ldy CurrentEntityIndex
+
+        ; We'll work on the main sprite first
+        ldx entity_table + EntityState::MetaSpriteIndex, y
+
+        ; first, copy the coordinates into place
+        lda entity_table + EntityState::PositionX, y
+        sta metasprite_table + MetaSpriteState::PositionX, x
+        lda entity_table + EntityState::PositionX+1, y
+        sta metasprite_table + MetaSpriteState::PositionX+1, x
+        lda entity_table + EntityState::PositionY, y
+        sta metasprite_table + MetaSpriteState::PositionY, x
+        lda entity_table + EntityState::PositionY+1, y
+        sta metasprite_table + MetaSpriteState::PositionY+1, x
+
+        ; Now we need to subtract the player's height from their Y coordinate
+        sec
+        lda metasprite_table + MetaSpriteState::PositionY, x
+        sbc entity_table + EntityState::PositionZ, y
+        sta metasprite_table + MetaSpriteState::PositionY, x
+        lda metasprite_table + MetaSpriteState::PositionY+1, x
+        sbc entity_table + EntityState::PositionZ + 1, y
+        sta metasprite_table + MetaSpriteState::PositionY+1, x
+
+        ; now, shift the metasprite position to the right by 4, taking
+        ; the coordinates from *subtile* space to *pixel* space
+        .repeat 4
+        lsr metasprite_table + MetaSpriteState::PositionX+1, x
+        ror metasprite_table + MetaSpriteState::PositionX, x
+        .endrepeat
+        .repeat 4
+        lsr metasprite_table + MetaSpriteState::PositionY+1, x
+        ror metasprite_table + MetaSpriteState::PositionY, x
+        .endrepeat
+
+        ; Okay now we would draw the shadow here, but we're gonna do that later
+        rts
+.endproc
+
+GRAVITY_ACCEL = ($FF - 2)
+TERMINAL_VELOCITY = ($FF - 60)
+JUMP_SPEED = 48
+
+.proc vertical_acceleration
+        ldx CurrentEntityIndex
+        ; first apply the player's current speed to their height coordinate
+        lda entity_table + EntityState::Data + DATA_SPEED_Z, x
+        sta R0
+        sadd16x entity_table + EntityState::PositionZ, R0
+        ; if their height coordinate is now negative, cap it at 0
+        lda entity_table + EntityState::PositionZ + 1, x
+        bpl height_not_negative
+        lda #0
+        sta entity_table + EntityState::PositionZ, x
+        sta entity_table + EntityState::PositionZ+1, x
+height_not_negative:
+        ; Now apply acceleration due to gravity, and clamp it to the terminal velocity
+        accelerate entity_table + EntityState::Data + DATA_SPEED_Z, #GRAVITY_ACCEL
+        min_speed entity_table + EntityState::Data + DATA_SPEED_Z, #TERMINAL_VELOCITY
+        ; and we should be done
+        rts
+.endproc
+
+.proc apply_jump
+        ldx CurrentEntityIndex
+        lda #JUMP_SPEED
+        sta entity_table + EntityState::Data + DATA_SPEED_Z, x
+        rts
+.endproc
+
 .proc walking_acceleration
         ldx CurrentEntityIndex
 check_right:
@@ -184,11 +262,16 @@ done:
 .endproc
 
 .proc pick_walk_animation
+MetaSpriteIndex := R0
+        ldy CurrentEntityIndex
+        lda entity_table + EntityState::MetaSpriteIndex, y
+        sta MetaSpriteIndex
+
         lda #KEY_RIGHT
         bit ButtonsHeld
         beq right_not_held
         ; switch to the walk right animation and state
-        set_metasprite_animation R0, boxgirl_anim_move_right
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_move_right
         set_update_func CurrentEntityIndex, boxgirl_walk_right
         rts
 right_not_held:       
@@ -196,7 +279,7 @@ right_not_held:
         bit ButtonsHeld
         beq left_not_held
         ; switch to the walk right animation and state
-        set_metasprite_animation R0, boxgirl_anim_move_left
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_move_left
         set_update_func CurrentEntityIndex, boxgirl_walk_left
         rts
 left_not_held:
@@ -204,7 +287,7 @@ left_not_held:
         bit ButtonsHeld
         beq up_not_held
         ; switch to the walk right animation and state
-        set_metasprite_animation R0, boxgirl_anim_move_up
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_move_up
         set_update_func CurrentEntityIndex, boxgirl_walk_up
         rts
 up_not_held:
@@ -212,7 +295,7 @@ up_not_held:
         bit ButtonsHeld
         beq down_not_held
         ; switch to the walk right animation and state
-        set_metasprite_animation R0, boxgirl_anim_move_down
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_move_down
         set_update_func CurrentEntityIndex, boxgirl_walk_down
         rts
 down_not_held:
@@ -222,23 +305,43 @@ down_not_held:
         check_flag FLAG_FACING
         bne facing_left
 facing_right:
-        set_metasprite_animation R0, boxgirl_anim_idle_right
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_idle_right
         rts
 facing_left:
-        set_metasprite_animation R0, boxgirl_anim_idle_left
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_idle_left
+        rts
+.endproc
+
+; we probably want to reorganize the states later, and separate the concept of "facing direction"
+; out from everything else, as it results in a lot of tedious duplication. Anyway though, for jumping
+; we really just need to check if the player is grounded and set their vertical speed, so let's
+; do that.
+.proc handle_jump
+        ; have we pressed the jump button?
+        lda #KEY_A
+        bit ButtonsDown
+        beq jump_not_pressed
+        ; are we currently grounded? (height == 0)
+        ldx CurrentEntityIndex
+        lda entity_table + EntityState::PositionZ, x
+        ora entity_table + EntityState::PositionZ + 1, x
+        bne not_grounded
+        ; set our upwards velocity immediately; gravity will take
+        ; care of the rest
+        lda #JUMP_SPEED
+        sta entity_table + EntityState::Data + DATA_SPEED_Z, x
+not_grounded:
+jump_not_pressed:
         rts
 .endproc
 
 .proc boxgirl_idle
+        jsr handle_jump
         jsr walking_acceleration
+        jsr vertical_acceleration
         ; apply physics normally
         jsr apply_speed
-        ldx CurrentEntityIndex
-        txa
-        sta R1
-        lda entity_table + EntityState::MetaSpriteIndex, x
-        sta R0
-        jsr set_metasprite_pos
+        jsr set_3d_metasprite_pos
         ; check for state changes
         lda #(KEY_RIGHT | KEY_LEFT | KEY_UP | KEY_DOWN)
         bit ButtonsHeld
@@ -249,15 +352,12 @@ still_idle:
 .endproc
 
 .proc boxgirl_walk_right
+        jsr handle_jump
         jsr walking_acceleration
+        jsr vertical_acceleration
         ; apply physics normally
         jsr apply_speed
-        ldx CurrentEntityIndex
-        txa
-        sta R1
-        lda entity_table + EntityState::MetaSpriteIndex, x
-        sta R0
-        jsr set_metasprite_pos
+        jsr set_3d_metasprite_pos
         ; set our "last facing" bit to the right
         ldy CurrentEntityIndex
         set_flag FLAG_FACING, FACING_RIGHT
@@ -272,15 +372,12 @@ right_not_held:
 .endproc
 
 .proc boxgirl_walk_left
+        jsr handle_jump
         jsr walking_acceleration
+        jsr vertical_acceleration
         ; apply physics normally
         jsr apply_speed
-        ldx CurrentEntityIndex
-        txa
-        sta R1
-        lda entity_table + EntityState::MetaSpriteIndex, x
-        sta R0
-        jsr set_metasprite_pos
+        jsr set_3d_metasprite_pos
         ; set our "last facing" bit to the left
         ldy CurrentEntityIndex
         set_flag FLAG_FACING, FACING_LEFT
@@ -295,15 +392,12 @@ left_not_held:
 .endproc
 
 .proc boxgirl_walk_up
+        jsr handle_jump
         jsr walking_acceleration
+        jsr vertical_acceleration
         ; apply physics normally
         jsr apply_speed
-        ldx CurrentEntityIndex
-        txa
-        sta R1
-        lda entity_table + EntityState::MetaSpriteIndex, x
-        sta R0
-        jsr set_metasprite_pos
+        jsr set_3d_metasprite_pos
         ; check for state changes
         lda #KEY_UP
         bit ButtonsHeld
@@ -315,15 +409,12 @@ up_not_held:
 .endproc
 
 .proc boxgirl_walk_down
+        jsr handle_jump
         jsr walking_acceleration
+        jsr vertical_acceleration
         ; apply physics normally
         jsr apply_speed
-        ldx CurrentEntityIndex
-        txa
-        sta R1
-        lda entity_table + EntityState::MetaSpriteIndex, x
-        sta R0
-        jsr set_metasprite_pos
+        jsr set_3d_metasprite_pos
         ; check for state changes
         lda #KEY_DOWN
         bit ButtonsHeld
