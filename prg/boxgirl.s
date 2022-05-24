@@ -216,17 +216,16 @@ up_not_held:
         set_update_func CurrentEntityIndex, boxgirl_walk_down
         rts
 down_not_held:
+        set_update_func CurrentEntityIndex, boxgirl_idle
         ; pick an idle state based on our most recent walking direction
         ldy CurrentEntityIndex
         check_flag FLAG_FACING
         bne facing_left
 facing_right:
         set_metasprite_animation R0, boxgirl_anim_idle_right
-        set_update_func CurrentEntityIndex, boxgirl_idle
         rts
 facing_left:
         set_metasprite_animation R0, boxgirl_anim_idle_left
-        set_update_func CurrentEntityIndex, boxgirl_idle
         rts
 .endproc
 
