@@ -64,11 +64,32 @@ failed_to_spawn:
 ; collision code is now missing. We're going to add those back, just...
 ; ... y'know, not yet. Patience.
 .proc apply_speed
+LeftX := R1
+RightX := R2
+VerticalOffset := R3
         ; set our palette index to 0 by default, for debugging
         ldx CurrentEntityIndex
         ldy entity_table + EntityState::MetaSpriteIndex, x
         lda #0
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
+
+        ; Set up the hitbox coordinates for collision
+        ; Note: later when we generalize "apply_speed", we need to move
+        ; these registers somewhere more global probably
+
+        ; Boxgirl's "hitbox" is more like a hit line segment, with a
+        ; left and right edge, and a height relative to her position.
+        ; For now, make that height at position 0.
+
+        ; left
+        lda #(3 << 4)
+        sta LeftX
+        ; right
+        lda #(12 << 4)
+        sta RightX
+        ; top
+        lda #(0 << 4)
+        sta VerticalOffset
 
         ; apply speed to position for each axis, then check the
         ; tilemap and correct for any tile collisions

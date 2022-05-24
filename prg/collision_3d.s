@@ -24,6 +24,8 @@ NavLutPtrHigh: .res 2
 
         .segment "PRGLAST_C000"
 
+.include "debug_maps/collision_tileset.incs"
+
 nav_lut_width_128_low:
         .repeat 128, i
         .byte <(NavMapData + (128 * i))
@@ -137,7 +139,7 @@ must_be_16:
         sta DestY+1 ; now contains map tile for top-left
 .endmacro
 
-.macro if_solid TileAddr, HandleResponse
+.macro if_solid_old TileAddr, HandleResponse
 .scope
         ldy #0
         lda (TileAddr), y ; now contains collision index
@@ -149,11 +151,35 @@ no_response:
 .endscope
 .endmacro
 
+.macro if_solid TileAddr, HandleResponse
+.scope
+ColFlags := R14
+ColHeights := R15
+        ldy #0
+        lda (TileAddr), y ; now contains collision index
+        tay
+        lda collision_heights, y
+        sta ColHeights
+        lda collision_flags, y
+        sta ColFlags
+        bpl check_hidden_surface
+check_surface:
+        lda #$0F
+        and ColHeights ; A now contains visible surface height, from 0-15
+        ; FOR TESTING, only consider a ground level of 0 to be solid
+        beq no_response
+check_hidden_surface:
+        ; FOR TESTING, hidden surfaces are not collidable at all
+        jsr HandleResponse
+no_response:
+.endscope
+.endmacro
+
 .proc collision_response_push_down
-SubtileX := R5
-TileX := R6
-SubtileY := R7
-TileY := R8
+SubtileX := R4
+TileX := R5
+SubtileY := R6
+TileY := R7
         ; todo: this
         ; movement? Nah, *highlight*
         ldy CurrentEntityIndex
@@ -179,10 +205,10 @@ TileY := R8
 .endproc
 
 .proc collision_response_push_up
-SubtileX := R5
-TileX := R6
-SubtileY := R7
-TileY := R8
+SubtileX := R4
+TileX := R5
+SubtileY := R6
+TileY := R7
         ; todo: this
         ; movement? Nah, *highlight*
         ldy CurrentEntityIndex
@@ -204,10 +230,10 @@ TileY := R8
 .endproc
 
 .proc collision_response_push_right
-SubtileX := R5
-TileX := R6
-SubtileY := R7
-TileY := R8
+SubtileX := R4
+TileX := R5
+SubtileY := R6
+TileY := R7
         ; todo: this
         ; movement? Nah, *highlight*
         ldy CurrentEntityIndex
@@ -237,10 +263,10 @@ TileY := R8
 .endproc
 
 .proc collision_response_push_left
-SubtileX := R5
-TileX := R6
-SubtileY := R7
-TileY := R8
+SubtileX := R4
+TileX := R5
+SubtileY := R6
+TileY := R7
         ; todo: this
         ; movement? Nah, *highlight*
         ldy CurrentEntityIndex
@@ -275,20 +301,19 @@ TileY := R8
 .export collide_up_with_map_3d
 .proc collide_up_with_map_3d
 LeftX := R1
-TopY := R2
-RightX := R3
-BottomY := R4
-SubtileX := R5
-TileX := R6
-SubtileY := R7
-TileY := R8
-TileAddr := R9
-        tile_offset LeftX, TopY, SubtileX, SubtileY
-        map_index TileX, TileY, TileAddr
+RightX := R2
+VerticalOffset := R3
+SubtileX := R4
+TileX := R5
+SubtileY := R6
+TileY := R7
+TileAddr := R8
+        tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
+        nav_map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_down
 
-        tile_offset RightX, TopY, SubtileX, SubtileY
-        map_index TileX, TileY, TileAddr
+        tile_offset RightX, VerticalOffset, SubtileX, SubtileY
+        nav_map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_down
 
         rts
@@ -297,20 +322,19 @@ TileAddr := R9
 .export collide_down_with_map_3d
 .proc collide_down_with_map_3d
 LeftX := R1
-TopY := R2
-RightX := R3
-BottomY := R4
-SubtileX := R5
-TileX := R6
-SubtileY := R7
-TileY := R8
-TileAddr := R9
-        tile_offset LeftX, BottomY, SubtileX, SubtileY
-        map_index TileX, TileY, TileAddr
+RightX := R2
+VerticalOffset := R3
+SubtileX := R4
+TileX := R5
+SubtileY := R6
+TileY := R7
+TileAddr := R8
+        tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
+        nav_map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_up
 
-        tile_offset RightX, BottomY, SubtileX, SubtileY
-        map_index TileX, TileY, TileAddr
+        tile_offset RightX, VerticalOffset, SubtileX, SubtileY
+        nav_map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_up
 
         rts
@@ -319,20 +343,19 @@ TileAddr := R9
 .export collide_left_with_map_3d
 .proc collide_left_with_map_3d
 LeftX := R1
-TopY := R2
-RightX := R3
-BottomY := R4
-SubtileX := R5
-TileX := R6
-SubtileY := R7
-TileY := R8
-TileAddr := R9
-        tile_offset LeftX, TopY, SubtileX, SubtileY
-        map_index TileX, TileY, TileAddr
+RightX := R2
+VerticalOffset := R3
+SubtileX := R4
+TileX := R5
+SubtileY := R6
+TileY := R7
+TileAddr := R8
+        tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
+        nav_map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_right
 
-        tile_offset LeftX, BottomY, SubtileX, SubtileY
-        map_index TileX, TileY, TileAddr
+        tile_offset RightX, VerticalOffset, SubtileX, SubtileY
+        nav_map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_right
 
         rts
@@ -341,20 +364,19 @@ TileAddr := R9
 .export collide_right_with_map_3d
 .proc collide_right_with_map_3d
 LeftX := R1
-TopY := R2
-RightX := R3
-BottomY := R4
-SubtileX := R5
-TileX := R6
-SubtileY := R7
-TileY := R8
-TileAddr := R9
-        tile_offset RightX, TopY, SubtileX, SubtileY
-        map_index TileX, TileY, TileAddr
+RightX := R2
+VerticalOffset := R3
+SubtileX := R4
+TileX := R5
+SubtileY := R6
+TileY := R7
+TileAddr := R8
+        tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
+        nav_map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_left
 
-        tile_offset RightX, BottomY, SubtileX, SubtileY
-        map_index TileX, TileY, TileAddr
+        tile_offset RightX, VerticalOffset, SubtileX, SubtileY
+        nav_map_index TileX, TileY, TileAddr
         if_solid TileAddr, collision_response_push_left
 
         rts
