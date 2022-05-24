@@ -99,25 +99,6 @@ must_be_16:
         sta DestAddr
 .endmacro
 
-.macro map_index TileX, TileY, DestAddr
-        ; goal is to turn TileY into %00111111 11000000
-        lda TileY
-        ror
-        ror
-        tax ; stash high byte here
-        ror
-        and #%11000000
-        clc
-        adc TileX ; which has the top two bits of 0; this will not carry
-        adc #<MapData ; this *might* carry
-        sta DestAddr
-        txa
-        and #%00111111
-        adc #>MapData
-        sta DestAddr+1
-        ; and done!
-.endmacro
-
 .macro tile_offset OffsetX, OffsetY, DestX, DestY
         ldy CurrentEntityIndex
         ; Calculate the tile coordinates for the X axis:
@@ -137,18 +118,6 @@ must_be_16:
         lda entity_table + EntityState::PositionY+1, y
         adc #0
         sta DestY+1 ; now contains map tile for top-left
-.endmacro
-
-.macro if_solid_old TileAddr, HandleResponse
-.scope
-        ldy #0
-        lda (TileAddr), y ; now contains collision index
-        tay
-        lda MetatileAttributes, y; a now contains tile type
-        bpl no_response
-        jsr HandleResponse
-no_response:
-.endscope
 .endmacro
 
 .macro if_solid TileAddr, HandleResponse
