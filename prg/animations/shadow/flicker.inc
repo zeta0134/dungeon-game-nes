@@ -1,4 +1,4 @@
-.export shadow_solid
+.export shadow_solid, shadow_flicker
 
 ; solid - plain, boring sprite
 
@@ -21,7 +21,6 @@ shadow_frames_flicker:
         .byte $01, $05, $0; oam length, mapper, delay frames
         .word shadow_oam_solid
         .byte $00, $05, $0; oam length, mapper, delay frames
-; NOTE: OAM length of 0 here is untested!
 
 ; checkerboard - alternating dither pattern at 30 Hz
 

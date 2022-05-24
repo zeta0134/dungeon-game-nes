@@ -30,4 +30,19 @@ _ENTITY_INC := 1
         sta entity_table + EntityState::UpdateFunc+1, y
 .endmacro
 
+; note: assumes Y is already set to CurrentEntityIndex
+.macro entity_set_flag flag_mask, flag_value
+        lda entity_table + EntityState::Data + DATA_FLAGS, y
+        and #(flag_mask ^ $FF)
+        ora #flag_value
+        sta entity_table + EntityState::Data + DATA_FLAGS, y
+.endmacro
+
+; note: assumes Y is already set to CurrentEntityIndex
+.macro entity_check_flag flag_mask
+        lda entity_table + EntityState::Data + DATA_FLAGS, y
+        and #flag_mask
+        ; now you can beq for unset, and bne for flag set
+.endmacro
+
 .endif

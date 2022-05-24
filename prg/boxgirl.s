@@ -37,21 +37,6 @@ FLAG_FACING =  %00000001
 FACING_LEFT =  %00000001
 FACING_RIGHT = %00000000
 
-; note: assumes Y is already set to CurrentEntityIndex
-.macro set_flag flag_mask, flag_value
-        lda entity_table + EntityState::Data + DATA_FLAGS, y
-        and #(flag_mask ^ $FF)
-        ora #flag_value
-        sta entity_table + EntityState::Data + DATA_FLAGS, y
-.endmacro
-
-; note: assumes Y is already set to CurrentEntityIndex
-.macro check_flag flag_mask
-        lda entity_table + EntityState::Data + DATA_FLAGS, y
-        and #flag_mask
-        ; now you can beq for unset, and bne for flag set
-.endmacro
-
 ; mostly performs a whole bunch of one-time setup
 ; expects the entity position to have been set by whatever did the initial spawning
 .proc boxgirl_init
@@ -67,6 +52,8 @@ FACING_RIGHT = %00000000
         set_metasprite_animation R0, boxgirl_anim_idle_right
         set_metasprite_tile_offset R0, #0
         set_metasprite_palette_offset R0, #0
+        ldx R0
+        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
         ; allocate a shadow sprite
         jsr find_unused_metasprite
         lda #$FF
@@ -76,9 +63,11 @@ FACING_RIGHT = %00000000
         lda R0
         sta entity_table + EntityState::ShadowSpriteIndex, y
         ; basic init for the shadow sprite
-        set_metasprite_animation R0, shadow_solid
+        set_metasprite_animation R0, shadow_flicker
         set_metasprite_tile_offset R0, #$18 ; note: probably move this to its own bank later
         set_metasprite_palette_offset R0, #0
+        ldx R0
+        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
 
         jsr set_3d_metasprite_pos
 
@@ -158,6 +147,7 @@ done:
 ; works out the proper location to display the character and shadow metasprite, based
 ; on the character's position and current height relative to the ground
 .proc set_3d_metasprite_pos
+MetaSpriteIndex := R0
         ldy CurrentEntityIndex
 
         ; We'll work on the main sprite first
@@ -194,8 +184,16 @@ done:
         .endrepeat
 
         ; Alright now, repeat most of the above but for the shadow sprite
-        ; TODO: should we display the shadow sprite at all when not airbourne?
         ldx entity_table + EntityState::ShadowSpriteIndex, y
+        stx MetaSpriteIndex
+
+        ; Shadow check: is our height nonzero?
+        lda entity_table + EntityState::PositionZ, y
+        ora entity_table + EntityState::PositionZ + 1, y
+        jeq no_shadow
+
+        ; x already contains MetaSpriteIndex
+        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
 
         ; copy the coordinates into place
         lda entity_table + EntityState::PositionX, y
@@ -218,6 +216,14 @@ done:
         ror metasprite_table + MetaSpriteState::PositionY, x
         .endrepeat
 
+        ; done drawing the shadow, get outta here
+        rts
+
+no_shadow:
+        ; There is no shadow to draw; turn off the shadow animation
+        ; x already contains MetaSpriteIndex
+        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_HIDDEN
+        ; and done
         rts
 .endproc
 
@@ -341,7 +347,7 @@ down_not_held:
         set_update_func CurrentEntityIndex, boxgirl_idle
         ; pick an idle state based on our most recent walking direction
         ldy CurrentEntityIndex
-        check_flag FLAG_FACING
+        entity_check_flag FLAG_FACING
         bne facing_left
 facing_right:
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_idle_right
@@ -399,7 +405,7 @@ still_idle:
         jsr set_3d_metasprite_pos
         ; set our "last facing" bit to the right
         ldy CurrentEntityIndex
-        set_flag FLAG_FACING, FACING_RIGHT
+        entity_set_flag FLAG_FACING, FACING_RIGHT
         ; check for state changes
         lda #KEY_RIGHT
         bit ButtonsHeld
@@ -419,7 +425,7 @@ right_not_held:
         jsr set_3d_metasprite_pos
         ; set our "last facing" bit to the left
         ldy CurrentEntityIndex
-        set_flag FLAG_FACING, FACING_LEFT
+        entity_set_flag FLAG_FACING, FACING_LEFT
         ; check for state changes
         lda #KEY_LEFT
         bit ButtonsHeld

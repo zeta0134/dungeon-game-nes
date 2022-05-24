@@ -20,7 +20,7 @@ CameraScrollPixelsY: .word $0000
         .segment "RAM"
         .export metasprite_table
 metasprite_table:
-        .repeat 21
+        .repeat 16
         .tag MetaSpriteState
         .endrepeat
 
@@ -69,7 +69,7 @@ loop:
         lda #.sizeof(MetaSpriteState)
         clc
         adc MetaSpriteIndex
-        bvs table_is_full
+        bcs table_is_full
         sta MetaSpriteIndex
         jmp loop
 table_is_full:
@@ -154,7 +154,7 @@ done:
 .proc update_animations
 MetaSpriteCount := R0
 MetaSpriteIndex := R1
-        lda #21
+        lda #16
         sta MetaSpriteCount
         lda #0
         sta MetaSpriteIndex
@@ -266,7 +266,7 @@ MetaSpriteCount := R0
 MetaSpriteIndex := R1
         jsr update_camera_scroll
         jsr hide_all_sprites
-        lda #21
+        lda #16
         sta MetaSpriteCount
         lda #0
         sta MetaSpriteIndex
@@ -280,6 +280,10 @@ metasprite_loop:
         ldx MetaSpriteIndex
         lda metasprite_table + MetaSpriteState::AnimationAddr + 1, x
         beq next_metasprite
+
+        ; is this metasprite disabled with a flag?
+        metasprite_check_flag FLAG_VISIBILITY
+        bne next_metasprite
 
         ; we will at least attempt to draw this metasprite's parts.
         ; most of this data is a straight copy from the state struct
@@ -311,6 +315,9 @@ metasprite_loop:
         ldy #AnimationFrame::OAMLength
         lda (ScratchSpritePtr),y
         sta OAMTableLength
+
+        ; sanity check: if this OAM Table length is 0, there is nothing to draw.
+        beq next_metasprite
 
         ; apply the camera scroll amount to the sprite's meta position
         sec
