@@ -24,6 +24,26 @@ WALKING_ACCEL = 2
 
 DATA_SPEED_X = 0
 DATA_SPEED_Y = 1
+DATA_FLAGS = 2
+
+FLAG_FACING =  %00000001
+FACING_LEFT =  %00000001
+FACING_RIGHT = %00000000
+
+; note: assumes Y is already set to CurrentEntityIndex
+.macro set_flag flag_mask, flag_value
+        lda entity_table + EntityState::Data + DATA_FLAGS, y
+        and #(flag_mask ^ $FF)
+        ora #flag_value
+        sta entity_table + EntityState::Data + DATA_FLAGS, y
+.endmacro
+
+; note: assumes Y is already set to CurrentEntityIndex
+.macro check_flag flag_mask
+        lda entity_table + EntityState::Data + DATA_FLAGS, y
+        and #flag_mask
+        ; now you can beq for unset, and bne for flag set
+.endmacro
 
 ; mostly performs a whole bunch of one-time setup
 ; expects the entity position to have been set by whatever did the initial spawning
@@ -47,6 +67,8 @@ DATA_SPEED_Y = 1
         ldy CurrentEntityIndex
         sta entity_table + EntityState::Data + DATA_SPEED_X, y
         sta entity_table + EntityState::Data + DATA_SPEED_Y, y
+        ; set all flag bits to 0
+        sta entity_table + EntityState::Data + DATA_FLAGS, y
         ; finally, switch to the idle routine
         set_update_func CurrentEntityIndex, boxgirl_idle
         rts
@@ -55,14 +77,6 @@ failed_to_spawn:
         rts
 .endproc
 
-; draws the player's sprite set based on a few things
-.proc set_metasprite_positions
-        
-.endproc
-
-; Note: the structure here is a little strange, that's because all of the
-; collision code is now missing. We're going to add those back, just...
-; ... y'know, not yet. Patience.
 .proc apply_speed
 LeftX := R1
 RightX := R2
@@ -202,7 +216,16 @@ up_not_held:
         set_update_func CurrentEntityIndex, boxgirl_walk_down
         rts
 down_not_held:
+        ; pick an idle state based on our most recent walking direction
+        ldy CurrentEntityIndex
+        check_flag FLAG_FACING
+        bne facing_left
+facing_right:
         set_metasprite_animation R0, boxgirl_anim_idle_right
+        set_update_func CurrentEntityIndex, boxgirl_idle
+        rts
+facing_left:
+        set_metasprite_animation R0, boxgirl_anim_idle_left
         set_update_func CurrentEntityIndex, boxgirl_idle
         rts
 .endproc
@@ -236,6 +259,9 @@ still_idle:
         lda entity_table + EntityState::MetaSpriteIndex, x
         sta R0
         jsr set_metasprite_pos
+        ; set our "last facing" bit to the right
+        ldy CurrentEntityIndex
+        set_flag FLAG_FACING, FACING_RIGHT
         ; check for state changes
         lda #KEY_RIGHT
         bit ButtonsHeld
@@ -256,6 +282,9 @@ right_not_held:
         lda entity_table + EntityState::MetaSpriteIndex, x
         sta R0
         jsr set_metasprite_pos
+        ; set our "last facing" bit to the left
+        ldy CurrentEntityIndex
+        set_flag FLAG_FACING, FACING_LEFT
         ; check for state changes
         lda #KEY_LEFT
         bit ButtonsHeld

@@ -27,5 +27,5 @@ boxgirl_oam_idle_left_1:
         ;     Y-offset  Tile  Attr   X-offset
         .byte ($ff-31), 3,    $40,   0
         .byte ($ff-31), 1,    $40,   8
-        .byte ($ff-15), 5,    $40,   0
-        .byte ($ff-15), 7,    $40,   8
+        .byte ($ff-15), 7,    $40,   0
+        .byte ($ff-15), 5,    $40,   8
