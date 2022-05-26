@@ -26,6 +26,15 @@ DesiredY: .word $0000
         lda entity_table + EntityState::PositionY + 1
         sta DesiredY + 1
 
+        ; subtract the entity's current 3D height from the desired Y
+        sec
+        lda DesiredY
+        sbc entity_table + EntityState::PositionZ
+        sta DesiredY
+        lda DesiredY+1
+        sbc entity_table + EntityState::PositionZ + 1
+        sta DesiredY+1
+
         ; convert from 16x16 metatiles to 8x8 hardware tiles
         clc
         rol DesiredX
