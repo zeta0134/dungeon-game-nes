@@ -243,6 +243,8 @@ JUMP_SPEED = 48
         lda #0
         sta entity_table + EntityState::PositionZ, x
         sta entity_table + EntityState::PositionZ+1, x
+        ; also zero out speed, so that if we fall off a ledge we start accelerating again
+        sta entity_table + EntityState::Data + DATA_SPEED_Z
 height_not_negative:
         ; Now apply acceleration due to gravity, and clamp it to the terminal velocity
         accelerate entity_table + EntityState::Data + DATA_SPEED_Z, #GRAVITY_ACCEL
