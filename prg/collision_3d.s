@@ -368,16 +368,27 @@ check_combined_flags:
 visible_surface:
         ldx CurrentEntityIndex
         ldy entity_table + EntityState::MetaSpriteIndex, x
-        lda metasprite_table + MetaSpriteState::PaletteOffset, x
+        lda metasprite_table + MetaSpriteState::PaletteOffset, y
         and #%11011111 ; clear the bgPriority bit
-        sta metasprite_table + MetaSpriteState::PaletteOffset, x
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
+
+        ldy entity_table + EntityState::ShadowSpriteIndex, x
+        lda metasprite_table + MetaSpriteState::PaletteOffset, y
+        and #%11011111 ; clear the bgPriority bit
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
+
         rts ; TODO: shadow sprite too    
 hidden_surface:
         ldx CurrentEntityIndex
         ldy entity_table + EntityState::MetaSpriteIndex, x
-        lda metasprite_table + MetaSpriteState::PaletteOffset, x
+        lda metasprite_table + MetaSpriteState::PaletteOffset, y
         ora #%00100000 ; set the bgPriority bit
-        sta metasprite_table + MetaSpriteState::PaletteOffset, x
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
+
+        ldy entity_table + EntityState::ShadowSpriteIndex, x
+        lda metasprite_table + MetaSpriteState::PaletteOffset, y
+        ora #%00100000 ; set the bgPriority bit
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
         rts ; TODO: shadow sprite too
 
 done_with_priority_adjustment:
