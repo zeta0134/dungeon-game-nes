@@ -139,8 +139,9 @@ cmp AdjustedGround
 .macro if_not_valid TileAddr, HandleResponse
 .scope
 HighestGround := R10
-AdjustedGround := R11
-AdjustedHeight := R12
+HighestGroundType := R11
+AdjustedGround := R12
+AdjustedHeight := R13
 ColFlags := R14
 ColHeights := R15
         ; initialize our ground level to match the player's starting height
@@ -174,13 +175,13 @@ check_surface_jump:
         ; compare the visible surface here with our adjusted ground
         ; If it matches, we've found a valid tile and can stop here
         surface_matches_adjusted_ground
-        beq no_response
+        beq is_valid_move
 check_hidden_surface_jump:
         bit ColFlags
         bvc no_hidden_surface_jump
         ; compare the hidden surface now, same as before
         hidden_surface_matches_adjusted_ground
-        beq no_response
+        beq is_valid_move
 no_hidden_surface_jump:
         ; if the player is jumping we need to scan the map upwards
         ; first decrement their height
@@ -228,13 +229,13 @@ check_surface_fall:
         ; compare the visible surface here with our adjusted ground
         ; If it matches, we've found a valid tile and can stop here
         surface_matches_adjusted_ground
-        beq no_response
+        beq is_valid_move
 check_hidden_surface_fall:
         bit ColFlags
         bvc no_hidden_surface_fall
         ; compare the hidden surface now, same as before
         hidden_surface_matches_adjusted_ground
-        beq no_response
+        beq is_valid_move
 no_hidden_surface_fall:
         ; If we get here, this tile was invalid for falling.
         ; We've already decremented everything, so just continue the loop
@@ -245,17 +246,19 @@ invalid_move:
         ; like a wall and push the player out.
         jsr HandleResponse
         jmp finished
-no_response:
+is_valid_move:
         ; This was a valid move, so correct HighestGround if needed
         lda AdjustedGround
         ; if highest ground has never been written, then we will write it unconditionally
         bit HighestGround
-        bmi write_highest_ground
+        bmi write_highest_surface
         ; otherwise, only write if we are higher than the existing value
         cmp HighestGround
         bcc finished
-write_highest_ground:
+write_highest_surface:
         sta HighestGround
+
+
 finished:
 .endscope
 .endmacro
@@ -301,6 +304,83 @@ HeightDifference := R11
         adc HeightDifference
         sta entity_table + EntityState::PositionY+1, x
 done_with_height_fix:
+        rts
+.endproc
+
+.proc apply_bg_priority
+LeftX := R1
+RightX := R2
+VerticalOffset := R3
+SubtileX := R4
+TileX := R5
+SubtileY := R6
+TileY := R7
+TileAddr := R8
+GroundLevel := R10
+GroundType := R11
+        lda #0
+        sta GroundType
+
+        ldx CurrentEntityIndex
+        lda entity_table + EntityState::GroundLevel, x
+        asl
+        asl
+        asl
+        asl
+        sta GroundLevel
+
+check_left_tile:
+        ; check both tiles under our new position's hit points
+        tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
+        nav_map_index TileX, TileY, TileAddr
+        ldy #0
+        lda (TileAddr), y
+        tay
+        ; if the hidden surface height matches our player's height
+        lda collision_heights, y
+        and #$F0
+        cmp GroundLevel
+        bne check_right_tile
+        ; collect the flags and stash them
+        lda collision_flags, y
+        sta GroundType
+
+check_right_tile:
+        tile_offset RightX, VerticalOffset, SubtileX, SubtileY
+        nav_map_index TileX, TileY, TileAddr
+        ldy #0
+        lda (TileAddr), y ;
+        tay
+        ; if the hidden surface height matches our player's height
+        lda collision_heights, y
+        and #$F0
+        cmp GroundLevel
+        bne check_combined_flags
+        ; combine these flags with the previous value and store them
+        lda collision_flags, y
+        ora GroundType
+        sta GroundType
+
+check_combined_flags:
+        ; at this point if bit 6 is set, one of our hit points is "behind" a surface,
+        bit GroundType
+        bvs hidden_surface
+visible_surface:
+        ldx CurrentEntityIndex
+        ldy entity_table + EntityState::MetaSpriteIndex, x
+        lda metasprite_table + MetaSpriteState::PaletteOffset, x
+        and #%11011111 ; clear the bgPriority bit
+        sta metasprite_table + MetaSpriteState::PaletteOffset, x
+        rts ; TODO: shadow sprite too    
+hidden_surface:
+        ldx CurrentEntityIndex
+        ldy entity_table + EntityState::MetaSpriteIndex, x
+        lda metasprite_table + MetaSpriteState::PaletteOffset, x
+        ora #%00100000 ; set the bgPriority bit
+        sta metasprite_table + MetaSpriteState::PaletteOffset, x
+        rts ; TODO: shadow sprite too
+
+done_with_priority_adjustment:
         rts
 .endproc
 
@@ -446,6 +526,7 @@ HighestGround := R10
         if_not_valid TileAddr, collision_response_push_down
 
         jsr fix_height
+        jsr apply_bg_priority
         rts
 .endproc
 
@@ -472,6 +553,7 @@ HighestGround := R10
         if_not_valid TileAddr, collision_response_push_up
 
         jsr fix_height
+        jsr apply_bg_priority
         rts
 .endproc
 
@@ -501,6 +583,7 @@ HighestGround := R10
         if_not_valid TileAddr, collision_response_push_right
 
         jsr fix_height
+        jsr apply_bg_priority
         rts
 .endproc
 
@@ -527,6 +610,7 @@ HighestGround := R10
         if_not_valid TileAddr, collision_response_push_left
 
         jsr fix_height
+        jsr apply_bg_priority
         rts
 .endproc
 
