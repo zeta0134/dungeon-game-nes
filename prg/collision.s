@@ -514,8 +514,8 @@ TileY := R7
 ;   - R0 - R8: various (see below)
 ; Clobbers:
 ;   - yes
-.export collide_up_with_map_3d
-.proc collide_up_with_map_3d
+.export collide_up_with_map
+.proc collide_up_with_map
 LeftX := R1
 RightX := R2
 VerticalOffset := R3
@@ -541,8 +541,8 @@ HighestGround := R10
         rts
 .endproc
 
-.export collide_down_with_map_3d
-.proc collide_down_with_map_3d
+.export collide_down_with_map
+.proc collide_down_with_map
 LeftX := R1
 RightX := R2
 VerticalOffset := R3
@@ -571,8 +571,8 @@ HighestGround := R10
 ; For the left and right directions, since our line segment is aligned to an axis, we
 ; can safely ignore the opposite point of the direction of movement. The response for such
 ; a collision would be wrong anyway. This cuts down on 25% of collision checks per entity
-.export collide_left_with_map_3d
-.proc collide_left_with_map_3d
+.export collide_left_with_map
+.proc collide_left_with_map
 LeftX := R1
 RightX := R2
 VerticalOffset := R3
@@ -598,8 +598,8 @@ HighestGround := R10
         rts
 .endproc
 
-.export collide_right_with_map_3d
-.proc collide_right_with_map_3d
+.export collide_right_with_map
+.proc collide_right_with_map
 LeftX := R1
 RightX := R2
 VerticalOffset := R3

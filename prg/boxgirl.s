@@ -122,11 +122,11 @@ VerticalOffset := R3
         bmi move_left
 move_right:
         sadd16x entity_table + EntityState::PositionX, R0
-        jsr collide_right_with_map_3d
+        jsr collide_right_with_map
         jmp done_with_x
 move_left:
         sadd16x entity_table + EntityState::PositionX, R0
-        jsr collide_left_with_map_3d
+        jsr collide_left_with_map
 done_with_x:
         ldx CurrentEntityIndex
         lda entity_table + EntityState::Data + DATA_SPEED_Y, x
@@ -134,11 +134,11 @@ done_with_x:
         bmi move_up
 move_down:
         sadd16x entity_table + EntityState::PositionY, R0
-        jsr collide_down_with_map_3d
+        jsr collide_down_with_map
         jmp done
 move_up:
         sadd16x entity_table + EntityState::PositionY, R0
-        jsr collide_up_with_map_3d
+        jsr collide_up_with_map
 
 done:
         rts
