@@ -1,6 +1,5 @@
         .setcpu "6502"
         .include "collision.inc"
-        .include "collision_3d.inc"
         .include "compression.inc"
         .include "scrolling.inc"
         .include "word_util.inc"

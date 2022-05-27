@@ -1,7 +1,6 @@
         .setcpu "6502"
         .include "nes.inc"
         .include "branch_util.inc"
-        .include "collision.inc"
         .include "mmc3.inc"
         .include "ppu.inc"
         .include "vram_buffer.inc"

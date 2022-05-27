@@ -1,10 +1,8 @@
         .setcpu "6502"
 
-        .include "blobby.inc"
         .include "boxgirl.inc"
         .include "animations/blobby.inc"
         .include "camera.inc"
-        .include "collision.inc"
         .include "debug.inc"
         .include "entity.inc"
         .include "far_call.inc"
@@ -40,27 +38,6 @@ test_tileset:
 
 .segment "PRGLAST_E000"
 
-.proc spawn_static_sprite
-MetaspriteIndex := R0
-PosX := R1
-PosY := R3
-
-        jsr find_unused_metasprite
-        lda #$FF
-        cmp MetaspriteIndex
-        beq failed_to_spawn
-
-        set_metasprite_x MetaspriteIndex, PosX
-        set_metasprite_y MetaspriteIndex, PosY
-        set_metasprite_animation MetaspriteIndex, blobby_anim_idle
-        set_metasprite_tile_offset MetaspriteIndex, #0
-        set_metasprite_palette_offset MetaspriteIndex, #1
-
-failed_to_spawn:
-        ; do nothing!
-        rts
-.endproc
-
 .proc demo_init
         st16 R0, boxgirl_init
         jsr spawn_entity
@@ -72,7 +49,7 @@ failed_to_spawn:
         lda #5
         sta entity_table + EntityState::PositionX+1, y
         sta entity_table + EntityState::PositionY+1, y
-        ; in theory, blobby is now ready to go.
+        ; in theory, boxgirl is now ready to go.
         rts
 .endproc
 

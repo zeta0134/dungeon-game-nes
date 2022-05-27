@@ -1,7 +1,7 @@
         .setcpu "6502"
         .include "branch_util.inc"
         .include "nes.inc"
-        .include "collision_3d.inc"
+        .include "collision.inc"
         .include "input.inc"
         .include "sprites.inc"
         .include "entity.inc"
