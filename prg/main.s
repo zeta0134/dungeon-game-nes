@@ -26,10 +26,8 @@
 .segment "PRGFIXED_8000"
 ; note: this is probably a bad idea
 test_map:
-        ;.incbin "build/maps/large_test_room.bin"
-        .include "debug_maps/test_room_3d.incs"
+        .include "../build/maps/test_room_3d.incs"
 test_tileset:
-        ;.incbin "build/tilesets/skull_tiles.mt"
         .include "../build/tilesets/tiles_3d.mt"
 
 

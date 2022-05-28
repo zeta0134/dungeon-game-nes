@@ -22,7 +22,7 @@ RAW_CHR_FILES := \
 # Data files (maps, game data, etc) for more complex conversions
 MAP_FILES := $(wildcard $(ARTDIR)/maps/*.tmx)
 BIN_FILES := \
-	$(patsubst $(ARTDIR)/maps/%.tmx,$(BUILDDIR)/maps/%.bin,$(MAP_FILES))
+	$(patsubst $(ARTDIR)/maps/%.tmx,$(BUILDDIR)/maps/%.incs,$(MAP_FILES))
 TILESET_FILES := $(wildcard $(ARTDIR)/tilesets/*.tsx)
 TILESET_CHR_FILES := $(patsubst $(ARTDIR)/tilesets/%.tsx,$(BUILDDIR)/tilesets/%.chr,$(TILESET_FILES))
 
@@ -64,8 +64,8 @@ $(BUILDDIR)/%.o: $(CHRDIR)/%.s $(RAW_CHR_FILES) $(TILESET_CHR_FILES)
 $(BUILDDIR)/sprites/%.chr: $(ARTDIR)/sprites/%.png
 	vendor/pilbmp2nes.py $< -o $@ --planes="0;1" --tile-height=16
 
-$(BUILDDIR)/maps/%.bin: $(ARTDIR)/maps/%.tmx
-	tools/convertmap.py $< $@
+$(BUILDDIR)/maps/%.incs: $(ARTDIR)/maps/%.tmx
+	tools/convert3dmap.py $< $@
 
 $(BUILDDIR)/tilesets/%.chr: $(ARTDIR)/tilesets/%.tsx
 	tools/converttileset.py $< $@ $(basename $@).mt $(basename $@).pal
