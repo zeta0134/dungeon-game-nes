@@ -10,7 +10,7 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
-        .segment "PRGFIXED_E000"
+        .segment "SCROLLING_A000"
 
 ; various useful constants
 SCROLL_SEAM = 224 ; in pixels from the top of the nametable
@@ -25,7 +25,7 @@ HUD_BANK = 2
 ; to be used in the same frame without conflict.
 ; ALL generators leave R0 pointing at the next valid entry in the table.
 
-.proc generate_basic_playfield
+.proc FAR_generate_basic_playfield
 IrqGenerationIndex := R0
 ChrBank := R1
 ScratchByte := R2
@@ -141,7 +141,7 @@ hud_split:
         rts
 .endproc
 
-.proc generate_standard_hud
+.proc FAR_generate_standard_hud
 IrqGenerationIndex := R0
         ldx IrqGenerationIndex
         ; the standard HUD consists of two simple splits, showing the bottom-most metatile

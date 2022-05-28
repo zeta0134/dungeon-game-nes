@@ -1,2 +1,2 @@
-.global generate_basic_playfield
-.global generate_standard_hud
+.global FAR_generate_basic_playfield
+.global FAR_generate_standard_hud

@@ -142,8 +142,8 @@ gameloop:
         ; CHR bank to use for BG graphics
         lda DynamicChrBank
         sta R1
-        jsr generate_basic_playfield
-        jsr generate_standard_hud
+        far_call FAR_generate_basic_playfield
+        far_call FAR_generate_standard_hud
         jsr swap_irq_buffers
 wait_for_next_vblank:
         inc GameloopCounter

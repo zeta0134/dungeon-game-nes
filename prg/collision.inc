@@ -1,6 +1,7 @@
-.global collide_up_with_map
-.global collide_down_with_map
-.global collide_left_with_map
-.global collide_right_with_map
 .global NavMapData
-.global update_nav_lut_ptr
+
+.global FAR_collide_up_with_map
+.global FAR_collide_down_with_map
+.global FAR_collide_left_with_map
+.global FAR_collide_right_with_map
+.global FAR_update_nav_lut_ptr
