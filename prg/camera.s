@@ -76,12 +76,14 @@ y_not_negative:
         lda MapWidth
         asl a
         ; now subtract screen width
+        sec
         sbc #32
         ; stash in x temporarily
         tax
         ; a now contains our maximum scroll amount to the right
         ; compare with the high byte
         ; of our desired X
+        sec
         sbc DesiredX+1
         ; if we overflowed, clamp DesiredX to the maximum
         bcs x_less_than_maximum
