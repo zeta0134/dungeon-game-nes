@@ -3,7 +3,6 @@
         .include "branch_util.inc"
         .include "far_call.inc"
         .include "nes.inc"
-        .include "collision.inc"
         .include "input.inc"
         .include "sprites.inc"
         .include "entity.inc"
@@ -27,10 +26,7 @@ WALKING_ACCEL = 2
 ; Some of these probably need to be global
 ; ... the entity struct is gonna need to be bigger
 ; (other musings, etc)
-DATA_SPEED_X = 0
-DATA_SPEED_Y = 1
-DATA_SPEED_Z = 2
-DATA_FLAGS = 3
+DATA_FLAGS = 0
 
 FLAG_FACING =  %00000001
 FACING_LEFT =  %00000001
@@ -73,8 +69,8 @@ FACING_RIGHT = %00000000
         ; use data bytes 0 and 1 to track speed
         lda #0
         ldy CurrentEntityIndex
-        sta entity_table + EntityState::Data + DATA_SPEED_X, y
-        sta entity_table + EntityState::Data + DATA_SPEED_Y, y
+        sta entity_table + EntityState::SpeedX, y
+        sta entity_table + EntityState::SpeedY, y
         ; set all flag bits to 0
         sta entity_table + EntityState::Data + DATA_FLAGS, y
         ; finally, switch to the idle routine
@@ -85,63 +81,7 @@ failed_to_spawn:
         rts
 .endproc
 
-.proc apply_speed
-LeftX := R1
-RightX := R2
-VerticalOffset := R3
-        ; set our palette index to 0 by default, for debugging
-        ldx CurrentEntityIndex
-        ldy entity_table + EntityState::MetaSpriteIndex, x
-        lda #0
-        sta metasprite_table + MetaSpriteState::PaletteOffset, y
 
-        ; Set up the hitbox coordinates for collision
-        ; Note: later when we generalize "apply_speed", we need to move
-        ; these registers somewhere more global probably
-
-        ; Boxgirl's "hitbox" is more like a hit line segment, with a
-        ; left and right edge, and a height relative to her position.
-        ; For now, make that height at position 0.
-
-        ; left
-        lda #(3 << 4)
-        sta LeftX
-        ; right
-        lda #(12 << 4)
-        sta RightX
-        ; top
-        lda #(0 << 4)
-        sta VerticalOffset
-
-        ; apply speed to position for each axis, then check the
-        ; tilemap and correct for any tile collisions
-        ldx CurrentEntityIndex
-        lda entity_table + EntityState::Data + DATA_SPEED_X, x
-        sta R0
-        bmi move_left
-move_right:
-        sadd16x entity_table + EntityState::PositionX, R0
-        far_call FAR_collide_right_with_map
-        jmp done_with_x
-move_left:
-        sadd16x entity_table + EntityState::PositionX, R0
-        far_call FAR_collide_left_with_map
-done_with_x:
-        ldx CurrentEntityIndex
-        lda entity_table + EntityState::Data + DATA_SPEED_Y, x
-        sta R0
-        bmi move_up
-move_down:
-        sadd16x entity_table + EntityState::PositionY, R0
-        far_call FAR_collide_down_with_map
-        jmp done
-move_up:
-        sadd16x entity_table + EntityState::PositionY, R0
-        far_call FAR_collide_up_with_map
-
-done:
-        rts
-.endproc
 
 ; works out the proper location to display the character and shadow metasprite, based
 ; on the character's position and current height relative to the ground
@@ -226,36 +166,12 @@ no_shadow:
         rts
 .endproc
 
-GRAVITY_ACCEL = ($FF - 2)
-TERMINAL_VELOCITY = ($FF - 60)
 JUMP_SPEED = 48
-
-.proc vertical_acceleration
-        ldx CurrentEntityIndex
-        ; first apply the player's current speed to their height coordinate
-        lda entity_table + EntityState::Data + DATA_SPEED_Z, x
-        sta R0
-        sadd16x entity_table + EntityState::PositionZ, R0
-        ; if their height coordinate is now negative, cap it at 0
-        lda entity_table + EntityState::PositionZ + 1, x
-        bpl height_not_negative
-        lda #0
-        sta entity_table + EntityState::PositionZ, x
-        sta entity_table + EntityState::PositionZ+1, x
-        ; also zero out speed, so that if we fall off a ledge we start accelerating again
-        sta entity_table + EntityState::Data + DATA_SPEED_Z
-height_not_negative:
-        ; Now apply acceleration due to gravity, and clamp it to the terminal velocity
-        accelerate entity_table + EntityState::Data + DATA_SPEED_Z, #GRAVITY_ACCEL
-        min_speed entity_table + EntityState::Data + DATA_SPEED_Z, #TERMINAL_VELOCITY
-        ; and we should be done
-        rts
-.endproc
 
 .proc apply_jump
         ldx CurrentEntityIndex
         lda #JUMP_SPEED
-        sta entity_table + EntityState::Data + DATA_SPEED_Z, x
+        sta entity_table + EntityState::SpeedZ, x
         rts
 .endproc
 
@@ -266,8 +182,8 @@ check_right:
         bit ButtonsHeld
         beq right_not_held
         ; right is held, so accelerate to the +X
-        accelerate entity_table + EntityState::Data + DATA_SPEED_X, #WALKING_ACCEL
-        max_speed entity_table + EntityState::Data + DATA_SPEED_X, #WALKING_SPEED
+        accelerate entity_table + EntityState::SpeedX, #WALKING_ACCEL
+        max_speed entity_table + EntityState::SpeedX, #WALKING_SPEED
         ; note: we explicitly skip checking for left, to work around
         ; worn controllers and broken emulators; right wins
         jmp check_up
@@ -277,18 +193,18 @@ check_left:
         bit ButtonsHeld
         beq left_not_held
         ; left is held, so accelerate to the -X
-        accelerate entity_table + EntityState::Data + DATA_SPEED_X, #(256-WALKING_ACCEL)
-        min_speed entity_table + EntityState::Data + DATA_SPEED_X, #(256-WALKING_SPEED)
+        accelerate entity_table + EntityState::SpeedX, #(256-WALKING_ACCEL)
+        min_speed entity_table + EntityState::SpeedX, #(256-WALKING_SPEED)
         jmp check_up
 left_not_held:
-        apply_friction entity_table + EntityState::Data + DATA_SPEED_X, SLIPPERINESS
+        apply_friction entity_table + EntityState::SpeedX, SLIPPERINESS
 check_up:
         lda #KEY_UP
         bit ButtonsHeld
         beq up_not_held
         ; up is held, so accelerate to the -Y
-        accelerate entity_table + EntityState::Data + DATA_SPEED_Y, #(256-WALKING_ACCEL)
-        min_speed entity_table + EntityState::Data + DATA_SPEED_Y, #(256-WALKING_SPEED)
+        accelerate entity_table + EntityState::SpeedY, #(256-WALKING_ACCEL)
+        min_speed entity_table + EntityState::SpeedY, #(256-WALKING_SPEED)
         ; note: we explicitly skip checking for down, to work around
         ; worn controllers and broken emulators; up wins
         jmp done
@@ -298,11 +214,11 @@ check_down:
         bit ButtonsHeld
         beq down_not_held
         ; down is held, so accelerate to the +Y
-        accelerate entity_table + EntityState::Data + DATA_SPEED_Y, #WALKING_ACCEL
-        max_speed entity_table + EntityState::Data + DATA_SPEED_Y, #WALKING_SPEED
+        accelerate entity_table + EntityState::SpeedY, #WALKING_ACCEL
+        max_speed entity_table + EntityState::SpeedY, #WALKING_SPEED
         jmp done
 down_not_held:
-        apply_friction entity_table + EntityState::Data + DATA_SPEED_Y, SLIPPERINESS
+        apply_friction entity_table + EntityState::SpeedY, SLIPPERINESS
 done:
         rts
 .endproc
@@ -375,7 +291,7 @@ facing_left:
         ; set our upwards velocity immediately; gravity will take
         ; care of the rest
         lda #JUMP_SPEED
-        sta entity_table + EntityState::Data + DATA_SPEED_Z, x
+        sta entity_table + EntityState::SpeedZ, x
 not_grounded:
 jump_not_pressed:
         rts
@@ -384,9 +300,9 @@ jump_not_pressed:
 .proc boxgirl_idle
         jsr handle_jump
         jsr walking_acceleration
-        jsr vertical_acceleration
         ; apply physics normally
-        jsr apply_speed
+        far_call FAR_standard_entity_vertical_acceleration
+        far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
         ; check for state changes
         lda #(KEY_RIGHT | KEY_LEFT | KEY_UP | KEY_DOWN)
@@ -400,9 +316,9 @@ still_idle:
 .proc boxgirl_walk_right
         jsr handle_jump
         jsr walking_acceleration
-        jsr vertical_acceleration
         ; apply physics normally
-        jsr apply_speed
+        far_call FAR_standard_entity_vertical_acceleration
+        far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
         ; set our "last facing" bit to the right
         ldy CurrentEntityIndex
@@ -420,9 +336,9 @@ right_not_held:
 .proc boxgirl_walk_left
         jsr handle_jump
         jsr walking_acceleration
-        jsr vertical_acceleration
         ; apply physics normally
-        jsr apply_speed
+        far_call FAR_standard_entity_vertical_acceleration
+        far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
         ; set our "last facing" bit to the left
         ldy CurrentEntityIndex
@@ -440,9 +356,9 @@ left_not_held:
 .proc boxgirl_walk_up
         jsr handle_jump
         jsr walking_acceleration
-        jsr vertical_acceleration
         ; apply physics normally
-        jsr apply_speed
+        far_call FAR_standard_entity_vertical_acceleration
+        far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
         ; check for state changes
         lda #KEY_UP
@@ -457,9 +373,9 @@ up_not_held:
 .proc boxgirl_walk_down
         jsr handle_jump
         jsr walking_acceleration
-        jsr vertical_acceleration
         ; apply physics normally
-        jsr apply_speed
+        far_call FAR_standard_entity_vertical_acceleration
+        far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
         ; check for state changes
         lda #KEY_DOWN

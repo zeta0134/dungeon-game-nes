@@ -1,5 +1,9 @@
-.ifndef _PHYSICS_INC
-_PHYSICS_INC := 1
+.global FAR_apply_standard_entity_speed
+.global FAR_standard_entity_vertical_acceleration
+
+GRAVITY_ACCEL = ($FF - 2)
+TERMINAL_VELOCITY = ($FF - 60)
+
 ; what could *possibly* go wrong?
 ; note: all of these are meant to operate on items in an
 ; entity table, so speed_addr is indexed with x in all cases
@@ -74,5 +78,3 @@ negative:
 done:
 .endscope
 .endmacro
-
-.endif
