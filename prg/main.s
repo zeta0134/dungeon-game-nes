@@ -124,6 +124,16 @@ start:
         jmp wait_for_next_vblank
 
 gameloop:
+        .if DEBUG_MODE
+        ; waste a bunch of time
+        ldx #$FF
+time_waste_loop:
+        .repeat 1
+        nop
+        .endrepeat
+        dex
+        bne time_waste_loop
+        .endif
         debug_color LIGHTGRAY
         far_call FAR_update_camera
         debug_color TINT_R | TINT_G

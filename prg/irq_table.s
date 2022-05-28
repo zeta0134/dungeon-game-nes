@@ -1,5 +1,6 @@
         .setcpu "6502"
 
+        .include "debug.inc"
         .include "branch_checks.inc"
         .include "irq_table.inc"
         .include "nes.inc"
@@ -105,11 +106,20 @@ loop:
         lda #(VBLANK_NMI | OBJ_1000 | BG_0000 | OBJ_8X16)
         sta PPUCTRL
 
+        .if ::DEBUG_MODE
+        ; In debug mode we disable PPUMASK writes, so start the frame with everything
+        ; turned on. This will break sprite clipping on vertical seams, and disable color
+        ; emphasis effects in affected rooms, but allows us to use debug colors to measure
+        ; performance.
+        lda #(BG_ON | OBJ_ON)
+        sta PPUMASK
+        .else
         ; PPUMASK should hide sprites, but we need to display backgrounds otherwise MMC3's
-        ; IRQ counter braks. To facilitate this, we'll display the HUD row again here, but
+        ; IRQ counter breaks. To facilitate this, we'll display the HUD row again here, but
         ; with a completely empty CHR bank loaded instead of the usual HUD tiles
         lda #(BG_ON)
         sta PPUMASK
+        .endif
 
         ; Switch the blank bank in instead of the HUD graphics, guaranteeing that the
         ; top 8px will draw the background color and nothing else:
@@ -233,8 +243,15 @@ split_xy_begin:
 
         ; ppu dot range here: 280 - 300
 
+        .if ::DEBUG_MODE
+        .repeat 4 ; 8 (24)
+        nop
+        .endrepeat
+        .else
         lda irq_table_ppumask, y ; 4 (12)
         sta PPUMASK ; 4 (12)
+        .endif
+
 
         ; end timing sensitive code; prep for next scanline
         inc irq_table_index ; 5 (15)
