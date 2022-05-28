@@ -2,7 +2,7 @@
 import sys
 
 from ca65 import pretty_print_table, ca65_label, ca65_byte_literal
-from convert3dmap import generate_collision_tileset
+from convertmap import generate_collision_tileset
 
 # A short utility script to generate the lookup table for the collision system,
 # using the same tiles and in the same order that the map exporter uses to generate
@@ -24,7 +24,7 @@ def flags_byte(tile):
 if __name__ == '__main__':
   # DEBUG TEST THINGS
   if len(sys.argv) != 2:
-    print("Usage: collisiontileset3d.py output_file")
+    print("Usage: collisiontileset.py output_file")
     sys.exit(-1)
   output_filename = sys.argv[1]
 

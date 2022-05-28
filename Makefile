@@ -65,13 +65,13 @@ $(BUILDDIR)/sprites/%.chr: $(ARTDIR)/sprites/%.png
 	vendor/pilbmp2nes.py $< -o $@ --planes="0;1" --tile-height=16
 
 $(BUILDDIR)/maps/%.incs: $(ARTDIR)/maps/%.tmx
-	tools/convert3dmap.py $< $@
+	tools/convertmap.py $< $@
 
 $(BUILDDIR)/tilesets/%.chr: $(ARTDIR)/tilesets/%.tsx
 	tools/converttileset.py $< $@ $(basename $@).mt $(basename $@).pal
 
-$(BUILDDIR)/collision_tileset.incs: tools/collisiontileset3d.py tools/convert3dmap.py
-	tools/collisiontileset3d.py $@
+$(BUILDDIR)/collision_tileset.incs: tools/collisiontileset.py tools/convertmap.py
+	tools/collisiontileset.py $@
 
 
 
