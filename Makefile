@@ -55,7 +55,7 @@ everdrive: dir $(ROM_NAME)
 $(ROM_NAME): $(SOURCEDIR)/mmc3.cfg $(O_FILES)
 	ld65 -m $(BUILDDIR)/map.txt --dbgfile $(DBG_NAME) -o $@ -C $^
 
-$(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(BIN_FILES) $(TILESET_CHR_FILES)
+$(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(BIN_FILES) $(TILESET_CHR_FILES) $(BUILDDIR)/collision_tileset.incs
 	ca65 -g -o $@ $<
 
 $(BUILDDIR)/%.o: $(CHRDIR)/%.s $(RAW_CHR_FILES) $(TILESET_CHR_FILES)
@@ -70,7 +70,8 @@ $(BUILDDIR)/maps/%.incs: $(ARTDIR)/maps/%.tmx
 $(BUILDDIR)/tilesets/%.chr: $(ARTDIR)/tilesets/%.tsx
 	tools/converttileset.py $< $@ $(basename $@).mt $(basename $@).pal
 
-
+$(BUILDDIR)/collision_tileset.incs: tools/collisiontileset3d.py tools/convert3dmap.py
+	tools/collisiontileset3d.py $@
 
 
 

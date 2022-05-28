@@ -22,7 +22,7 @@ ScratchTileAddr: .res 2 ; used by the collision scanning routines
 
         .segment "PHYSICS_A000"
 
-.include "debug_maps/collision_tileset.incs"
+.include "../build/collision_tileset.incs"
 
 nav_lut_width_128_low:
         .repeat 128, i
