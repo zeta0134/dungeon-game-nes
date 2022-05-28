@@ -8,7 +8,7 @@
         .include "zeropage.inc"
         .include "debug.inc"
 
-.scope PRG1_A000
+.scope SCROLLING_A000
         .segment "PRGRAM"
 MAX_METATILES = 128
 
@@ -66,7 +66,7 @@ CameraYTileTarget: .byte $00
 CameraYScrollTarget: .byte $00
 PpuYTileTarget: .byte $00
 
-        .segment "PRG1_A000"
+        .segment "SCROLLING_A000"
 
 .export FAR_init_map, FAR_init_attributes, FAR_scroll_camera, FAR_render_initial_viewport
 

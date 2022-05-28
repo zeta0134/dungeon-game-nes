@@ -5,11 +5,11 @@
         .include "zeropage.inc"
 
 
-.scope PRG0_A000
+.scope SCROLLING_A000
         .segment "RAM"
 DesiredX: .word $0000
 DesiredY: .word $0000
-        .segment "PRG0_A000"
+        .segment "SCROLLING_A000"
 
 .export FAR_update_camera
 

@@ -4,7 +4,7 @@
         .include "zeropage.inc"
         .include "vram_buffer.inc"
 
-.scope PRGLAST_C000
+.scope PRGLAST_E000
         .zeropage
 PopSlideAddress: .word $0000
 

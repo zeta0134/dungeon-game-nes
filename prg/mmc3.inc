@@ -8,7 +8,7 @@ MMC3_IRQ_DISABLE = $E000
 MMC3_IRQ_ENABLE  = $E001
 
 ; project global
-MMC3_BANKING_MODE = $00
+MMC3_BANKING_MODE = $40
 
 .macro mmc3_select_bank register_index, bank_number
         lda #(MMC3_BANKING_MODE + register_index) ; CHR_2K_LOW

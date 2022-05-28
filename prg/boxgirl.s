@@ -9,8 +9,8 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
-.scope PRGLAST_E000
-        .segment "PRGLAST_C000"
+.scope PRGLAST_8000
+        .segment "PRGLAST_8000"
         ;.org $e000
         .include "animations/boxgirl/idle.inc"
         .include "animations/boxgirl/move.inc"

@@ -26,7 +26,7 @@
         .importzp GameloopCounter, LastNmi, CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget
 
 
-.segment "PRG0_A000"
+.segment "PRGLAST_8000"
 ; note: this is probably a bad idea
 test_map:
         ;.incbin "build/maps/large_test_room.bin"
