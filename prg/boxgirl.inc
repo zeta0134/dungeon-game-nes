@@ -1,1 +1,1 @@
-.import boxgirl_init
+.global boxgirl_init

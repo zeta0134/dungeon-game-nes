@@ -10,7 +10,6 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
-.scope PRGFIXED_E000
         .segment "PRGFIXED_E000"
         ;.org $e000
 
@@ -44,7 +43,6 @@ JumpTarget := R14
         jmp (JumpTarget)
         ; tail call, target will rts
 .endproc
-.export decompress
 
 decompression_type_table:
         .word uncompressed
@@ -72,5 +70,3 @@ loop:
 
         rts
 .endproc
-
-.endscope

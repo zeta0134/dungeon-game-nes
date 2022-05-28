@@ -1,7 +1,6 @@
-.import collide_up_with_map
-.import collide_down_with_map
-.import collide_left_with_map
-.import collide_right_with_map
-.import NavMapData
-
-.import update_nav_lut_ptr
+.global collide_up_with_map
+.global collide_down_with_map
+.global collide_left_with_map
+.global collide_right_with_map
+.global NavMapData
+.global update_nav_lut_ptr

@@ -1,4 +1,5 @@
         .setcpu "6502"
+        .include "collision.inc"
         .include "entity.inc"
         .include "nes.inc"
         .include "scrolling.inc"
@@ -6,22 +7,18 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
-        
 
-.scope PRGFIXED_8000
         .segment "PRGRAM"
 
 ; old dead pointer, remove when you are done refactoring
 MetatileAttributes:
 
 NavMapData: .res 1536
-.export NavMapData
 
         .zeropage
 NavLutPtrLow: .res 2
 NavLutPtrHigh: .res 2
 ScratchTileAddr: .res 2 ; used by the collision scanning routines
-.exportzp NavLutPtrLow, NavLutPtrHigh
 
         .segment "PRGFIXED_8000"
 
@@ -61,7 +58,6 @@ nav_lut_width_16_high:
         .byte >(NavMapData + (16 * i))
         .endrep
 
-.export update_nav_lut_ptr
 .proc update_nav_lut_ptr
         lda MapWidth
         cmp #128
@@ -514,7 +510,6 @@ TileY := R7
 ;   - R0 - R8: various (see below)
 ; Clobbers:
 ;   - yes
-.export collide_up_with_map
 .proc collide_up_with_map
 LeftX := R1
 RightX := R2
@@ -541,7 +536,6 @@ HighestGround := R10
         rts
 .endproc
 
-.export collide_down_with_map
 .proc collide_down_with_map
 LeftX := R1
 RightX := R2
@@ -571,7 +565,6 @@ HighestGround := R10
 ; For the left and right directions, since our line segment is aligned to an axis, we
 ; can safely ignore the opposite point of the direction of movement. The response for such
 ; a collision would be wrong anyway. This cuts down on 25% of collision checks per entity
-.export collide_left_with_map
 .proc collide_left_with_map
 LeftX := R1
 RightX := R2
@@ -598,7 +591,6 @@ HighestGround := R10
         rts
 .endproc
 
-.export collide_right_with_map
 .proc collide_right_with_map
 LeftX := R1
 RightX := R2
@@ -624,5 +616,3 @@ HighestGround := R10
         jsr apply_bg_priority
         rts
 .endproc
-
-.endscope

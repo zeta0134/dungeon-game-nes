@@ -1,16 +1,14 @@
         .setcpu "6502"
+        .include "far_call.inc"
         .include "nes.inc"
         .include "mmc3.inc"
 
-.scope PRGFIXED_E000
         .zeropage
 TargetBank: .byte $00
 CurrentBank: .byte $00
 JumpTarget: .word $0000
-.exportzp TargetBank, CurrentBank, JumpTarget
 
         .segment "PRGFIXED_E000"
-.export launch_far_call
 
 .proc launch_far_call
         ; preserve the current bank
@@ -39,5 +37,3 @@ return_from_indirect:
 finished:
         rts
 .endproc
-
-.endscope

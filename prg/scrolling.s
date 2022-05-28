@@ -3,12 +3,12 @@
         .include "branch_util.inc"
         .include "mmc3.inc"
         .include "ppu.inc"
+        .include "scrolling.inc"
         .include "vram_buffer.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
         .include "debug.inc"
 
-.scope SCROLLING_A000
         .segment "PRGRAM"
 MAX_METATILES = 128
 
@@ -20,11 +20,9 @@ TilesetTopRight: .res MAX_METATILES
 TilesetBottomLeft: .res MAX_METATILES
 TilesetBottomRight: .res MAX_METATILES
 TilesetAttributes: .res MAX_METATILES
-.export MapData, TilesetTopLeft, TilesetTopRight, TilesetBottomLeft, TilesetBottomRight, TilesetAttributes
 ; CHR banks to display the selected tileset(s)
 DynamicChrBank: .byte $00
 StaticChrBank: .byte $00
-.export DynamicChrBank, StaticChrBank
         .zeropage
 ; Map dimensions
 MapWidth: .byte $00
@@ -59,7 +57,6 @@ CameraXTileCurrent: .byte $00
 CameraXScrollCurrent: .byte $00
 CameraYTileCurrent: .byte $00
 CameraYScrollCurrent: .byte $00
-.exportzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget, MapWidth, MapHeight, AttributeWidth, PpuYTileTarget
 CameraXTileTarget: .byte $00
 CameraXScrollTarget: .byte $00
 CameraYTileTarget: .byte $00
@@ -67,8 +64,6 @@ CameraYScrollTarget: .byte $00
 PpuYTileTarget: .byte $00
 
         .segment "SCROLLING_A000"
-
-.export FAR_init_map, FAR_init_attributes, FAR_scroll_camera, FAR_render_initial_viewport
 
 .macro incColumn addr
 .scope
@@ -1333,6 +1328,3 @@ done_scrolling:
         sta CameraYScrollCurrent
         rts
 .endproc
-
-
-.endscope

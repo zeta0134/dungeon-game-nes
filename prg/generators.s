@@ -3,6 +3,7 @@
 
         .setcpu "6502"
 
+        .include "generators.inc"
         .include "nes.inc"
         .include "irq_table.inc"
         .include "scrolling.inc"
@@ -24,7 +25,6 @@ HUD_BANK = 2
 ; to be used in the same frame without conflict.
 ; ALL generators leave R0 pointing at the next valid entry in the table.
 
-.export generate_basic_playfield
 .proc generate_basic_playfield
 IrqGenerationIndex := R0
 ChrBank := R1
@@ -141,7 +141,6 @@ hud_split:
         rts
 .endproc
 
-.export generate_standard_hud
 .proc generate_standard_hud
 IrqGenerationIndex := R0
         ldx IrqGenerationIndex

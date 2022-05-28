@@ -1,6 +1,7 @@
         .setcpu "6502"
 
         .include "branch_checks.inc"
+        .include "irq_table.inc"
         .include "nes.inc"
         .include "mmc3.inc"
 
@@ -12,8 +13,6 @@ irq_table_index: .byte $00
 two_thirds_temp: .byte $00
 irq_stash: .byte $00
 
-.exportzp active_irq_index, inactive_irq_index
-
         .segment "PRGRAM"
 
 
@@ -24,15 +23,12 @@ irq_stash: .byte $00
 .align 256
 ; Sets the total size of the IRQ table. Note that when using double-buffering (recommended),
 ; the maximum available scanlines will be (IRQ_TABLE_SIZE / 2).
-IRQ_TABLE_SIZE = 128
 irq_table_scanlines: .res IRQ_TABLE_SIZE
 irq_table_nametable_high: .res IRQ_TABLE_SIZE
 irq_table_scroll_y: .res IRQ_TABLE_SIZE
 irq_table_scroll_x: .res IRQ_TABLE_SIZE
 irq_table_ppumask: .res IRQ_TABLE_SIZE
 irq_table_chr0_bank: .res IRQ_TABLE_SIZE
-
-.export irq_table_scanlines, irq_table_nametable_high, irq_table_scroll_y, irq_table_scroll_x, irq_table_ppumask, irq_table_chr0_bank
 
         .segment "PRGFIXED_E000"
 
@@ -58,7 +54,6 @@ continue:
 ; ditching the double-buffering technique, then it is sufficient to remove all calls to
 ; swap_irq_buffers, and instead use the full size of the table as the only active index.
 ; Beware race conditions! Double-buffering is *much* safer.
-.export initialize_irq_table
 .proc initialize_irq_table
         jsr clear_irq_table
         lda #0
@@ -72,7 +67,6 @@ continue:
 ; to take more scanlines than there are in a single frame
 ; (note that irqs should be disabled during NMI if we go with this
 ; technique in a real project)
-.export clear_irq_table
 .proc clear_irq_table
         ldx #0
 loop:
@@ -94,7 +88,6 @@ loop:
         rts
 .endproc
 
-.export swap_irq_buffers
 .proc swap_irq_buffers
         lda inactive_irq_index
         ldx active_irq_index
@@ -104,7 +97,6 @@ loop:
 .endproc
 
 ; Sets up the render to use the IRQ table
-.export setup_irq_table_for_frame
 .proc setup_irq_table_for_frame
         ; reset PPU latch
         lda PPUSTATUS
@@ -148,7 +140,6 @@ loop:
         rts
 .endproc
 
-.export irq
 .proc irq
         ; earliest cycle: 285
         ; latest possible cycle: 305

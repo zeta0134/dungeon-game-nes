@@ -18,10 +18,5 @@ MMC3_BANKING_MODE = $40
         sta MMC3_BANK_DATA
 .endmacro
 
-.ifndef _MMC3_INC
-_MMC3_INC := 1
-
-.import initialize_mmc3
-.importzp mmc3_bank_select_shadow
-
-.endif
+.global initialize_mmc3
+.globalzp mmc3_bank_select_shadow

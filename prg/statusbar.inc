@@ -1,1 +1,1 @@
-.import demo_init_statusbar
+.global demo_init_statusbar

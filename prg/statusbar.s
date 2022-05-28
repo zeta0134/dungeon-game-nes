@@ -1,11 +1,9 @@
         .setcpu "6502"
+        .include "statusbar.inc"
         .include "nes.inc"
         .include "ppu.inc"
 
-.scope PRGFIXED_E000
         .segment "PRGFIXED_E000"
-
-.export demo_init_statusbar
 
 ;BLANK = 128
 ;FILL = 129
@@ -146,7 +144,3 @@ loop4:
 
         rts
 .endproc
-
-.endscope
-
-

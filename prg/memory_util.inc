@@ -1,4 +1,4 @@
-.import clear_memory
+.global clear_memory
 
 .macro clear_page ADDR
 .scope

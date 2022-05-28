@@ -6,18 +6,17 @@
         .include "zeropage.inc"
 
 
-.scope PRGFIXED_E000
         .zeropage
 CurrentEntityIndex: .byte $00
-        .exportzp CurrentEntityIndex
+
         .segment "RAM"
-        .export entity_table, spawn_entity, update_entities, set_metasprite_pos
 entity_table:
         .repeat 16
         .tag EntityState
         .endrepeat
         .align 2
 CurrentEntityFuncPtr: .word $0000
+
         .segment "PRGFIXED_E000"
 
 
@@ -105,5 +104,3 @@ EntityIndex := R1
         .endrepeat
         rts
 .endproc
-
-.endscope

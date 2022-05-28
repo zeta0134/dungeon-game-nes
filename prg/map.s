@@ -1,15 +1,12 @@
         .setcpu "6502"
         .include "collision.inc"
         .include "compression.inc"
+        .include "map.inc"
         .include "scrolling.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
 
-.scope PRGFIXED_E000
         .segment "PRGFIXED_E000"
-        ;.org $e000
-
-.export load_map, load_tileset
 
 .struct MapHeader
         width .byte
@@ -167,5 +164,3 @@ attribute_loop:
 
         rts
 .endproc
-
-.endscope

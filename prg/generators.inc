@@ -1,2 +1,2 @@
-.import generate_basic_playfield
-.import generate_standard_hud
+.global generate_basic_playfield
+.global generate_standard_hud

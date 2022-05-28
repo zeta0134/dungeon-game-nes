@@ -1,11 +1,10 @@
         .setcpu "6502"
+        .include "input.inc"
         .include "nes.inc"
 
 
 
-.scope PRGFIXED_E000
         .zeropage
-.exportzp ButtonsDown, ButtonsUp, ButtonsHeld
 ButtonsThisFrame: .byte $00
 ButtonsLastFrame: .byte $00
 ButtonsDown: .byte $00
@@ -15,7 +14,6 @@ ButtonsHeld: .byte $00
         .segment "PRGFIXED_E000"
         ;.org $e000
 
-.export poll_input
 
 .macro read_controller controller_port, result_dest
 .scope
@@ -76,5 +74,3 @@ check_held:
         sta ButtonsHeld ; register a held button
         rts
 .endproc
-
-.endscope

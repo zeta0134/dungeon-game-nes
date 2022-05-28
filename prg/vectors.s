@@ -2,12 +2,11 @@
 
 .include "irq_table.inc"
 .include "input.inc"
+.include "main.inc"
 .include "memory_util.inc"
 .include "scrolling.inc"
 .include "vram_buffer.inc"
-
-.scope PRGFIXED_E000
-        .segment "PRGRAM"
+.include "zeropage.inc"
 
         .segment "PRGFIXED_E000"
 
@@ -19,7 +18,6 @@ loop:
 .endscope
 .endmacro
 
-        .import start
 reset:
         sei            ; Disable interrupts
         cld            ; make sure decimal mode is off (not that it does anything)
@@ -37,7 +35,6 @@ reset:
         ; Jump to main
         jmp start
 
-        .importzp GameloopCounter, LastNmi
 nmi:
         ; preserve registers
         pha
@@ -101,4 +98,3 @@ lag_frame:
         .addr nmi
         .addr reset
         .addr irq
-.endscope

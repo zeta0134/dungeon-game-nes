@@ -1,8 +1,5 @@
-.ifndef _ENTITY_INC
-_ENTITY_INC := 1
-
-.import entity_table, spawn_entity, update_entities, set_metasprite_pos
-.importzp CurrentEntityIndex
+.global entity_table, spawn_entity, update_entities, set_metasprite_pos
+.globalzp CurrentEntityIndex
 
 .struct EntityState
         UpdateFunc .word
@@ -44,5 +41,3 @@ _ENTITY_INC := 1
         and #flag_mask
         ; now you can beq for unset, and bne for flag set
 .endmacro
-
-.endif

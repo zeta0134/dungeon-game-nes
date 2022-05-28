@@ -1,4 +1,5 @@
         .setcpu "6502"
+        .include "boxgirl.inc"
         .include "branch_util.inc"
         .include "nes.inc"
         .include "collision.inc"
@@ -9,13 +10,10 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
-.scope PRGFIXED_8000
         .segment "PRGFIXED_8000"
-        ;.org $e000
         .include "animations/boxgirl/idle.inc"
         .include "animations/boxgirl/move.inc"
         .include "animations/shadow/flicker.inc"
-        .export boxgirl_init
 
 WALKING_SPEED = 16
 WALKING_ACCEL = 2
@@ -471,6 +469,3 @@ up_not_held:
 down_not_held:
         rts
 .endproc
-
-
-.endscope

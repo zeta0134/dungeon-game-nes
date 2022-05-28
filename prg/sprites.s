@@ -4,9 +4,7 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
-.scope PRGFIXED_E000
         .zeropage
-.exportzp OAMTableLength, OAMEntryIndex, OAMTableAddr, MetaspritePosX, MetaspritePosY, ScratchSpritePtr
 ScratchSpritePtr: .word $0000
 OAMTableLength: .byte $00
 OAMEntryIndex: .byte $00
@@ -18,7 +16,6 @@ MetaspritePaletteOffset: .byte $00
 CameraScrollPixelsX: .word $0000
 CameraScrollPixelsY: .word $0000
         .segment "RAM"
-        .export metasprite_table
 metasprite_table:
         .repeat 16
         .tag MetaSpriteState
@@ -27,7 +24,6 @@ metasprite_table:
         .segment "PRGFIXED_E000"
         ;.org $e000
 
-.export initialize_oam, draw_metasprite, update_animations, draw_metasprites, find_unused_metasprite
 
 SHADOW_OAM = $0200
 ; offsets
@@ -354,5 +350,3 @@ next_metasprite:
 all_done:
         rts
 .endproc
-
-.endscope

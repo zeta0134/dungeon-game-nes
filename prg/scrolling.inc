@@ -1,11 +1,11 @@
-.import FAR_init_map
-.import FAR_init_attributes
-.import FAR_scroll_camera
-.import FAR_render_initial_viewport
+.global FAR_init_map
+.global FAR_init_attributes
+.global FAR_scroll_camera
+.global FAR_render_initial_viewport
 
-.import set_scroll_for_entire_frame
+.global set_scroll_for_entire_frame
 
-.import MapData, TilesetTopLeft, TilesetTopRight, TilesetBottomLeft, TilesetBottomRight, TilesetAttributes
-.import DynamicChrBank, StaticChrBank
-.importzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget, MapWidth, MapHeight, AttributeWidth, PpuYTileTarget
+.global MapData, TilesetTopLeft, TilesetTopRight, TilesetBottomLeft, TilesetBottomRight, TilesetAttributes
+.global DynamicChrBank, StaticChrBank
+.globalzp CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget, MapWidth, MapHeight, AttributeWidth, PpuYTileTarget
 

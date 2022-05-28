@@ -1,2 +1,2 @@
-.importzp ButtonsDown, ButtonsUp, ButtonsHeld
-.import poll_input
+.globalzp ButtonsDown, ButtonsUp, ButtonsHeld
+.global poll_input

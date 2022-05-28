@@ -1,12 +1,9 @@
         .setcpu "6502"
+        .include "memory_util.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
 
-.scope PRGFIXED_E000
         .segment "PRGFIXED_E000"
-        ;.org $e000
-
-.export clear_memory
 
 ; Arguments:
 ; R0 - starting address (16bit)
@@ -24,5 +21,3 @@ loop:
         bne loop
         rts
 .endproc
-
-.endscope

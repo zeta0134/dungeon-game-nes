@@ -1,18 +1,11 @@
-_MMC3_INC := 1
-
         .setcpu "6502"
         .include "mmc3.inc"
         .include "nes.inc"
 
         .zeropage
 mmc3_bank_select_shadow: .byte $00
-.exportzp mmc3_bank_select_shadow
 
-.scope PRGFIXED_E000
         .segment "PRGFIXED_E000"
-        ;.org $e000
-
-.export initialize_mmc3
 
 .proc initialize_mmc3
         ; Note: the high bits of MMC3_BANK_SELECT determine the mode.
@@ -41,5 +34,3 @@ mmc3_bank_select_shadow: .byte $00
         sta MMC3_IRQ_DISABLE
         rts
 .endproc
-
-.endscope

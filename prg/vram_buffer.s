@@ -4,13 +4,10 @@
         .include "zeropage.inc"
         .include "vram_buffer.inc"
 
-.scope PRGFIXED_E000
         .zeropage
 PopSlideAddress: .word $0000
 
         .segment "PRGFIXED_E000"
-.export vram_zipper
-
 
 ; Applies a buffer of PPUDATA writes stored in the stack area, and
 ; rapidly copies this data. The list should begin with a length byte,
@@ -92,4 +89,3 @@ done_with_transfer:
         sta VRAM_TABLE_INDEX
 all_done:
         rts
-.endscope

@@ -9,6 +9,7 @@
         .include "generators.inc"
         .include "input.inc"
         .include "irq_table.inc"
+        .include "main.inc"
         .include "map.inc"
         .include "memory_util.inc"
         .include "mmc3.inc"
@@ -20,10 +21,6 @@
         .include "vram_buffer.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
-
-.scope PRGFIXED_E000
-        .export start
-        .importzp GameloopCounter, LastNmi, CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget
 
 
 .segment "PRGFIXED_8000"
@@ -156,4 +153,3 @@ wait_for_next_vblank:
         bne @loop
         jmp gameloop
 
-.endscope

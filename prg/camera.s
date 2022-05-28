@@ -1,17 +1,14 @@
         .setcpu "6502"
+        .include "camera.inc"
         .include "nes.inc"
         .include "entity.inc"
         .include "scrolling.inc"
         .include "zeropage.inc"
 
-
-.scope SCROLLING_A000
         .segment "RAM"
 DesiredX: .word $0000
 DesiredY: .word $0000
         .segment "SCROLLING_A000"
-
-.export FAR_update_camera
 
 .proc find_desired_follow_camera
         ; start with the position of the entity in slot #0
@@ -264,7 +261,6 @@ done_with_y:
         rts
 .endproc
 
-.endscope
 
 
 
