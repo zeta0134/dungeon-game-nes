@@ -8,7 +8,7 @@
 
         
 
-.scope PRGLAST_8000
+.scope PRGFIXED_8000
         .segment "PRGRAM"
 
 ; old dead pointer, remove when you are done refactoring
@@ -23,7 +23,7 @@ NavLutPtrHigh: .res 2
 ScratchTileAddr: .res 2 ; used by the collision scanning routines
 .exportzp NavLutPtrLow, NavLutPtrHigh
 
-        .segment "PRGLAST_8000"
+        .segment "PRGFIXED_8000"
 
 .include "debug_maps/collision_tileset.incs"
 

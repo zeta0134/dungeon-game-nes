@@ -10,8 +10,8 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
-.scope PRGLAST_E000
-        .segment "PRGLAST_E000"
+.scope PRGFIXED_E000
+        .segment "PRGFIXED_E000"
         ;.org $e000
 
 ; asssumes y is already 0

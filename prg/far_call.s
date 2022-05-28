@@ -2,14 +2,14 @@
         .include "nes.inc"
         .include "mmc3.inc"
 
-.scope PRGLAST_E000
+.scope PRGFIXED_E000
         .zeropage
 TargetBank: .byte $00
 CurrentBank: .byte $00
 JumpTarget: .word $0000
 .exportzp TargetBank, CurrentBank, JumpTarget
 
-        .segment "PRGLAST_E000"
+        .segment "PRGFIXED_E000"
 .export launch_far_call
 
 .proc launch_far_call

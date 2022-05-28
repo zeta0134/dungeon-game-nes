@@ -6,7 +6,7 @@
         .include "zeropage.inc"
 
 
-.scope PRGLAST_E000
+.scope PRGFIXED_E000
         .zeropage
 CurrentEntityIndex: .byte $00
         .exportzp CurrentEntityIndex
@@ -18,7 +18,7 @@ entity_table:
         .endrepeat
         .align 2
 CurrentEntityFuncPtr: .word $0000
-        .segment "PRGLAST_E000"
+        .segment "PRGFIXED_E000"
 
 
 ; Input: R0 - update logic (typically an init function)

@@ -21,12 +21,12 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
-.scope PRGLAST_E000
+.scope PRGFIXED_E000
         .export start
         .importzp GameloopCounter, LastNmi, CameraXTileTarget, CameraXScrollTarget, CameraYTileTarget, CameraYScrollTarget
 
 
-.segment "PRGLAST_8000"
+.segment "PRGFIXED_8000"
 ; note: this is probably a bad idea
 test_map:
         ;.incbin "build/maps/large_test_room.bin"
@@ -36,7 +36,7 @@ test_tileset:
         .include "../build/tilesets/tiles_3d.mt"
 
 
-.segment "PRGLAST_E000"
+.segment "PRGFIXED_E000"
 
 .proc demo_init
         st16 R0, boxgirl_init

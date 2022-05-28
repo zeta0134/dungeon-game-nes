@@ -34,7 +34,7 @@ irq_table_chr0_bank: .res IRQ_TABLE_SIZE
 
 .export irq_table_scanlines, irq_table_nametable_high, irq_table_scroll_y, irq_table_scroll_x, irq_table_ppumask, irq_table_chr0_bank
 
-        .segment "PRGLAST_E000"
+        .segment "PRGFIXED_E000"
 
 ; tweak this until the branch asserts go away :P
 .align 32

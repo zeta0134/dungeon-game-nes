@@ -3,7 +3,7 @@
 
 
 
-.scope PRGLAST_E000
+.scope PRGFIXED_E000
         .zeropage
 .exportzp ButtonsDown, ButtonsUp, ButtonsHeld
 ButtonsThisFrame: .byte $00
@@ -12,7 +12,7 @@ ButtonsDown: .byte $00
 ButtonsUp: .byte $00
 ButtonsHeld: .byte $00
 
-        .segment "PRGLAST_E000"
+        .segment "PRGFIXED_E000"
         ;.org $e000
 
 .export poll_input

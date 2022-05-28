@@ -6,10 +6,10 @@
 .include "scrolling.inc"
 .include "vram_buffer.inc"
 
-.scope PRGLAST_E000
+.scope PRGFIXED_E000
         .segment "PRGRAM"
 
-        .segment "PRGLAST_E000"
+        .segment "PRGFIXED_E000"
 
 .macro spinwait_for_vblank
 .scope

@@ -9,7 +9,7 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
-        .segment "PRGLAST_E000"
+        .segment "PRGFIXED_E000"
 
 ; various useful constants
 SCROLL_SEAM = 224 ; in pixels from the top of the nametable

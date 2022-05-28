@@ -1337,7 +1337,7 @@ done_scrolling:
 ; Everything below this line is meant to be called via either NMI or IRQs, so we want it
 ; banked in at all times for efficiency
 
-        .segment "PRGLAST_E000"
+        .segment "PRGFIXED_E000"
 
         .export set_scroll_for_entire_frame
 

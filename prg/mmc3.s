@@ -8,8 +8,8 @@ _MMC3_INC := 1
 mmc3_bank_select_shadow: .byte $00
 .exportzp mmc3_bank_select_shadow
 
-.scope PRGLAST_E000
-        .segment "PRGLAST_E000"
+.scope PRGFIXED_E000
+        .segment "PRGFIXED_E000"
         ;.org $e000
 
 .export initialize_mmc3

@@ -2,8 +2,8 @@
         .include "nes.inc"
         .include "ppu.inc"
 
-.scope PRGLAST_E000
-        .segment "PRGLAST_E000"
+.scope PRGFIXED_E000
+        .segment "PRGFIXED_E000"
 
 .export demo_init_statusbar
 

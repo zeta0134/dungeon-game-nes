@@ -4,11 +4,11 @@
         .include "zeropage.inc"
         .include "vram_buffer.inc"
 
-.scope PRGLAST_E000
+.scope PRGFIXED_E000
         .zeropage
 PopSlideAddress: .word $0000
 
-        .segment "PRGLAST_E000"
+        .segment "PRGFIXED_E000"
 .export vram_zipper
 
 

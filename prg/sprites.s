@@ -4,7 +4,7 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
-.scope PRGLAST_E000
+.scope PRGFIXED_E000
         .zeropage
 .exportzp OAMTableLength, OAMEntryIndex, OAMTableAddr, MetaspritePosX, MetaspritePosY, ScratchSpritePtr
 ScratchSpritePtr: .word $0000
@@ -24,7 +24,7 @@ metasprite_table:
         .tag MetaSpriteState
         .endrepeat
 
-        .segment "PRGLAST_E000"
+        .segment "PRGFIXED_E000"
         ;.org $e000
 
 .export initialize_oam, draw_metasprite, update_animations, draw_metasprites, find_unused_metasprite
