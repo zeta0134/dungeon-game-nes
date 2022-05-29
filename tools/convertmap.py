@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Dict
 
 from ca65 import pretty_print_table, ca65_label, ca65_byte_literal, ca65_word_literal
+from compress import compress_smallest
 
 # === Data Types ===
 # Note: concerned with data for map conversion only. We ignore everything else.
@@ -175,12 +176,15 @@ def write_map_header(tilemap, output_file):
     output_file.write("\n")
 
 def write_graphics_tiles(tilemap, output_file):
+    raw_graphics_bytes = [tile.ordinal_index for tile in tilemap.tiles]
+    compression_type, compressed_bytes = compress_smallest(raw_graphics_bytes)
+
     output_file.write(ca65_label(tilemap.name + "_graphics") + "\n")
     # for now, compression type 0 == identity, raw bytes with no compression
-    output_file.write("  .byte %s ; compression type\n" % ca65_byte_literal(0))
-    raw_graphics_bytes = [tile.ordinal_index for tile in tilemap.tiles]
-    output_file.write("  .word %s ; length in bytes\n" % ca65_word_literal(len(raw_graphics_bytes)))
-    pretty_print_table(raw_graphics_bytes, output_file, tilemap.width)
+    output_file.write("  .byte %s ; compression type\n" % ca65_byte_literal(compression_type))
+    output_file.write("  .word %s ; decompressed length in bytes\n" % ca65_word_literal(len(raw_graphics_bytes)))
+    output_file.write("              ; compressed length: $%04X, ratio: %.2f:1 \n" % (len(compressed_bytes), len(raw_graphics_bytes) / len(compressed_bytes)))
+    pretty_print_table(compressed_bytes, output_file, tilemap.width)
     output_file.write("\n")
 
 def generate_collision_tileset():
@@ -253,12 +257,14 @@ def find_collision_index(combined_tile, collision_tiles):
 
 def write_collision_tiles(tilemap, output_file):
     collision_tiles = generate_collision_tileset()
-    output_file.write(ca65_label(tilemap.name + "_collision") + "\n")
-    # for now, compression type 0 == identity, raw bytes with no compression
-    output_file.write("  .byte %s ; compression type\n" % ca65_byte_literal(0))
     raw_collision_bytes = [find_collision_index(tile, collision_tiles) for tile in tilemap.tiles]
-    output_file.write("  .word %s ; length in bytes\n" % ca65_word_literal(len(raw_collision_bytes)))
-    pretty_print_table(raw_collision_bytes, output_file, tilemap.width)
+    compression_type, compressed_bytes = compress_smallest(raw_collision_bytes)
+
+    output_file.write(ca65_label(tilemap.name + "_collision") + "\n")
+    output_file.write("  .byte %s ; compression type\n" % ca65_byte_literal(compression_type))
+    output_file.write("  .word %s ; decompressed length in bytes\n" % ca65_word_literal(len(raw_collision_bytes)))
+    output_file.write("              ; compressed length: $%04X, ratio: %.2f:1 \n" % (len(compressed_bytes), len(raw_collision_bytes) / len(compressed_bytes)))
+    pretty_print_table(compressed_bytes, output_file, tilemap.width)
     output_file.write("\n")
 
 if __name__ == '__main__':

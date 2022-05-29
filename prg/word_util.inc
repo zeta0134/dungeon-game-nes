@@ -144,6 +144,7 @@ positive:
 .endmacro
 
 .macro cmp16 op_a, op_b
+.scope
 .if (.match (.left (1, {op_a}), #))
         lda #>(.right (.tcount ({op_a})-1, {op_a}))
         cmp op_b+1
@@ -164,6 +165,7 @@ positive:
         cmp op_b
 .endif
 done:
+.endscope
 .endmacro
 
 .endif
