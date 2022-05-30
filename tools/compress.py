@@ -128,6 +128,9 @@ def delta_encode(byte_array):
 # the smallest possible result, regardless of complexity.
 def compress_smallest(byte_array):
     uncompressed = byte_array
+    # oops
+    return 0, uncompressed
+    
     plain_lz77 = compress_lz77(byte_array)
 
     best_length = min(len(uncompressed), len(plain_lz77))

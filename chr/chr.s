@@ -13,6 +13,9 @@ hud_graphics:
         .segment "BG2"
         .include "../build/tilesets/tiles_3d.chr"
 
+        .segment "BG3"
+        .include "../build/tilesets/grassy_fields.chr"
+
         .segment "OBJ0"
 boxgirl_graphics:
         .incbin "build/sprites/greybox.chr"

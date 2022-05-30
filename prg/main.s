@@ -25,13 +25,29 @@
 
 .segment "PRGFIXED_8000"
 ; note: this is probably a bad idea
-test_map:
+test_maps:
         .include "../build/maps/test_room_3d.incs"
+        .include "../build/maps/bridges.incs"
 test_tileset:
         .include "../build/tilesets/tiles_3d.mt"
+        .include "../build/tilesets/grassy_fields.mt"
+grassy_fields_pal:
+        .incbin "../build/tilesets/grassy_fields.pal"
 
 
 .segment "PRGFIXED_E000"
+
+.proc demo_load_palette
+        set_ppuaddr #$3F00
+        ldy #0
+loop:
+        lda grassy_fields_pal, y
+        sta PPUDATA
+        iny
+        cpy #12
+        bne loop
+        rts
+.endproc
 
 .proc demo_init
         st16 R0, boxgirl_init
@@ -86,8 +102,12 @@ start:
         sta PPUCTRL ; and NMI
 
         ; less demo map init
-        st16 R4, (test_room_3d)
+        ;st16 R4, (test_room_3d)
+        st16 R4, (bridges)
         jsr load_map
+
+        ; load in the demo palette
+        jsr demo_load_palette
         
         far_call FAR_init_map
         far_call FAR_init_attributes

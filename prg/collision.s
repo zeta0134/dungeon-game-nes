@@ -1,4 +1,5 @@
         .setcpu "6502"
+        .include "branch_util.inc"
         .include "collision.inc"
         .include "entity.inc"
         .include "nes.inc"
@@ -115,6 +116,36 @@ must_be_16:
         lda entity_table + EntityState::PositionY+1, y
         adc #0
         sta DestY+1 ; now contains map tile for top-left
+.endmacro
+
+.macro jumping_tile_offset OffsetX, OffsetY, DestX, DestY
+        ldy CurrentEntityIndex
+        ; Calculate the tile coordinates for the X axis:
+        clc
+        lda entity_table + EntityState::PositionX, y
+        adc OffsetX ; and throw it away; we just need the carry
+        sta DestX
+        lda entity_table + EntityState::PositionX+1, y
+        adc #0
+        sta DestX+1 ; now contains map tile for top-left
+        
+        ; now repeat this for the Y axis
+        clc
+        lda entity_table + EntityState::PositionY, y
+        adc OffsetY ; and throw it away; we just need the carry
+        sta DestY
+        lda entity_table + EntityState::PositionY+1, y
+        adc #0
+        sta DestY+1 ; now contains map tile for top-left
+
+        ; subtract jump height here
+        sec
+        lda DestY
+        sbc entity_table + EntityState::PositionZ, y
+        sta DestY
+        lda DestY+1
+        sbc entity_table + EntityState::PositionZ + 1, y
+        sta DestY+1
 .endmacro
 
 .macro surface_matches_adjusted_ground
@@ -358,36 +389,84 @@ check_right_tile:
         sta GroundType
 
 check_combined_flags:
-        ; at this point if bit 6 is set, one of our hit points is "behind" a surface,
+        ; at this point if bit 6 is set, one of our shadow hit points is "behind" a surface,
         bit GroundType
-        bvs hidden_surface
-visible_surface:
+        jvc shadow_visible_surface
+shadow_hidden_surface:
         ldx CurrentEntityIndex
-        ldy entity_table + EntityState::MetaSpriteIndex, x
+        ldy entity_table + EntityState::ShadowSpriteIndex, x
         lda metasprite_table + MetaSpriteState::PaletteOffset, y
-        and #%11011111 ; clear the bgPriority bit
+        ora #%00100000 ; set the bgPriority bit
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
-
+        ; now we check the player sprite and apply bgPriority to it also, if appropriate
+        jmp check_left_jumping_tile
+shadow_visible_surface:
+        ldx CurrentEntityIndex
         ldy entity_table + EntityState::ShadowSpriteIndex, x
         lda metasprite_table + MetaSpriteState::PaletteOffset, y
         and #%11011111 ; clear the bgPriority bit
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
+        ; If the shadow isn't behind something, then we don't try to put the player sprite behing
+        ; something either
+        jmp visible_surface
 
-        rts ; TODO: shadow sprite too    
+        ; Okay, now perform a similar check but for the base of the player's jump height
+        ; This tries to ensure that if the player jumps out of the bgPriority region, we don't
+        ; apply it incorrectly and have them slip behind nearby scene geometry
+
+check_left_jumping_tile:
+        ; check both tiles under our new position's hit points
+        jumping_tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
+        nav_map_index TileX, TileY, TileAddr
+        ldy #0
+        lda (TileAddr), y
+        tay
+        ; if the hidden surface height matches our player's height
+        lda collision_heights, y
+        and #$F0
+        cmp GroundLevel
+        bne check_right_jumping_tile
+        ; collect the flags and stash them
+        ; (note: this also clears the result from the shadow round of checks)
+        lda collision_flags, y
+        sta GroundType
+
+check_right_jumping_tile:
+        jumping_tile_offset RightX, VerticalOffset, SubtileX, SubtileY
+        nav_map_index TileX, TileY, TileAddr
+        ldy #0
+        lda (TileAddr), y ;
+        tay
+        ; if the hidden surface height matches our player's height
+        lda collision_heights, y
+        and #$F0
+        cmp GroundLevel
+        bne check_combined_jumping_flags
+        ; combine these flags with the previous value and store them
+        lda collision_flags, y
+        ora GroundType
+        sta GroundType
+
+check_combined_jumping_flags:
+        ; at this point if bit 6 is set, in addition to our shadow being behind a surface, our
+        ; player position is *also* behind a surface. Hopefully that same surface.
+        bit GroundType
+        bvc visible_surface
+
 hidden_surface:
         ldx CurrentEntityIndex
         ldy entity_table + EntityState::MetaSpriteIndex, x
         lda metasprite_table + MetaSpriteState::PaletteOffset, y
         ora #%00100000 ; set the bgPriority bit
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
+        rts
 
-        ldy entity_table + EntityState::ShadowSpriteIndex, x
+visible_surface:
+        ldx CurrentEntityIndex
+        ldy entity_table + EntityState::MetaSpriteIndex, x
         lda metasprite_table + MetaSpriteState::PaletteOffset, y
-        ora #%00100000 ; set the bgPriority bit
+        and #%11011111 ; clear the bgPriority bit
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
-        rts ; TODO: shadow sprite too
-
-done_with_priority_adjustment:
         rts
 .endproc
 
