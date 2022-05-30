@@ -71,7 +71,7 @@ def pop_adjacent_data_packets(packet_list):
             return data_packets
     return data_packets
 
-def collapse_data_packets(original_packets):
+def collapse_data_packets(original_packets, max_data_packet_length):
     collapsed_packets = []
     packets_to_consider = list(original_packets)
     while len(packets_to_consider) > 0:
@@ -90,11 +90,15 @@ def collapse_data_packets(original_packets):
                 # These two pointer bytes are more efficient as they are, do not collapse them
                 collapsed_packets.extend(candidate_data_packets)
             else:
-                # we got 2 or more data packets in a row, collapse them into a single data packet
+                # we got 2 or more data packets in a row, collapse them into combined data packets,
+                # up to the max length for each
                 data_bytes = []
                 for packet in candidate_data_packets:
                     data_bytes.extend(packet.data)
-                collapsed_packets.append(DataBlock(length=len(data_bytes),data=data_bytes))
+                while len(data_bytes) > 0:
+                    packet_data = data_bytes[0:8]
+                    data_bytes = data_bytes[8:]
+                    collapsed_packets.append(DataBlock(length=len(packet_data),data=packet_data))
     return collapsed_packets
 
 def raw_bytes_from_packets(packets):
@@ -111,9 +115,9 @@ def raw_bytes_from_packets(packets):
 
 def compress_lz77(byte_array):
     packets = lz77_packets(byte_array, 31, 8)
-    collapsed_packets = collapse_data_packets(packets)
+    collapsed_packets = collapse_data_packets(packets, 8)
     return raw_bytes_from_packets(collapsed_packets)
-
+    
 def delta_encode(byte_array):
     delta_encoded_bytes = byte_array[0:1]
     bytes_to_encode = byte_array[1:]
@@ -128,9 +132,7 @@ def delta_encode(byte_array):
 # the smallest possible result, regardless of complexity.
 def compress_smallest(byte_array):
     uncompressed = byte_array
-    # oops
-    return 0, uncompressed
-    
+
     plain_lz77 = compress_lz77(byte_array)
 
     best_length = min(len(uncompressed), len(plain_lz77))
