@@ -135,7 +135,6 @@ cmp AdjustedGround
 .macro if_not_valid TileAddr, HandleResponse
 .scope
 HighestGround := R10
-HighestGroundType := R11
 AdjustedGround := R12
 AdjustedHeight := R13
 ColFlags := R14
@@ -241,14 +240,15 @@ invalid_move:
         ; If we get here, neither a jump nor a fall located a valid tile, so we need to treat this
         ; like a wall and push the player out.
         jsr HandleResponse
+        ; we also just invalidated any height adjustments we were going to make, so cancel
+        ; those out. (Otherwise we can get stale height adjustments, and that causes problems)
+        lda #$FF
+        sta HighestGround
         jmp finished
 is_valid_move:
         ; This was a valid move, so correct HighestGround if needed
         lda AdjustedGround
-        ; if highest ground has never been written, then we will write it unconditionally
-        bit HighestGround
-        bmi write_highest_surface
-        ; otherwise, only write if we are higher than the existing value
+        ; only write if we are higher than the existing value
         cmp HighestGround
         bcc finished
 write_highest_surface:
@@ -520,7 +520,7 @@ SubtileY := R6
 TileY := R7
 TileAddr := R8
 HighestGround := R10
-        lda #$FF
+        lda #$00
         sta HighestGround
 
         tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
@@ -546,7 +546,7 @@ SubtileY := R6
 TileY := R7
 TileAddr := R8
 HighestGround := R10
-        lda #$FF
+        lda #$00
         sta HighestGround
 
         tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
@@ -575,7 +575,7 @@ SubtileY := R6
 TileY := R7
 TileAddr := R8
 HighestGround := R10
-        lda #$FF
+        lda #$00
         sta HighestGround
 
         tile_offset RightX, VerticalOffset, SubtileX, SubtileY
@@ -601,7 +601,7 @@ SubtileY := R6
 TileY := R7
 TileAddr := R8
 HighestGround := R10
-        lda #$FF
+        lda #$00
         sta HighestGround
 
         tile_offset RightX, VerticalOffset, SubtileX, SubtileY
