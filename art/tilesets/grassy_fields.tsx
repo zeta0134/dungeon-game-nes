@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.8" tiledversion="1.8.5" name="grassy_fields" tilewidth="16" tileheight="16" tilecount="75" columns="0">
+<tileset version="1.8" tiledversion="1.8.4" name="grassy_fields" tilewidth="16" tileheight="16" tilecount="76" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image width="16" height="16" source="../tiles/grassy_fields/bgPriority_floor.png"/>
@@ -225,5 +225,8 @@
  </tile>
  <tile id="74">
   <image width="16" height="16" source="../tiles/grassy_fields/level2_bm_flower.png"/>
+ </tile>
+ <tile id="75" type="EXIT">
+  <image width="16" height="16" source="../tiles/grassy_fields/teleport_tile.png"/>
  </tile>
 </tileset>

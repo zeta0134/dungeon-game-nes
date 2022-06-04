@@ -11,6 +11,11 @@ import os, re, sys
 from ca65 import pretty_print_table, ca65_label, ca65_byte_literal, ca65_word_literal
 from compress import compress_smallest
 
+supported_tile_types = {
+  "NORMAL": 0,
+  "EXIT": 1
+}
+
 def bytes_to_palette(byte_array):
   return [(byte_array[i], byte_array[i+1], byte_array[i+2]) for i in range(0, len(byte_array), 3)]
 
@@ -72,7 +77,7 @@ def read_tile(filename, nespalette):
 def read_tileset(filename, nespalette):
   tileset_element = ElementTree.parse(filename).getroot()
   tile_elements = tileset_element.findall("tile")
-  tile_types = [int(tile.get("type",default=0)) for tile in tile_elements]
+  tile_types = [supported_tile_types.get(tile.get("type",default="NORMAL")) for tile in tile_elements]
   image_elements = [tile.find("image") for tile in tile_elements]
   image_filenames = [image.get("source") for image in image_elements]
   
@@ -115,21 +120,6 @@ def write_chr_tiles(chr_tiles, filename):
     output_file.write(ca65_label(chr_label) + "\n")
     pretty_print_table(chr_bytes, output_file, 16)
     output_file.write("\n")
-
-def write_meta_tiles_old(metatiles, filename):
-  with open(filename, "wb") as output_file:
-    # First write all the CHR data as one page
-    for tile in metatiles:
-      output_file.write(bytes(tile["chr_indices"]))
-    # pad the page with zero bytes for smaller tilesets
-    for i in range(len(metatiles), 64):
-      output_file.write(bytes([0,0,0,0]))
-    # Now write all the type data, here separated by 4 bytes
-    for tile in metatiles:
-      output_file.write(bytes([tile["type"], tile["palette_index"], 0, 0]))
-    # Again, pad the remaining space to a full page
-    for i in range(len(metatiles), 64):
-      output_file.write(bytes([0,0,0,0]))
 
 def nice_label(full_path_and_filename):
   (_, plain_filename) = os.path.split(full_path_and_filename)
