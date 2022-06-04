@@ -77,7 +77,7 @@ def read_tile(filename, nespalette):
 def read_tileset(filename, nespalette):
   tileset_element = ElementTree.parse(filename).getroot()
   tile_elements = tileset_element.findall("tile")
-  tile_types = [supported_tile_types.get(tile.get("type",default="NORMAL")) for tile in tile_elements]
+  tile_types = [supported_tile_types.get(tile.get("type"),0) for tile in tile_elements]
   image_elements = [tile.find("image") for tile in tile_elements]
   image_filenames = [image.get("source") for image in image_elements]
   

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.8" tiledversion="1.8.4" orientation="orthogonal" renderorder="right-down" width="32" height="26" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="1">
+<map version="1.8" tiledversion="1.8.4" orientation="orthogonal" renderorder="right-down" width="32" height="26" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="11">
  <tileset firstgid="1" source="../tilesets/grassy_fields.tsx"/>
  <tileset firstgid="78" source="../tilesets/floor_heights_3d.tsx"/>
  <tileset firstgid="95" source="../tilesets/hidden_floor_heights_3d.tsx"/>
+ <tileset firstgid="112" source="../tilesets/technical.tsx"/>
  <layer id="1" name="Graphics" width="32" height="26">
   <data encoding="csv">
 3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
@@ -33,8 +34,7 @@
 3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
 </data>
  </layer>
- <objectgroup id="4" name="Tile Metadata" visible="0"/>
- <layer id="2" name="Visible Floors" width="32" height="26" visible="0" opacity="0.58">
+ <layer id="2" name="Visible Floors" width="32" height="26" opacity="0.58">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -64,7 +64,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <layer id="3" name="Hidden Floors" width="32" height="26" visible="0" opacity="0.55">
+ <layer id="3" name="Hidden Floors" width="32" height="26" opacity="0.55">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -94,4 +94,13 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
+ <objectgroup id="4" name="Objects" opacity="0.52">
+  <object id="1" name="to test map" gid="113" x="304" y="160" width="16" height="16">
+   <properties>
+    <property name="destination_doorway" type="int" value="0"/>
+    <property name="destination_map" value="test_room_3d"/>
+   </properties>
+  </object>
+  <object id="5" name="spawn" gid="118" x="144" y="240" width="16" height="16"/>
+ </objectgroup>
 </map>

@@ -14,6 +14,8 @@
         height .byte
         graphics_ptr .word
         collision_ptr .word
+        entrance_table_ptr .word
+        exit_table_ptr .word
         first_tileset .word
 .endstruct
 

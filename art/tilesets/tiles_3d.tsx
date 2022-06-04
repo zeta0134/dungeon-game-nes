@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.8" tiledversion="1.8.2" name="tiles_3d" tilewidth="16" tileheight="16" tilecount="8" columns="0">
+<tileset version="1.8" tiledversion="1.8.4" name="tiles_3d" tilewidth="16" tileheight="16" tilecount="9" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image width="16" height="16" source="../tiles/3d_floor_0.png"/>
@@ -24,5 +24,8 @@
  </tile>
  <tile id="9">
   <image width="16" height="16" source="../tiles/3d_floor_0_tshadow.png"/>
+ </tile>
+ <tile id="10">
+  <image width="16" height="16" source="../tiles/grassy_fields/teleport_tile.png"/>
  </tile>
 </tileset>

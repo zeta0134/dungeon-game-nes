@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import xml.etree.ElementTree as ElementTree
-import os, re, sys
+import math, os, re, sys
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -18,6 +18,7 @@ from compress import compress_smallest
 class TiledTile:
     tiled_index: int
     ordinal_index: int
+    type: str
     integer_properties: Dict[str, int]
     boolean_properties: Dict[str, bool]
 
@@ -27,7 +28,19 @@ class TiledTileSet:
     first_gid: int
     tiles: Dict[int, TiledTile]
 
-BLANK_TILE = TiledTile(tiled_index=0, ordinal_index=0, integer_properties={}, boolean_properties={})
+@dataclass
+class Exit:
+    x: int
+    y: int
+    map_name: str
+    entrance_id: int
+
+@dataclass
+class Entrance:
+    x: int
+    y: int
+
+BLANK_TILE = TiledTile(tiled_index=0, ordinal_index=0, integer_properties={}, boolean_properties={}, type="")
 
 @dataclass
 class CombinedMap:
@@ -36,6 +49,8 @@ class CombinedMap:
     height: int
     graphics_tilesets: [TiledTileSet]
     tiles: [TiledTile]
+    entrances: [Entrance]
+    exits: [Exit]
 
 def read_boolean_properties(tile_element):
     boolean_properties = {}
@@ -62,9 +77,10 @@ def read_tileset(tileset_filename, first_gid=0, name=""):
     for ordinal_index in range(0, len(tile_elements)):
         tile_element = tile_elements[ordinal_index]
         tiled_index = int(tile_element.get("id"))
+        tiled_type = tile_element.get("type")
         boolean_properties = read_boolean_properties(tile_element)
         integer_properties = read_integer_properties(tile_element)
-        tiled_tile = TiledTile(ordinal_index=ordinal_index, tiled_index=tiled_index, boolean_properties=boolean_properties, integer_properties=integer_properties)
+        tiled_tile = TiledTile(ordinal_index=ordinal_index, tiled_index=tiled_index, boolean_properties=boolean_properties, integer_properties=integer_properties, type=tiled_type)
         tiles[tiled_index] = tiled_tile
     tileset = TiledTileSet(first_gid=first_gid, tiles=tiles, name=name)
     return tileset
@@ -95,7 +111,8 @@ def combine_properties(graphics_tile, supplementary_tiles):
         ordinal_index=graphics_tile.ordinal_index,
         tiled_index=graphics_tile.tiled_index,
         boolean_properties=dict(graphics_tile.boolean_properties),
-        integer_properties=dict(graphics_tile.integer_properties)
+        integer_properties=dict(graphics_tile.integer_properties),
+        type=graphics_tile.type
     )
     for supplementary_tile in supplementary_tiles:
         combined_tile.integer_properties = combined_tile.integer_properties | supplementary_tile.integer_properties
@@ -120,6 +137,57 @@ def identity_graphics_tilesets(layer_elements, tilesets):
                     if tileset and tileset not in graphics_tilesets:
                         graphics_tilesets.append(tileset)
     return graphics_tilesets
+
+def identify_object(object_element):
+    if object_element.get("gid"):
+        return "tile"
+    if object_element.get("x") and object_element.get("y"):
+        if object_element.get("width") and object_element.get("height"):
+            if object_element.find("ellipse"):
+                return "ellipse"
+            if object_element.find("text"):
+                return "text"
+            return "rectangle"
+        if object_element.find("point"):
+            return "point"
+        if object_element.find("polygon"):
+            return "polygon"
+    return None
+
+def read_entrances(object_elements, tilesets, map_width, map_height):
+    # Put the default spawn in the center of the map. (All maps *should* override this)
+    default_spawn = Entrance(x=math.floor(map_width/2),y=math.floor(map_height/2))
+    # If we have an undefined entrance, use the default spawn location
+    entrances = [default_spawn,default_spawn,default_spawn,default_spawn,default_spawn]
+    for object_element in object_elements:
+        if identify_object(object_element) == "tile":
+            tile = tile_from_gid(int(object_element.get("gid")), tilesets)
+            if tile.type == "entrance":
+                entrance_index = tile.integer_properties["index"]
+                entrance_x = math.floor(int(object_element.get("x")) / 16)
+                entrance_y = math.floor(int(object_element.get("y")) / 16)
+                entrances[entrance_index] = Entrance(x=entrance_x, y=entrance_y)
+    return entrances
+
+def read_exits(object_elements, tilesets):
+    exits = []
+    for object_element in object_elements:
+        if identify_object(object_element) == "tile":
+            tile = tile_from_gid(int(object_element.get("gid")), tilesets)
+            if tile.type == "exit":
+                exit_x = math.floor(int(object_element.get("x")) / 16)
+                exit_y = math.floor(int(object_element.get("y")) / 16)
+                exit_map_name = "undefined_name_missing"
+                exit_index = 0
+                properties_element = object_element.find("properties")
+                if properties_element:
+                    for property_element in properties_element.findall("property"):
+                        if property_element.get("name") == "destination_map":
+                            exit_map_name = property_element.get("value")
+                        if property_element.get("name") == "destination_doorway":
+                            exit_index = int(property_element.get("value"))
+                exits.append(Exit(x=exit_x,y=exit_y,map_name=exit_map_name,entrance_id=exit_index))
+    return exits
 
 def read_map(map_filename):
     map_element = ElementTree.parse(map_filename).getroot()
@@ -159,12 +227,24 @@ def read_map(map_filename):
         supplementary_tiles = [supplementary_layers[layer_name][tile_index] for layer_name in supplementary_layers]
         combined_tiles.append(combine_properties(graphics_tile, supplementary_tiles))
 
+    # Read in supplementary structures: entrances, exits, etc
+    entrances = []
+    exits = []
+    objectgroup = map_element.find("objectgroup")
+    if objectgroup:
+        objects = map_element.find("objectgroup").findall("object")
+        entrances = read_entrances(objects, tilesets, map_width, map_height)
+        exits = read_exits(objects, tilesets)
+    else:
+        # ensure we at least have a senisble default spawn point
+        entrances = read_entrances([], tilesets, map_width, map_height)
+
     # finally let's make the name something useful
     (_, plain_filename) = os.path.split(map_filename)
     (base_filename, _) = os.path.splitext(plain_filename)
     safe_label = re.sub(r'[^A-Za-z0-9\-\_]', '_', base_filename)
 
-    return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles, graphics_tilesets=graphics_tilesets)
+    return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles, graphics_tilesets=graphics_tilesets, entrances=entrances, exits=exits)
 
 def write_map_header(tilemap, output_file):
     output_file.write(ca65_label(tilemap.name) + "\n")
@@ -172,7 +252,28 @@ def write_map_header(tilemap, output_file):
     output_file.write("  .byte %s ; height\n" % ca65_byte_literal(tilemap.height))
     output_file.write("  .word %s_graphics\n" % tilemap.name)
     output_file.write("  .word %s_collision\n" % tilemap.name)
+    output_file.write("  .word %s_entrances\n" % tilemap.name)
+    output_file.write("  .word %s_exits\n" % tilemap.name)
     output_file.write("  .word %s_tileset ; first tileset \n" % tilemap.graphics_tilesets[0].name)
+    output_file.write("\n")
+
+def write_entrance_table(tilemap, output_file):
+    output_file.write(ca65_label(tilemap.name + "_entrances") + "\n")
+    for index in range(0, len(tilemap.entrances)):
+        friendly_name = "spawn" if index == 0 else "door #" + str(index)
+        x_byte = ca65_byte_literal(tilemap.entrances[index].x)
+        y_byte = ca65_byte_literal(tilemap.entrances[index].y)
+        output_file.write("  .byte %s, %s ; %s\n" % (x_byte, y_byte, friendly_name))
+    output_file.write("\n")
+
+def write_exit_table(tilemap, output_file):
+    output_file.write(ca65_label(tilemap.name + "_exits") + "\n")
+    output_file.write("  .byte %s ; length \n" % ca65_byte_literal(len(tilemap.exits)))
+    for exit in tilemap.exits:
+        output_file.write("  .byte %s, %s ; coordinates \n" % (ca65_byte_literal(exit.x), ca65_byte_literal(exit.y)))
+        output_file.write("  .word %s ; target map\n" % exit.map_name)
+        output_file.write("  .byte <.bank(%s) ; target bank\n" % exit.map_name)
+        output_file.write("  .byte %s ; entrance id\n" % exit.entrance_id)
     output_file.write("\n")
 
 def write_graphics_tiles(tilemap, output_file):
@@ -202,7 +303,8 @@ def generate_collision_tileset():
             }, 
             boolean_properties={
                 "is_floor": True
-            }
+            },
+            type="collision"
         )
         tiles.append(vislble_surface_tile)
     # There are 15 occluded surface heights, 0-14
@@ -215,7 +317,8 @@ def generate_collision_tileset():
             }, 
             boolean_properties={
                 "is_hidden_floor": True
-            }
+            },
+            type="collision"
         )
         tiles.append(hidden_surface_tile)
 
@@ -234,7 +337,8 @@ def generate_collision_tileset():
                 boolean_properties={
                     "is_hidden_floor": True,
                     "is_floor": True
-                }
+                },
+                type="collision"
             )
             tiles.append(combined_surface_tile)
 
@@ -279,5 +383,7 @@ if __name__ == '__main__':
 
     with open(output_filename, "w") as output_file:
         write_map_header(tilemap, output_file)
+        write_entrance_table(tilemap, output_file)
+        write_exit_table(tilemap, output_file)
         write_graphics_tiles(tilemap, output_file)
         write_collision_tiles(tilemap, output_file)
