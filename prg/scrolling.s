@@ -1000,6 +1000,10 @@ attr_height_loop:
         add16 AttributeUpperLeftRow, AttributeWidth
         mov16 R0, AttributeUpperLeftRow
         split_attribute_row_across_nametables HWAttributeUpperLeftRow, draw_attribute_row
+
+        ; flush the VRAM buffer each row, otherwise we'll smash the stack
+        jsr vram_zipper
+        
         dec RowCounter
         jne attr_height_loop
 
