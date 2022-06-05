@@ -6,6 +6,7 @@
 .include "memory_util.inc"
 .include "palette.inc"
 .include "scrolling.inc"
+.include "sound.inc"
 .include "vram_buffer.inc"
 .include "zeropage.inc"
 
@@ -80,6 +81,10 @@ lag_frame:
 
         ; Set PPUSCROLL and also configure IRQ for screen split
         jsr setup_irq_table_for_frame
+
+        ; enable IRQs early here, so that they can interrupt the audio engine
+        cli
+        jsr update_audio
 
         ; todo: we might wish to update the audio engine here? That way music
         ; continues to play at the proper speed even if the game lags, ie, we

@@ -8,6 +8,7 @@
         .include "levels.inc"
         .include "nes.inc"
         .include "ppu.inc"
+        .include "sound.inc"
         .include "sprites.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
@@ -32,6 +33,7 @@ start:
         jsr initialize_oam
         jsr initialize_ppu
         jsr initialize_irq_table
+        jsr init_audio
 
         ; disable unusual IRQ sources
         lda #%01000000
@@ -51,4 +53,3 @@ start:
 main_loop:
         jsr run_kernel
         jmp main_loop
-

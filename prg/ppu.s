@@ -30,13 +30,6 @@ loop:
         sta PPUADDR
         sta PPUADDR
 
-        ; enable NMI interrupts and 8x16 sprites
-        lda #$A0
-        sta PPUCTRL
-
-        ; enable rendering everywhere
-        lda #$1E
-        sta PPUMASK
         rts
 .endproc
 
