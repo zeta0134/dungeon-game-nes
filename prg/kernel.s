@@ -97,6 +97,7 @@ loop:
         
         far_call FAR_init_map
         far_call FAR_init_attributes
+        far_call FAR_init_camera
 
         ; render the initial viewport before we turn on graphics
         far_call FAR_render_initial_viewport

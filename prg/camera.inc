@@ -1,1 +1,2 @@
+.global FAR_init_camera
 .global FAR_update_camera

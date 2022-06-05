@@ -10,6 +10,10 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
+        ; temp
+        .include "kernel.inc"
+        .include "levels.inc"
+
         .segment "PRGFIXED_8000"
         .include "animations/boxgirl/idle.inc"
         .include "animations/boxgirl/move.inc"
@@ -310,6 +314,18 @@ jump_not_pressed:
         beq still_idle
         jsr pick_walk_animation
 still_idle:
+
+        ; DEBUG DEBUG TEST REMOVE LATER
+        lda #(KEY_SELECT)
+        bit ButtonsDown
+        beq all_done
+        ; Select was pressed! Load the TEST map
+        st16 TargetMapAddr, (test_room_3d)
+        lda #<.bank(test_room_3d)
+        sta TargetMapBank
+        st16 GameMode, load_new_map
+
+all_done:
         rts
 .endproc
 

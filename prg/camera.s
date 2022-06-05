@@ -265,6 +265,18 @@ done_with_y:
         rts
 .endproc
 
-
+.proc FAR_init_camera
+        lda #0
+        sta CameraXTileCurrent
+        sta CameraXScrollCurrent
+        sta CameraYTileCurrent
+        sta CameraYScrollCurrent
+        sta CameraXTileTarget
+        sta CameraXScrollTarget
+        sta CameraYTileTarget
+        sta CameraYScrollTarget
+        sta PpuYTileTarget
+        rts
+.endproc
 
 
