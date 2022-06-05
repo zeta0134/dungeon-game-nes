@@ -41,16 +41,47 @@ TargetMapEntrance: .res 1
 .endproc
 
 .proc demo_init
-        st16 R0, boxgirl_init
+ScratchAddr := R0
+CurrentEntityIndex := R2
+        st16 ScratchAddr, boxgirl_init
         jsr spawn_entity
-        ; y now contains the entity index. Use this to set the tile
-        ; coordinate to 5, 5 for testing
+
+        ; y now contains the entity index; preserve it
+        sty CurrentEntityIndex
+
+        access_data_bank TargetMapBank
+        ; load the coordinates from this map's entrance, and teleport boxgirl there
+        lda TargetMapAddr
+        sta ScratchAddr
+        lda TargetMapAddr+1
+        sta ScratchAddr+1
+
+        ldy #MapHeader::entrance_table_ptr
+        lda (ScratchAddr), y
+        tax
+        ldy #MapHeader::entrance_table_ptr+1
+        lda (ScratchAddr), y
+        stx ScratchAddr
+        sta ScratchAddr+1
+
+        ldx CurrentEntityIndex
+        lda TargetMapEntrance
+        asl
+        tay
+        lda (ScratchAddr), y
+        sta entity_table + EntityState::PositionX+1, x
+        iny
+        lda (ScratchAddr), y
+        sta entity_table + EntityState::PositionY+1, x
+
+        ; clear out the pixel and subpixel coordinates
         lda #0
-        sta entity_table + EntityState::PositionX, y
-        sta entity_table + EntityState::PositionY, y
-        lda #5
-        sta entity_table + EntityState::PositionX+1, y
-        sta entity_table + EntityState::PositionY+1, y
+        sta entity_table + EntityState::PositionX, x
+        sta entity_table + EntityState::PositionY, x 
+
+        ; all done
+        restore_previous_bank
+
         ; in theory, boxgirl is now ready to go.
         rts
 .endproc
