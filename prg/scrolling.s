@@ -394,7 +394,8 @@ column_loop:
         iny
         lda (LowerRowPtr),y ; bottom-right
         tax
-        lda TilesetAttributes,x ; a now contains 2-bit palette index
+        lda TilesetAttributes,x 
+        and #%00000011          ; a now contains 2-bit palette index
         asl
         asl
         sta AttributeScratchByte
@@ -403,6 +404,7 @@ column_loop:
         lda (LowerRowPtr),y ; bottom-left
         tax
         lda TilesetAttributes,x
+        and #%00000011
         ora AttributeScratchByte
         asl
         asl
@@ -412,6 +414,7 @@ column_loop:
         lda (UpperRowPtr),y ; upper-right
         tax
         lda TilesetAttributes,x ; a now contains 2-bit palette index
+        and #%00000011
         ora AttributeScratchByte
         asl
         asl
@@ -421,6 +424,7 @@ column_loop:
         lda (UpperRowPtr),y ; upper-left
         tax
         lda TilesetAttributes,x
+        and #%00000011
         ora AttributeScratchByte ; a now contains completed attribute byte
 
         sty ColumnCounter
@@ -442,7 +446,7 @@ done_with_column:
         add16 LowerRowPtr, MapWidth
         dec RowCounter
         dec RowCounter
-        bne row_loop
+        jne row_loop
 entirely_done:
         rts
 .endproc

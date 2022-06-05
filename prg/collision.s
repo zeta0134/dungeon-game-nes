@@ -86,38 +86,6 @@ must_be_16:
         rts
 .endproc
 
-; clobbers a and y
-.macro nav_map_index TileX, TileY, DestAddr
-        ldy TileY
-        lda (NavLutPtrHigh), y
-        sta DestAddr+1
-        lda (NavLutPtrLow), y
-        clc
-        adc TileX
-        sta DestAddr
-.endmacro
-
-.macro tile_offset OffsetX, OffsetY, DestX, DestY
-        ldy CurrentEntityIndex
-        ; Calculate the tile coordinates for the X axis:
-        clc
-        lda entity_table + EntityState::PositionX, y
-        adc OffsetX ; and throw it away; we just need the carry
-        sta DestX
-        lda entity_table + EntityState::PositionX+1, y
-        adc #0
-        sta DestX+1 ; now contains map tile for top-left
-        
-        ; now repeat this for the Y axis
-        clc
-        lda entity_table + EntityState::PositionY, y
-        adc OffsetY ; and throw it away; we just need the carry
-        sta DestY
-        lda entity_table + EntityState::PositionY+1, y
-        adc #0
-        sta DestY+1 ; now contains map tile for top-left
-.endmacro
-
 .macro jumping_tile_offset OffsetX, OffsetY, DestX, DestY
         ldy CurrentEntityIndex
         ; Calculate the tile coordinates for the X axis:

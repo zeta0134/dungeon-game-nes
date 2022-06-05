@@ -165,7 +165,9 @@ def read_entrances(object_elements, tilesets, map_width, map_height):
             if tile.type == "entrance":
                 entrance_index = tile.integer_properties["index"]
                 entrance_x = math.floor(int(object_element.get("x")) / 16)
-                entrance_y = math.floor(int(object_element.get("y")) / 16)
+                # for some reason, Tiled considers the origin of these things to be on their bottom, not
+                # their top, so we get different logic depending on the axis. Thanks tiled.
+                entrance_y = math.floor((int(object_element.get("y")) - 16) / 16)
                 entrances[entrance_index] = Entrance(x=entrance_x, y=entrance_y)
     return entrances
 
@@ -176,7 +178,7 @@ def read_exits(object_elements, tilesets):
             tile = tile_from_gid(int(object_element.get("gid")), tilesets)
             if tile.type == "exit":
                 exit_x = math.floor(int(object_element.get("x")) / 16)
-                exit_y = math.floor(int(object_element.get("y")) / 16)
+                exit_y = math.floor((int(object_element.get("y")) - 16) / 16)
                 exit_map_name = "undefined_name_missing"
                 exit_index = 0
                 properties_element = object_element.find("properties")

@@ -1,9 +1,14 @@
         .setcpu "6502"
         .include "boxgirl.inc"
         .include "branch_util.inc"
+        .include "collision.inc"
         .include "far_call.inc"
+        .include "kernel.inc"
+        .include "map.inc"
+        .include "mmc3.inc"
         .include "nes.inc"
         .include "input.inc"
+        .include "scrolling.inc"
         .include "sprites.inc"
         .include "entity.inc"
         .include "physics.inc"
@@ -11,10 +16,87 @@
         .include "zeropage.inc"
 
         ; temp
-        .include "kernel.inc"
         .include "levels.inc"
 
-        .segment "PRGFIXED_8000"
+        .segment "PRGFIXED_E000"
+; Note: this needs to bank in the map header, so it lives in fixed memory
+.proc handle_teleport
+MapAddr := R0
+TestPosX := R3
+TestTileX := R4
+TestPosY := R5
+TestTileY := R6
+ExitTableAddr := R7
+        ; helpfully our scratch registers are still set from the physics function,
+        ; so we don't need to re-do the lookup here
+        
+        ; The target registers are our currently loaded map. Use these to locate the
+        ; map header
+        access_data_bank TargetMapBank
+        lda TargetMapAddr
+        sta MapAddr
+        lda TargetMapAddr+1
+        sta MapAddr+1
+
+        ldy #MapHeader::exit_table_ptr
+        lda (MapAddr), y
+        sta ExitTableAddr
+        iny
+        lda (MapAddr), y
+        sta ExitTableAddr+1
+
+
+        ; loop through all the exits, stopping if we find a match for our current tile position
+        ldy #0
+        lda (ExitTableAddr), y ; length byte
+        inc16 ExitTableAddr
+        beq done ; sanity check, can't leave a map with no exits defined
+        tax ; x is otherwise unused, so it is our counter
+loop:
+        ldy #ExitTableEntry::tile_x
+        lda (ExitTableAddr), y
+        cmp TestTileX
+        bne no_match
+        ldy #ExitTableEntry::tile_y
+        lda (ExitTableAddr), y
+        cmp TestTileY
+        bne no_match
+
+        ; MATCH FOUND (!!!)
+
+        ; Set these map details as our new target map
+        ldy #ExitTableEntry::target_map
+        lda (ExitTableAddr), y
+        sta TargetMapAddr
+        ldy #ExitTableEntry::target_map+1
+        lda (ExitTableAddr), y
+        sta TargetMapAddr+1
+        ldy #ExitTableEntry::target_bank
+        lda (ExitTableAddr), y
+        sta TargetMapBank
+        ldy #ExitTableEntry::target_entrance
+        lda (ExitTableAddr), y
+        sta TargetMapEntrance
+
+        ; Set the new game mode to "load a new map"
+        st16 GameMode, load_new_map
+
+        ; cleanup and let the kernel handle the rest
+        jmp done
+
+no_match:
+        clc
+        add16 ExitTableAddr, #.sizeof(ExitTableEntry)
+        dex
+        bne loop
+        ; we did NOT find a valid exit. Do nothing!
+done:
+        restore_previous_bank
+        rts
+.endproc
+
+
+        .segment "PRGFIXED_8000" ; will eventually move to an AI page
         .include "animations/boxgirl/idle.inc"
         .include "animations/boxgirl/move.inc"
         .include "animations/shadow/flicker.inc"
@@ -301,6 +383,21 @@ jump_not_pressed:
         rts
 .endproc
 
+
+.proc handle_ground_tile
+GroundType := R0
+        lda GroundType
+        beq done
+
+        cmp #(1 << 2) ; MAGIC NUMBER == EXIT
+        bne done
+        jsr handle_teleport
+done:
+        rts
+.endproc
+
+; === States ===
+
 .proc boxgirl_idle
         jsr handle_jump
         jsr walking_acceleration
@@ -308,13 +405,15 @@ jump_not_pressed:
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
+        ; check for special ground tiles
+        far_call FAR_sense_ground
+        jsr handle_ground_tile
         ; check for state changes
         lda #(KEY_RIGHT | KEY_LEFT | KEY_UP | KEY_DOWN)
         bit ButtonsHeld
         beq still_idle
         jsr pick_walk_animation
 still_idle:
-
         ; DEBUG DEBUG TEST REMOVE LATER
         lda #(KEY_SELECT)
         bit ButtonsDown
@@ -324,6 +423,7 @@ still_idle:
         lda #<.bank(test_room_3d)
         sta TargetMapBank
         st16 GameMode, load_new_map
+
 
 all_done:
         rts
@@ -336,6 +436,9 @@ all_done:
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
+        ; check for special ground tiles
+        far_call FAR_sense_ground
+        jsr handle_ground_tile
         ; set our "last facing" bit to the right
         ldy CurrentEntityIndex
         entity_set_flag FLAG_FACING, FACING_RIGHT
@@ -356,6 +459,9 @@ right_not_held:
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
+        ; check for special ground tiles
+        far_call FAR_sense_ground
+        jsr handle_ground_tile
         ; set our "last facing" bit to the left
         ldy CurrentEntityIndex
         entity_set_flag FLAG_FACING, FACING_LEFT
@@ -376,6 +482,9 @@ left_not_held:
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
+        ; check for special ground tiles
+        far_call FAR_sense_ground
+        jsr handle_ground_tile
         ; check for state changes
         lda #KEY_UP
         bit ButtonsHeld
@@ -393,6 +502,9 @@ up_not_held:
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
+        ; check for special ground tiles
+        far_call FAR_sense_ground
+        jsr handle_ground_tile
         ; check for state changes
         lda #KEY_DOWN
         bit ButtonsHeld

@@ -1,5 +1,5 @@
 .global GameMode
-.global TargetMapAddr, TargetMapBank
+.global TargetMapAddr, TargetMapBank, TargetMapEntrance
 
 .global wait_for_next_vblank
 .global run_kernel

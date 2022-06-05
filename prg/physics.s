@@ -3,6 +3,7 @@
         .include "entity.inc"
         .include "collision.inc"
         .include "far_call.inc"
+        .include "scrolling.inc"
         .include "physics.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
@@ -78,5 +79,48 @@ height_not_negative:
         accelerate entity_table + EntityState::SpeedZ, #GRAVITY_ACCEL
         min_speed entity_table + EntityState::SpeedZ, #TERMINAL_VELOCITY
         ; and we should be done
+        rts
+.endproc
+
+; Clobbers: R1-R6
+; Returns: Ground value in R0
+
+.proc FAR_sense_ground
+Result := R0
+; union, TileAddr is used last
+TileAddr := R1
+CenterX := R1
+VerticalOffset := R2
+; normal
+TestPosX := R3
+TestTileX := R4
+TestPosY := R5
+TestTileY := R6
+        ; first of all, are we even on the ground?
+        ldx CurrentEntityIndex
+        lda entity_table + EntityState::PositionZ, x
+        ora entity_table + EntityState::PositionZ+1, x
+        bne not_grounded
+
+        ; left
+        lda #((7 << 4) + 8) ; 7 and one half
+        sta CenterX
+        ; top
+        lda #(0 << 4)
+        sta VerticalOffset
+
+        tile_offset CenterX, VerticalOffset, TestPosX, TestPosY
+        graphics_map_index TestTileX, TestTileY, TileAddr
+        ldy #0
+        lda (TileAddr), y
+        tay
+        lda TilesetAttributes, y ; a now contains combined attribute byte
+        and #%11111100 ; strip off the palette
+        sta Result
+        rts
+        
+not_grounded:
+        lda #0
+        sta Result
         rts
 .endproc

@@ -25,7 +25,7 @@
  <tile id="9">
   <image width="16" height="16" source="../tiles/3d_floor_0_tshadow.png"/>
  </tile>
- <tile id="10">
+ <tile id="10" type="EXIT">
   <image width="16" height="16" source="../tiles/grassy_fields/teleport_tile.png"/>
  </tile>
 </tileset>

@@ -1,5 +1,6 @@
 .global FAR_apply_standard_entity_speed
 .global FAR_standard_entity_vertical_acceleration
+.global FAR_sense_ground
 
 GRAVITY_ACCEL = ($FF - 2)
 TERMINAL_VELOCITY = ($FF - 60)

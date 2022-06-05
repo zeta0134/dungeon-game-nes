@@ -38,7 +38,7 @@
 6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6
 </data>
  </layer>
- <layer id="2" name="Visible Floor Height" width="32" height="30" opacity="0.64">
+ <layer id="2" name="Visible Floor Height" width="32" height="30" visible="0" opacity="0.64">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -72,7 +72,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <layer id="3" name="Hidden Floor Height" width="32" height="30" opacity="0.63">
+ <layer id="3" name="Hidden Floor Height" width="32" height="30" visible="0" opacity="0.63">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -106,7 +106,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <objectgroup id="4" name="Objects">
+ <objectgroup id="4" name="Objects" visible="0">
   <object id="1" name="spawn" gid="52" x="224" y="240" width="16" height="16"/>
   <object id="2" name="to grassy fields" gid="47" x="96" y="144" width="16" height="16">
    <properties>
