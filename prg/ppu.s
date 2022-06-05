@@ -41,7 +41,7 @@ loop:
 .endproc
 
 .proc initialize_palettes
-        ; TEST: Set the palettes up with a nice greyscale for everything
+        ;  Set the palettes up with a nice greyscale for everything
 
         ; disable rendering
         lda #$00
@@ -50,47 +50,16 @@ loop:
         ; Backgrounds
         set_ppuaddr #$3F00
 
-        ; level regions use this greyscale thing
-        lda #$37
-        sta PPUDATA
-        lda #$27
-        sta PPUDATA
-        lda #$17
-        sta PPUDATA
-        lda #$06
-        sta PPUDATA
-
-        ; and this green thing
-
-        lda #$39
-        sta PPUDATA
-        lda #$29
-        sta PPUDATA
-        lda #$19
-        sta PPUDATA
-        lda #$09
-        sta PPUDATA
-
-        ; and now also this "warm" thing (again?)
-
-        lda #$37
-        sta PPUDATA
-        lda #$27
-        sta PPUDATA
-        lda #$17
-        sta PPUDATA
-        lda #$06
-        sta PPUDATA
-
-        ; finally for now, the HUD uses plain greyscale
-        lda #$37
-        sta PPUDATA
+        .repeat 4
         lda #$30
+        sta PPUDATA
+        lda #$10
         sta PPUDATA
         lda #$00
         sta PPUDATA
         lda #$0F
         sta PPUDATA
+        .endrepeat
 
         ; Sprites
         ; gray!

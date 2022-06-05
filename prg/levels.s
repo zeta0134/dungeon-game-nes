@@ -8,4 +8,5 @@
         .include "../build/tilesets/tiles_3d.mt"
         .include "../build/tilesets/grassy_fields.mt"
         ; Palettes
+        .include "../build/tilesets/tiles_3d.pal"
         .include "../build/tilesets/grassy_fields.pal"

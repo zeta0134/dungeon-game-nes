@@ -3,6 +3,7 @@
         .include "compression.inc"
         .include "far_call.inc"
         .include "map.inc"
+        .include "palette.inc"
         .include "scrolling.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
@@ -95,7 +96,17 @@ MetatileCount := R8
 TilesetChrBank := R9
         ldy #0
 
-        ; first grab the chr bank and the metatile count, since we'll need it to unzip the data properly later
+        ; First things first, load in the palette data
+        lda (TilesetAddress), y
+        sta SourceAddr
+        inc16 TilesetAddress
+        lda (TilesetAddress), y
+        sta SourceAddr+1
+        inc16 TilesetAddress
+        jsr load_palette
+
+        ; next, grab the chr bank and the metatile count, since we'll need it to unzip the data properly later
+        ldy #0
         lda (TilesetAddress), y
         sta TilesetChrBank
         inc16 TilesetAddress
@@ -165,5 +176,34 @@ attribute_loop:
         cpx MetatileCount
         bne attribute_loop
 
+        rts
+.endproc
+
+.proc load_palette
+SourceAddr := R0
+        ldy #0
+loop:
+        lda (SourceAddr), y
+        sta BgPaletteBuffer, y
+        iny
+        cpy #12
+        bne loop
+
+        ; FOR NOW, we will load in a static HUD palette
+        lda #$30 ; ignored
+        sta BgPaletteBuffer, y
+        iny
+        lda #$30
+        sta BgPaletteBuffer, y
+        iny
+        lda #$00
+        sta BgPaletteBuffer, y
+        iny
+        lda #$0F
+        sta BgPaletteBuffer, y
+        iny
+
+        lda #1
+        sta BgPaletteDirty
         rts
 .endproc

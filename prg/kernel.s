@@ -40,18 +40,6 @@ TargetMapEntrance: .res 1
         rts
 .endproc
 
-.proc demo_load_palette
-        set_ppuaddr #$3F00
-        ldy #0
-loop:
-        lda grassy_fields_palette, y
-        sta PPUDATA
-        iny
-        cpy #12
-        bne loop
-        rts
-.endproc
-
 .proc demo_init
         st16 R0, boxgirl_init
         jsr spawn_entity
@@ -91,8 +79,6 @@ loop:
 
         access_data_bank TargetMapBank
         jsr load_map
-        ; FOR NOW, load in the demo palette
-        jsr demo_load_palette
         restore_previous_bank
         
         far_call FAR_init_map

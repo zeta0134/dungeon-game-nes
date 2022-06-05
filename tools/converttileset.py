@@ -148,10 +148,12 @@ def write_meta_tiles(metatiles, filename):
 
     metatile_label = nice_label(filename)+"_tileset"
     chr_label = nice_label(filename)+"_chr"
+    palette_label = nice_label(filename)+"_palette"
 
     output_file.write(".import %s\n\n" % chr_label)
 
     output_file.write(ca65_label(metatile_label) + "\n")
+    output_file.write("  .word %s ; default palette\n" % palette_label)
     output_file.write("  .byte <.bank(%s) ; CHR bank\n" % chr_label)
     output_file.write("  .byte %s ; metatile count\n" % len(metatiles))
     output_file.write("  .byte %s ; compression type\n" % ca65_byte_literal(compression_type))
