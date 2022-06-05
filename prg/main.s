@@ -7,6 +7,7 @@
         .include "entity.inc"
         .include "far_call.inc"
         .include "generators.inc"
+        .include "governer.inc"
         .include "input.inc"
         .include "irq_table.inc"
         .include "main.inc"
@@ -139,45 +140,14 @@ start:
         sta PPUCTRL
 
         ; immediately wait for one vblank, for sync purposes
-        jmp wait_for_next_vblank
+        jsr wait_for_next_vblank
 
-gameloop:
-        .if DEBUG_MODE
-        ; waste a bunch of time
-        ldx #$FF
-time_waste_loop:
-        .repeat 1
-        nop
-        .endrepeat
-        dex
-        bne time_waste_loop
-        .endif
-        debug_color LIGHTGRAY
-        far_call FAR_update_camera
-        debug_color TINT_R | TINT_G
-        jsr update_entities
-        debug_color TINT_B
-        jsr update_animations
-        debug_color TINT_B | TINT_G
-        jsr draw_metasprites
-        debug_color TINT_R
-        far_call FAR_scroll_camera
-        debug_color 0 ; disable debug colors
+        ; choose our starting game mode
+        st16 GameMode, standard_gameplay_loop
 
-        ; starting IRQ index for the playfield
-        lda inactive_irq_index
-        sta R0
-        ; CHR bank to use for BG graphics
-        lda DynamicChrBank
-        sta R1
-        far_call FAR_generate_basic_playfield
-        far_call FAR_generate_standard_hud
-        jsr swap_irq_buffers
-wait_for_next_vblank:
-        inc GameloopCounter
-@loop:
-        lda LastNmi
-        cmp GameloopCounter
-        bne @loop
-        jmp gameloop
+        ; hand control over to the governer, which will manage game mode
+        ; switching from here on out
+main_loop:
+        jsr run_game
+        jmp main_loop
 
