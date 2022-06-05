@@ -160,10 +160,23 @@ def write_meta_tiles(metatiles, filename):
     pretty_print_table(compressed_bytes, output_file, 16)
     output_file.write("\n")
 
-def write_palettes(palettes, filename):
+def write_palettes_bin(palettes, filename):
   with open(filename, "wb") as output_file:
     for palette in palettes:
       output_file.write(bytes(palette))
+
+def write_palettes(palettes, filename):
+  with open(filename, "w") as output_file:
+    palette_label = nice_label(filename)+"_palette"
+    output_file.write(ca65_label(palette_label) + "\n")
+    for i in range(0, len(palettes)):
+      pb = bytes(palettes[i])
+      output_file.write("  .byte %s, %s, %s, %s ; BG %s\n" % (
+        ca65_byte_literal(pb[0]), 
+        ca65_byte_literal(pb[1]), 
+        ca65_byte_literal(pb[2]), 
+        ca65_byte_literal(pb[3]), 
+        str(i)))
 
 if len(sys.argv) != 5:
   print("Usage: convertileset.py input.tsx output.chr output.mt output.pal")

@@ -44,7 +44,7 @@ TargetMapEntrance: .res 1
         set_ppuaddr #$3F00
         ldy #0
 loop:
-        lda grassy_fields_pal, y
+        lda grassy_fields_palette, y
         sta PPUDATA
         iny
         cpy #12

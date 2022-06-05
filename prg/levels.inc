@@ -3,4 +3,4 @@
 .global bridges
 
 ; their palettes (might change later)
-.global grassy_fields_pal
+.global grassy_fields_palette
