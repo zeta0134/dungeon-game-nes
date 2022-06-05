@@ -350,3 +350,26 @@ next_metasprite:
 all_done:
         rts
 .endproc
+
+.proc despawn_all_metasprites
+MetaSpriteCount := R0
+MetaSpriteIndex := R1
+        lda #0
+        sta MetaSpriteIndex
+        lda #16
+        sta MetaSpriteCount
+loop:
+        ldx MetaSpriteIndex
+        ; Disable metasprite by setting its animation high byte to 0
+        lda #0
+        sta metasprite_table + MetaSpriteState::AnimationAddr + 1, x
+next_metasprite:
+        clc
+        lda #.sizeof(MetaSpriteState)
+        adc MetaSpriteIndex
+        sta MetaSpriteIndex 
+        dec MetaSpriteCount
+        bne loop
+done:
+        rts
+.endproc

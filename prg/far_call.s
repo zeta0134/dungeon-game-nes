@@ -30,6 +30,7 @@ return_from_indirect:
         ; (rts removes return address)
         ; restore the original bank
         lda #(MMC3_BANKING_MODE | 7) ; select bank at 0xA000
+        sta mmc3_bank_select_shadow
         sta MMC3_BANK_SELECT
         pla
         sta MMC3_BANK_DATA

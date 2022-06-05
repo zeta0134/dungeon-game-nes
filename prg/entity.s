@@ -20,6 +20,25 @@ CurrentEntityFuncPtr: .word $0000
         .segment "PRGFIXED_E000"
 
 
+; Completely despawn the entity table; used during init and later
+; when switching levels. Note that an entity is considered inactive
+; if the high byte of its UpdateFunc is exactly #0. This is also how
+; an entity may despawn itself at runtime.
+.proc despawn_all_entities
+        ldy #0
+loop:
+        lda #0
+        sta entity_table + EntityState::UpdateFunc+1, y
+        clc
+        tya
+        adc #.sizeof(EntityState)
+        bcs done
+        tay
+        jmp loop
+done:
+        rts
+.endproc
+
 ; Input: R0 - update logic (typically an init function)
 ; for this entity. Will usually be called next frame, but
 ; might be called *this* frame if the new entity is created
@@ -36,7 +55,7 @@ loop:
         clc
         tya
         adc #.sizeof(EntityState)
-        bvs spawn_failed	
+        bcs spawn_failed	
         tay
         jmp loop
 found_slot:
