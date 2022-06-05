@@ -79,15 +79,15 @@ y_not_negative:
         sec
         sbc #32
         ; stash in x temporarily
-        tax
         ; a now contains our maximum scroll amount to the right
         ; compare with the high byte
         ; of our desired X
-        sec
-        sbc DesiredX+1
+        cmp DesiredX+1
         ; if we overflowed, clamp DesiredX to the maximum
-        bcs x_less_than_maximum
-        txa
+        bcc x_adjustment
+        beq x_adjustment
+        jmp x_less_than_maximum
+x_adjustment:
         sta DesiredX+1
         lda #0
         sta DesiredX
@@ -100,14 +100,16 @@ x_less_than_maximum:
         sec
         sbc #24
         ; stash in x temporarily
-        tax
+
         ; a now contains our maximum scroll amount downward
         ; compare with the high byte
         ; of our desired Y
-        sbc DesiredY+1
+        cmp DesiredY+1
         ; if we overflowed, clamp DesiredY to the maximum
-        bcs y_less_than_maximum
-        txa
+        bcc y_adjustment
+        beq y_adjustment
+        jmp y_less_than_maximum
+y_adjustment:
         sta DesiredY+1
         lda #0
         sta DesiredY
