@@ -45,16 +45,19 @@ nmi:
         tya
         pha
 
-        ; always update sprite OAM right away
-        lda #$00
-        sta OAMADDR
-        lda #$02
-        sta OAM_DMA
+        ; is NMI disabled? if so get outta here fast
+        lda NmiSoftDisable
+        bne nmi_soft_disable
 
         lda GameloopCounter
         cmp LastNmi
         beq lag_frame
 
+        ; always update sprite OAM right away
+        lda #$00
+        sta OAMADDR
+        lda #$02
+        sta OAM_DMA
 
         ; ===========================================================
         ; Tasks which should be guarded by a successful gameloop
@@ -84,6 +87,10 @@ lag_frame:
 
         ; enable IRQs early here, so that they can interrupt the audio engine
         cli
+
+nmi_soft_disable:
+        ; Here we *only* update the audio engine, nothing else. This is mostly to
+        ; smooth over transitions when loading a new level.
         jsr update_audio
 
         ; todo: we might wish to update the audio engine here? That way music

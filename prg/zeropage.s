@@ -22,3 +22,4 @@ R15: .byte $00
 ; Gameplay and graphics globals
 GameloopCounter: .byte $00
 LastNmi: .byte $00
+NmiSoftDisable: .byte $00

@@ -98,9 +98,16 @@ CurrentEntityIndex := R2
         ; while we are working on level loading, disable interrupts entirely
         sei
 
+         ; disable rendering
         lda #$00
-        sta PPUMASK ; disable rendering
-        sta PPUCTRL ; and NMI
+        sta PPUMASK
+
+        ; soft-disable NMI (sound engine updates only)
+        lda #1
+        sta NmiSoftDisable
+        ; Reset PPUCTRL, but leave NMI enabled
+        lda #(VBLANK_NMI)
+        sta PPUCTRL
 
         ; less demo map init
         lda TargetMapAddr
@@ -142,6 +149,10 @@ CurrentEntityIndex := R2
         sta PPUMASK
         lda #(VBLANK_NMI | BG_0000 | OBJ_1000 | OBJ_8X16)
         sta PPUCTRL
+
+        ; un-soft-disable NMI
+        lda #0
+        sta NmiSoftDisable
 
         ; immediately wait for one vblank, for sync purposes
         jsr wait_for_next_vblank
