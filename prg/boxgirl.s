@@ -9,6 +9,7 @@
         .include "nes.inc"
         .include "input.inc"
         .include "scrolling.inc"
+        .include "sound.inc"
         .include "sprites.inc"
         .include "entity.inc"
         .include "physics.inc"
@@ -378,6 +379,9 @@ facing_left:
         ; care of the rest
         lda #JUMP_SPEED
         sta entity_table + EntityState::SpeedZ, x
+        ; play a jump sfx?
+        st16 R0, sfx_jump
+        jsr play_sfx_pulse2
 not_grounded:
 jump_not_pressed:
         rts
