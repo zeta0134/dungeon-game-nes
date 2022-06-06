@@ -106,7 +106,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <objectgroup id="4" name="Objects" visible="0">
+ <objectgroup id="4" name="Objects">
   <object id="1" name="spawn" gid="52" x="224" y="240" width="16" height="16"/>
   <object id="2" name="to grassy fields" gid="47" x="96" y="144" width="16" height="16">
    <properties>

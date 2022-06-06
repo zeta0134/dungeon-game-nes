@@ -978,7 +978,7 @@ tile_height_loop:
         incRow HWScrollUpperLeftRow
 
         ; flush the VRAM buffer each row, otherwise we'll smash the stack
-        jsr vram_zipper
+        jsr vram_slowboat
 
         dec RowCounter
         jne tile_height_loop
@@ -1006,7 +1006,7 @@ attr_height_loop:
         split_attribute_row_across_nametables HWAttributeUpperLeftRow, draw_attribute_row
 
         ; flush the VRAM buffer each row, otherwise we'll smash the stack
-        jsr vram_zipper
+        jsr vram_slowboat
         
         dec RowCounter
         jne attr_height_loop

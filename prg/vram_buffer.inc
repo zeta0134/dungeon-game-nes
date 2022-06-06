@@ -10,7 +10,7 @@ VRAM_TABLE_START := $108 ; 7 bytes of breathing room, in case any part
 VRAM_INC_1  := $00
 VRAM_INC_32 := $80
 
-.global vram_zipper
+.global vram_zipper, vram_slowboat
 
 ; Each entry in the VRAM table begins with a 2-byte target address in PPU
 ; memory space, high byte first, followed by a length and mode byte:

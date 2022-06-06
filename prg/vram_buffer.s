@@ -89,3 +89,64 @@ done_with_transfer:
         sta VRAM_TABLE_INDEX
 all_done:
         rts
+
+; similar to above, but without disabling NMI and without
+; actually manipulating the stack. Useful for level transitions
+; when we need to disable rendering, but keep the sound engine
+; going
+.proc vram_slowboat
+        ; first off, is our table nonzero? if so, bail
+        lda VRAM_TABLE_ENTRIES
+        beq all_done
+
+        ; set X to the start of the table
+        ldx #<(VRAM_TABLE_START)
+        lda PPUSTATUS ; reset the PPUADDR latch (throw this byte away)
+section_loop:
+        ; the first two bytes are always the target address
+        lda $100, x
+        sta PPUADDR
+        inx
+        lda $100, x
+        sta PPUADDR
+        inx
+
+        ; the high bit of the third byte is our VRAM increment mode
+        lda $100, x
+        inx
+        asl ; Y now contains count * 4
+        tay 
+        bcs vram_32
+vram_1:
+        lda #($00 | VBLANK_NMI)
+        sta PPUCTRL
+        jmp converge
+vram_32:
+        lda #(VRAM_DOWN | VBLANK_NMI)
+        sta PPUCTRL
+converge:
+        tya ; A now contains count * 4
+        lsr ; count * 2
+        lsr ; count * 1
+        tay
+
+slowboat_loop:
+        ; perform the transfer the slow way
+        lda $100, x
+        sta PPUDATA
+        inx
+        iny
+        cpy #64
+        bne slowboat_loop
+
+done_with_transfer:
+        dec VRAM_TABLE_ENTRIES
+        bne section_loop
+        
+        ; zero out our table to reset it for the next frame
+        lda #0
+        sta VRAM_TABLE_ENTRIES
+        sta VRAM_TABLE_INDEX
+all_done:
+        rts
+.endproc

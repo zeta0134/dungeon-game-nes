@@ -101,6 +101,6 @@
     <property name="destination_map" value="test_room_3d"/>
    </properties>
   </object>
-  <object id="5" name="spawn" gid="118" x="144" y="240" width="16" height="16"/>
+  <object id="5" name="spawn" gid="118" x="336" y="112" width="16" height="16"/>
  </objectgroup>
 </map>

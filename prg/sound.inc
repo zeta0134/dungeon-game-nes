@@ -5,3 +5,4 @@
 .global play_sfx_pulse2
 
 .global sfx_jump
+.global sfx_teleport

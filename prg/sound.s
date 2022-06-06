@@ -34,7 +34,7 @@ bhop_music_data:
 
 .proc init_audio
         access_data_bank #<.bank(bhop_music_data)
-        lda #0
+        lda #1
         jsr bhop_init
         restore_previous_bank
         rts
@@ -223,3 +223,26 @@ sfx_jump:
         .byte END_ROW | 2
         .byte PULSE_DLV, DUTY_2 | DECAY | $2
         .byte END_ROW | 5
+
+sfx_teleport:
+        .byte 4 ; length of this sfx in rows
+        .byte PULSE_DLV, DUTY_2 | VOL | $C
+        .byte PULSE_FREQ_LOW, <(210)
+        .byte PULSE_FREQ_HIGH, >(210) | MAX_LENGTH
+        .byte PULSE_SWEEP, S_ENABLE | S_PERIOD_0 | S_SHIFT_5 | S_NEG
+        .byte END_ROW | 4
+        .byte PULSE_DLV, DUTY_2 | VOL | $9
+        .byte PULSE_FREQ_LOW, <(210)
+        .byte PULSE_FREQ_HIGH, >(210) | MAX_LENGTH
+        .byte PULSE_SWEEP, S_ENABLE | S_PERIOD_0 | S_SHIFT_5 | S_NEG
+        .byte END_ROW | 4
+        .byte PULSE_DLV, DUTY_2 | VOL | $6
+        .byte PULSE_FREQ_LOW, <(210)
+        .byte PULSE_FREQ_HIGH, >(210) | MAX_LENGTH
+        .byte PULSE_SWEEP, S_ENABLE | S_PERIOD_0 | S_SHIFT_5 | S_NEG
+        .byte END_ROW | 4
+        .byte PULSE_DLV, DUTY_2 | VOL | $2
+        .byte PULSE_FREQ_LOW, <(210)
+        .byte PULSE_FREQ_HIGH, >(210) | MAX_LENGTH
+        .byte PULSE_SWEEP, S_ENABLE | S_PERIOD_0 | S_SHIFT_5 | S_NEG
+        .byte END_ROW | 4

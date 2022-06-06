@@ -82,6 +82,11 @@ loop:
         ; Set the new game mode to "load a new map"
         st16 GameMode, load_new_map
 
+        ; play a nifty "whoosh" sfx
+        ; play a jump sfx
+        st16 R0, sfx_teleport
+        jsr play_sfx_pulse2
+
         ; cleanup and let the kernel handle the rest
         jmp done
 
@@ -379,7 +384,7 @@ facing_left:
         ; care of the rest
         lda #JUMP_SPEED
         sta entity_table + EntityState::SpeedZ, x
-        ; play a jump sfx?
+        ; play a jump sfx
         st16 R0, sfx_jump
         jsr play_sfx_pulse2
 not_grounded:
