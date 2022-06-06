@@ -1451,8 +1451,8 @@ release_sequence SEQUENCE_DUTY, duty_sequence_ptr_low, duty_sequence_ptr_high, d
 tick_pulse1:
         lda #CHANNEL_SUPPRESSED
         bit channel_status + PULSE_1_INDEX
-        bmi pulse1_muted
         bne tick_pulse2
+        bmi pulse1_muted
 
         ; apply the combined channel and instrument volume
         lda channel_tremolo_volume + PULSE_1_INDEX
@@ -1502,8 +1502,8 @@ pulse1_muted:
 tick_pulse2:
         lda #CHANNEL_SUPPRESSED
         bit channel_status + PULSE_2_INDEX
-        bmi pulse2_muted
         bne tick_triangle
+        bmi pulse2_muted
 
 
         ; apply the combined channel and instrument volume
