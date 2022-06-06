@@ -54,10 +54,20 @@ ft_groove_list:
 ; Song pointer list
 ft_song_list:
 	.word ft_song_0
+	.word ft_song_1
 
 ; Song info
 ft_song_0:
 	.word ft_s0_frames
+	.byte 1	; frame count
+	.byte 64	; pattern length
+	.byte 6	; speed
+	.byte 150	; tempo
+	.byte 0	; groove position
+	.byte 0	; initial bank
+
+ft_song_1:
+	.word ft_s1_frames
 	.byte 1	; frame count
 	.byte 128	; pattern length
 	.byte 3	; speed
@@ -74,23 +84,32 @@ ft_song_0:
 ft_s0_frames:
 	.word ft_s0f0
 ft_s0f0:
-	.word ft_s0p0c0, ft_s0p0c1, ft_s0p0c2, ft_s0p0c2, ft_s0p0c2
+	.word ft_s0p0c0, ft_s0p0c0, ft_s0p0c0, ft_s0p0c0, ft_s0p0c0
 ; Bank 0
 ft_s0p0c0:
+	.byte $7F, $3F
+
+; Bank 0
+ft_s1_frames:
+	.word ft_s1f0
+ft_s1f0:
+	.word ft_s1p0c0, ft_s1p0c1, ft_s1p0c2, ft_s1p0c2, ft_s1p0c2
+; Bank 0
+ft_s1p0c0:
 	.byte $82, $03, $E0, $FF, $1A, $FA, $21, $F8, $20, $FD, $1C, $FA, $21, $F8, $20, $F7, $1C, $FA, $21, $FF
 	.byte $1A, $FA, $21, $F8, $20, $FD, $1C, $FA, $21, $F8, $20, $F7, $1C, $FA, $21, $FF, $19, $FA, $21, $F8
 	.byte $20, $FD, $1C, $FA, $23, $F8, $21, $FD, $1C, $F9, $25, $FB, $19, $FA, $21, $F8, $20, $FD, $19, $FA
 	.byte $23, $83, $F8, $21, $00, $F6, $23, $00, $F5, $21, $01, $F9, $20, $03, $FA, $1C, $03
 
 ; Bank 0
-ft_s0p0c1:
+ft_s1p0c1:
 	.byte $00, $05, $82, $03, $E1, $FF, $1A, $FA, $21, $F8, $20, $FD, $1C, $FA, $21, $F8, $20, $F7, $1C, $FA
 	.byte $21, $FF, $1A, $FA, $21, $F8, $20, $FD, $1C, $FA, $21, $F8, $20, $F7, $1C, $FA, $21, $FF, $19, $FA
 	.byte $21, $F8, $20, $FD, $1C, $FA, $23, $F8, $21, $FD, $1C, $F9, $25, $FB, $19, $FA, $21, $F8, $20, $FD
 	.byte $19, $FA, $23, $83, $F8, $21, $00, $F6, $23, $00, $F5, $21, $01, $F9, $20, $01
 
 ; Bank 0
-ft_s0p0c2:
+ft_s1p0c2:
 	.byte $00, $7F
 
 
