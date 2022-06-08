@@ -9,12 +9,15 @@
         .segment "RAM"
 Pulse1RowCounter: .res 1
 Pulse2RowCounter: .res 1
+TriangleRowCounter: .res 1
 Pulse1DelayCounter: .res 1
 Pulse2DelayCounter: .res 1
+TriangleDelayCounter: .res 1
 
         .zeropage
 Pulse1SfxPtr: .res 2
 Pulse2SfxPtr: .res 2
+TriangleSfxPtr: .res 2
 
         .segment "MUSIC_A000"
 
@@ -96,20 +99,37 @@ SfxPtr := R0
         rts
 .endproc
 
+.proc play_sfx_triangle
+SfxPtr := R0
+        lda SfxPtr
+        sta TriangleSfxPtr
+        lda SfxPtr+1
+        sta TriangleSfxPtr+1
+        ldy #0
+        lda (TriangleSfxPtr), y
+        sta TriangleRowCounter
+        inc16 TriangleSfxPtr
+        lda #0
+        sta Pulse2DelayCounter
+        lda #2
+        jsr bhop_mute_channel
+        rts
+.endproc
+
 .proc update_pulse1
         lda Pulse1DelayCounter
-        beq advance_pulse1
+        beq advance
         dec Pulse1DelayCounter
-        jmp done_with_pulse1
-advance_pulse1:
+        jmp done
+advance:
         lda Pulse1RowCounter
-        beq silence_pulse_1
+        beq silence
         dec Pulse1RowCounter
         
         ldy #0
-pulse1_loop:
+loop:
         lda (Pulse1SfxPtr), y
-        bmi last_command_pulse1
+        bmi last_command
         ;clc
         ;adc #0
         tax
@@ -117,34 +137,34 @@ pulse1_loop:
         lda (Pulse1SfxPtr), y
         sta $4000, x
         inc16 Pulse1SfxPtr
-        jmp pulse1_loop
-last_command_pulse1:
+        jmp loop
+last_command:
         and #%01111111
         sta Pulse1DelayCounter
         inc16 Pulse1SfxPtr
-        jmp done_with_pulse1
+        jmp done
 
-silence_pulse_1:
+silence:
         lda #0
         jsr bhop_unmute_channel
-done_with_pulse1:
+done:
         rts
 .endproc
 
 .proc update_pulse2
         lda Pulse2DelayCounter
-        beq advance_pulse2
+        beq advance
         dec Pulse2DelayCounter
-        jmp done_with_pulse2
-advance_pulse2:
+        jmp done
+advance:
         lda Pulse2RowCounter
-        beq silence_pulse_2
+        beq silence
         dec Pulse2RowCounter
         
         ldy #0
-pulse2_loop:
+loop:
         lda (Pulse2SfxPtr), y
-        bmi last_command_pulse2
+        bmi last_command
         clc
         adc #4
         tax
@@ -152,23 +172,59 @@ pulse2_loop:
         lda (Pulse2SfxPtr), y
         sta $4000, x
         inc16 Pulse2SfxPtr
-        jmp pulse2_loop
-last_command_pulse2:
+        jmp loop
+last_command:
         and #%01111111
         sta Pulse2DelayCounter
         inc16 Pulse2SfxPtr
-        jmp done_with_pulse2
+        jmp done
 
-silence_pulse_2:
+silence:
         lda #1
         jsr bhop_unmute_channel
-done_with_pulse2:
+done:
+        rts
+.endproc
+
+.proc update_triangle
+        lda TriangleDelayCounter
+        beq advance
+        dec TriangleDelayCounter
+        jmp done
+advance:
+        lda TriangleRowCounter
+        beq silence
+        dec TriangleRowCounter
+        
+        ldy #0
+loop:
+        lda (TriangleSfxPtr), y
+        bmi last_command
+        clc
+        adc #8
+        tax
+        inc16 TriangleSfxPtr
+        lda (TriangleSfxPtr), y
+        sta $4000, x
+        inc16 TriangleSfxPtr
+        jmp loop
+last_command:
+        and #%01111111
+        sta TriangleDelayCounter
+        inc16 TriangleSfxPtr
+        jmp done
+
+silence:
+        lda #2
+        jsr bhop_unmute_channel
+done:
         rts
 .endproc
 
 .proc update_sfx
         jsr update_pulse1
         jsr update_pulse2
+        jsr update_triangle
         rts
 .endproc
 

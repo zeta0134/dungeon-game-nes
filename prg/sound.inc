@@ -3,6 +3,7 @@
 .global play_track
 .global play_sfx_pulse1
 .global play_sfx_pulse2
+.global play_sfx_triangle
 
 .global sfx_jump
 .global sfx_teleport

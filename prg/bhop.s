@@ -1552,8 +1552,11 @@ pulse2_muted:
         sta $4004
 
 tick_triangle:
+        lda #CHANNEL_SUPPRESSED
         bit channel_status + TRIANGLE_INDEX
+        bne tick_noise
         bmi triangle_muted
+
         ; triangle additionally should mute here if either channel volume,
         ; or instrument volume is zero
         ; (but don't clobber a)
