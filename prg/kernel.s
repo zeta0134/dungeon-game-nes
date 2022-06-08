@@ -167,7 +167,7 @@ CurrentEntityIndex := R2
 .endproc
 
 .proc standard_gameplay_loop
-        .if ::DEBUG_MODE
+        .if ::DEBUG_TIME_WASTE
         ; waste a bunch of time
         ldx #$FF
 time_waste_loop:

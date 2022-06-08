@@ -1,4 +1,5 @@
 DEBUG_MODE = 0
+DEBUG_TIME_WASTE = 0
 
 .macro debug_color flags
         .if ::DEBUG_MODE
