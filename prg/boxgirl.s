@@ -83,7 +83,6 @@ loop:
         st16 GameMode, load_new_map
 
         ; play a nifty "whoosh" sfx
-        ; play a jump sfx
         st16 R0, sfx_teleport
         jsr play_sfx_pulse2
 

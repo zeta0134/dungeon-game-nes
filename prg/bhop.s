@@ -1582,7 +1582,9 @@ triangle_muted:
         sta $4008
 
 tick_noise:
+        lda #CHANNEL_SUPPRESSED
         bit channel_status + NOISE_INDEX
+        bne cleanup
         bmi noise_muted
 
         ; apply the combined channel and instrument volume

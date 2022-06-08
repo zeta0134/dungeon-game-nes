@@ -10,14 +10,17 @@
 Pulse1RowCounter: .res 1
 Pulse2RowCounter: .res 1
 TriangleRowCounter: .res 1
+NoiseRowCounter: .res 1
 Pulse1DelayCounter: .res 1
 Pulse2DelayCounter: .res 1
 TriangleDelayCounter: .res 1
+NoiseDelayCounter: .res 1
 
         .zeropage
 Pulse1SfxPtr: .res 2
 Pulse2SfxPtr: .res 2
 TriangleSfxPtr: .res 2
+NoiseSfxPtr: .res 2
 
         .segment "MUSIC_A000"
 
@@ -112,6 +115,23 @@ SfxPtr := R0
         lda #0
         sta Pulse2DelayCounter
         lda #2
+        jsr bhop_mute_channel
+        rts
+.endproc
+
+.proc play_sfx_noise
+SfxPtr := R0
+        lda SfxPtr
+        sta NoiseSfxPtr
+        lda SfxPtr+1
+        sta NoiseSfxPtr+1
+        ldy #0
+        lda (NoiseSfxPtr), y
+        sta NoiseRowCounter
+        inc16 NoiseSfxPtr
+        lda #0
+        sta Pulse2DelayCounter
+        lda #3
         jsr bhop_mute_channel
         rts
 .endproc
@@ -221,10 +241,46 @@ done:
         rts
 .endproc
 
+.proc update_noise
+        lda NoiseDelayCounter
+        beq advance
+        dec NoiseDelayCounter
+        jmp done
+advance:
+        lda NoiseRowCounter
+        beq silence
+        dec NoiseRowCounter
+        
+        ldy #0
+loop:
+        lda (NoiseSfxPtr), y
+        bmi last_command
+        clc
+        adc #$C
+        tax
+        inc16 NoiseSfxPtr
+        lda (NoiseSfxPtr), y
+        sta $4000, x
+        inc16 NoiseSfxPtr
+        jmp loop
+last_command:
+        and #%01111111
+        sta NoiseDelayCounter
+        inc16 NoiseSfxPtr
+        jmp done
+
+silence:
+        lda #3
+        jsr bhop_unmute_channel
+done:
+        rts
+.endproc
+
 .proc update_sfx
         jsr update_pulse1
         jsr update_pulse2
         jsr update_triangle
+        jsr update_noise
         rts
 .endproc
 
