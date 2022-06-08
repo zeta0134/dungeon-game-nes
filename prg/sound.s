@@ -20,7 +20,8 @@ Pulse2SfxPtr: .res 2
 
 .export bhop_music_data
 bhop_music_data:
-        .include "../art/music/calm.asm"
+        ;.include "../art/music/calm.asm"
+        .include "../art/music/heat.asm"
 
         .segment "PRGFIXED_8000"
 
@@ -34,7 +35,7 @@ bhop_music_data:
 
 .proc init_audio
         access_data_bank #<.bank(bhop_music_data)
-        lda #1
+        lda #0
         jsr bhop_init
         restore_previous_bank
         rts
