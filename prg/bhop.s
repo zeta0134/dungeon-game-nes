@@ -1659,6 +1659,10 @@ cleanup:
 
 .proc play_dpcm_samples
         lda channel_status + DPCM_INDEX
+        and #CHANNEL_SUPPRESSED
+        bne done
+
+        lda channel_status + DPCM_INDEX
         and #(CHANNEL_MUTED | CHANNEL_RELEASED)
         bne dpcm_muted
 

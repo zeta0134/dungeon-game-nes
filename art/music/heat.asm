@@ -332,12 +332,12 @@ ft_sample_list:
 
 ; DPCM samples list (location, size, bank)
 ft_samples:
-	.byte <((ft_sample_0  - $C000) >> 6),  91, <.bank(ft_sample_0)
-	.byte <((ft_sample_1  - $C000) >> 6),  7, <.bank(ft_sample_1)
-	.byte <((ft_sample_2  - $C000) >> 6),  13, <.bank(ft_sample_2)
-	.byte <((ft_sample_3  - $C000) >> 6),  5, <.bank(ft_sample_3)
-	.byte <((ft_sample_4  - $C000) >> 6),  11, <.bank(ft_sample_4)
-	.byte <((ft_sample_5  - $C000) >> 6),  37, <.bank(ft_sample_5)
+  .byte <((ft_sample_0  - $C000) >> 6),  91, <.bank(ft_sample_0)
+  .byte <((ft_sample_1  - $C000) >> 6),  7, <.bank(ft_sample_1)
+  .byte <((ft_sample_2  - $C000) >> 6),  13, <.bank(ft_sample_2)
+  .byte <((ft_sample_3  - $C000) >> 6),  5, <.bank(ft_sample_3)
+  .byte <((ft_sample_4  - $C000) >> 6),  11, <.bank(ft_sample_4)
+  .byte <((ft_sample_5  - $C000) >> 6),  37, <.bank(ft_sample_5)
 
 ; Groove list
 ft_groove_list:
@@ -431,18 +431,18 @@ ft_s0p0c4:
 
 ; Bank 0
 ft_s0p1c0:
-	.byte $80, $2C, $F7, $0A, $02, $7E, $00, $E8, $91, $81, $F6, $22, $17, $F5, $00, $01, $F5, $00, $01, $80
-	.byte $2C, $F7, $0D, $02, $7E, $00, $E9, $F6, $20, $17, $F5, $00, $01, $F5, $00, $01, $80, $2C, $F2, $12
-	.byte $02, $7E, $00, $EA, $F6, $22, $17, $F5, $00, $01, $F5, $00, $01, $80, $2C, $F7, $0A, $02, $7E, $00
-	.byte $E8, $F6, $22, $13, $82, $01, $F5, $00, $F5, $00, $F4, $00, $83, $F4, $00, $01
-
-; Bank 0
-ft_s0p1c1:
 	.byte $E8, $92, $F9, $22, $17, $82, $00, $F8, $00, $F8, $00, $F8, $00, $F8, $00, $F7, $00, $F7, $00, $F7
 	.byte $00, $F6, $00, $83, $E9, $F9, $20, $17, $82, $00, $F8, $00, $F8, $00, $F8, $00, $F8, $00, $F7, $00
 	.byte $F7, $00, $F7, $00, $F6, $00, $83, $EA, $F9, $22, $17, $82, $00, $F8, $00, $F8, $00, $F8, $00, $F8
 	.byte $00, $F7, $00, $F7, $00, $F7, $00, $F6, $00, $83, $E8, $F9, $22, $17, $82, $00, $F8, $00, $F8, $00
 	.byte $F8, $00, $F8, $00, $F7, $00, $F7, $00, $F7, $00, $83, $F6, $00, $00
+
+; Bank 0
+ft_s0p1c1:
+	.byte $80, $2C, $F7, $0A, $02, $7E, $00, $E8, $91, $81, $F6, $22, $17, $F5, $00, $01, $F5, $00, $01, $80
+	.byte $2C, $F7, $0D, $02, $7E, $00, $E9, $F6, $20, $17, $F5, $00, $01, $F5, $00, $01, $80, $2C, $F2, $12
+	.byte $02, $7E, $00, $EA, $F6, $22, $17, $F5, $00, $01, $F5, $00, $01, $80, $2C, $F7, $0A, $02, $7E, $00
+	.byte $E8, $F6, $22, $13, $82, $01, $F5, $00, $F5, $00, $F4, $00, $83, $F4, $00, $01
 
 ; Bank 0
 ft_s0p1c2:
