@@ -123,10 +123,26 @@ CurrentEntityIndex := R2
         far_call FAR_init_attributes
         far_call FAR_init_camera
 
+        ; clear all entities and metasprites
+        jsr despawn_all_entities
+        jsr despawn_all_metasprites
+
+        ; FOR NOW, spawn in the player and nothing else
+        ; (later this will be replaced with loading the entity list defined by the level)
+        jsr demo_init
+
+        ; Initialize the map's scroll coordinates based on the camera-tracked position
+        ; of the entity in slot 0 (which is usually the player)
+        far_call FAR_update_desired_pos_only
+
         ; DEBUG, these numbers are arbitrary
-        lda #16
+        lda FollowCameraDesiredX+1
+        lsr
+        and #$FE ; force this to be even
         sta R0
-        lda #0
+        lda FollowCameraDesiredY+1
+        lsr
+        and #$FE ; force this to be even
         sta R1
         far_call FAR_init_scroll_position
 
@@ -138,14 +154,6 @@ CurrentEntityIndex := R2
 
         ; reset PPUADDR to top-left
         set_ppuaddr #$2000
-
-        ; clear all entities and metasprites
-        jsr despawn_all_entities
-        jsr despawn_all_metasprites
-
-        ; FOR NOW, spawn in the player and nothing else
-        ; (later this will be replaced with loading the entity list defined by the level)
-        jsr demo_init
 
         lda #$00
         sta GameloopCounter

@@ -1092,7 +1092,7 @@ done_with_rows:
         adc StartingTileX
         sta CameraXTileCurrent
         sta PpuXOffset
-        ; Now the attribute table, but using half of the width
+        ; Now the attribute table, but using half of (width + 1)
         lsr StartingTileX
         clc
         add16 AttributeUpperLeftRow, StartingTileX

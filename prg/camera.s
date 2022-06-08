@@ -6,8 +6,8 @@
         .include "zeropage.inc"
 
         .segment "RAM"
-DesiredX: .word $0000
-DesiredY: .word $0000
+FollowCameraDesiredX: .word $0000
+FollowCameraDesiredY: .word $0000
         .segment "SCROLLING_A000"
 
 .proc find_desired_follow_camera
@@ -15,41 +15,41 @@ DesiredY: .word $0000
 
         ; load player coordinates
         lda entity_table + EntityState::PositionX
-        sta DesiredX
+        sta FollowCameraDesiredX
         lda entity_table + EntityState::PositionX + 1
-        sta DesiredX + 1
+        sta FollowCameraDesiredX + 1
         lda entity_table + EntityState::PositionY
-        sta DesiredY
+        sta FollowCameraDesiredY
         lda entity_table + EntityState::PositionY + 1
-        sta DesiredY + 1
+        sta FollowCameraDesiredY + 1
 
         ; subtract the entity's current 3D height from the desired Y
         sec
-        lda DesiredY
+        lda FollowCameraDesiredY
         sbc entity_table + EntityState::PositionZ
-        sta DesiredY
-        lda DesiredY+1
+        sta FollowCameraDesiredY
+        lda FollowCameraDesiredY+1
         sbc entity_table + EntityState::PositionZ + 1
-        sta DesiredY+1
+        sta FollowCameraDesiredY+1
 
         ; convert from 16x16 metatiles to 8x8 hardware tiles
         clc
-        rol DesiredX
-        rol DesiredX+1
+        rol FollowCameraDesiredX
+        rol FollowCameraDesiredX+1
         clc
-        rol DesiredY
-        rol DesiredY+1
+        rol FollowCameraDesiredY
+        rol FollowCameraDesiredY+1
 
         ; substract half of screen width
-        lda DesiredX+1
+        lda FollowCameraDesiredX+1
         sec
         sbc #16 ; in 8x8 tiles
-        sta DesiredX+1
+        sta FollowCameraDesiredX+1
         ; subtract half of the screen height
-        lda DesiredY+1
+        lda FollowCameraDesiredY+1
         sec
         sbc #12 ; in 8x8 tiles
-        sta DesiredY+1
+        sta FollowCameraDesiredY+1
 
         ; FOR NOW this is our target. Do nothing else.
         rts
@@ -58,18 +58,18 @@ DesiredY: .word $0000
 .proc clamp_to_map_edges
         ; if camera would be outside of map bounds, set it there instead
         ; if x < 0, fix it
-        lda DesiredX+1
+        lda FollowCameraDesiredX+1
         bpl x_not_negative
         lda #0
-        sta DesiredX
-        sta DesiredX+1
+        sta FollowCameraDesiredX
+        sta FollowCameraDesiredX+1
 x_not_negative:
         ; if y < 0, fix it
-        lda DesiredY+1
+        lda FollowCameraDesiredY+1
         bpl y_not_negative
         lda #0
-        sta DesiredY
-        sta DesiredY+1
+        sta FollowCameraDesiredY
+        sta FollowCameraDesiredY+1
 y_not_negative:
         ; if x > map_width, fix it
         ; first, calculate the map width in HW tiles
@@ -82,15 +82,15 @@ y_not_negative:
         ; a now contains our maximum scroll amount to the right
         ; compare with the high byte
         ; of our desired X
-        cmp DesiredX+1
-        ; if we overflowed, clamp DesiredX to the maximum
+        cmp FollowCameraDesiredX+1
+        ; if we overflowed, clamp FollowCameraDesiredX to the maximum
         bcc x_adjustment
         beq x_adjustment
         jmp x_less_than_maximum
 x_adjustment:
-        sta DesiredX+1
+        sta FollowCameraDesiredX+1
         lda #0
-        sta DesiredX
+        sta FollowCameraDesiredX
 x_less_than_maximum:
         ; if x > map_width, fix it
         ; first, calculate the map width in HW tiles
@@ -104,15 +104,15 @@ x_less_than_maximum:
         ; a now contains our maximum scroll amount downward
         ; compare with the high byte
         ; of our desired Y
-        cmp DesiredY+1
-        ; if we overflowed, clamp DesiredY to the maximum
+        cmp FollowCameraDesiredY+1
+        ; if we overflowed, clamp FollowCameraDesiredY to the maximum
         bcc y_adjustment
         beq y_adjustment
         jmp y_less_than_maximum
 y_adjustment:
-        sta DesiredY+1
+        sta FollowCameraDesiredY+1
         lda #0
-        sta DesiredY
+        sta FollowCameraDesiredY
 y_less_than_maximum:
         ; all done!
         rts
@@ -124,10 +124,10 @@ Distance := R0
         ; first calculate the travel distance from our current scroll position
         ; to the target:
         sec
-        lda DesiredX
+        lda FollowCameraDesiredX
         sbc CameraXScrollTarget
         sta Distance
-        lda DesiredX+1
+        lda FollowCameraDesiredX+1
         sbc CameraXTileTarget
         sta Distance+1
         ; sanity check: are we already AT the target? If so, bail now
@@ -190,10 +190,10 @@ done_with_x:
         
         ; do all of that again, for the Y coordinate
         sec
-        lda DesiredY
+        lda FollowCameraDesiredY
         sbc CameraYScrollTarget
         sta Distance
-        lda DesiredY+1
+        lda FollowCameraDesiredY+1
         sbc CameraYTileTarget
         sta Distance+1
         ; sanity check: are we already AT the target? If so, bail now
@@ -255,6 +255,12 @@ store_result_y:
 done_with_y:
 
         ; and done!
+        rts
+.endproc
+
+.proc FAR_update_desired_pos_only
+        jsr find_desired_follow_camera
+        jsr clamp_to_map_edges
         rts
 .endproc
 
