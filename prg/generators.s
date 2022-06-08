@@ -42,7 +42,8 @@ PpuMaskSetting = $1E
         ldx IrqGenerationIndex
         ; First, set the nametable based on the 6th bit of the X tile position
         lda #%00100000
-        bit CameraXTileTarget
+        ;bit CameraXTileTarget
+        bit PpuXTileTarget
         beq left_nametable
 right_nametable:
         ;lda #(VBLANK_NMI | OBJ_1000 | BG_0000 | NT_2400)
@@ -59,7 +60,8 @@ done_with_nametables:
         ; now set the scroll properly, using the camera's position
         lda CameraXScrollTarget
         sta ScratchByte
-        lda CameraXTileTarget
+        ;lda CameraXTileTarget
+        lda PpuXTileTarget
         .repeat 3
         rol ScratchByte
         rol a

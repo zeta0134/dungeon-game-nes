@@ -275,6 +275,7 @@ done_with_y:
         sta CameraXScrollTarget
         sta CameraYTileTarget
         sta CameraYScrollTarget
+        sta PpuXTileTarget
         sta PpuYTileTarget
         rts
 .endproc

@@ -61,6 +61,8 @@ CameraXTileTarget: .byte $00
 CameraXScrollTarget: .byte $00
 CameraYTileTarget: .byte $00
 CameraYScrollTarget: .byte $00
+PpuXTileTarget: .byte $00
+PpuXOffset: .byte $00
 PpuYTileTarget: .byte $00
 
         .segment "SCROLLING_A000"
@@ -1023,6 +1025,94 @@ attr_undo_loop:
         rts
 .endproc
 
+; Call this *after* setting up the map with FAR_init_map
+; Leaves the HW registers alone. Scrolls the software pointers
+; to a starting tile within the map, and adjusts the camera
+; accordingly
+.proc FAR_init_scroll_position
+StartingTileX := R0
+StartingTileY := R1
+        ; Sanity check: if our starting position is x,0, we're already done
+        lda StartingTileY
+        jeq done_with_rows
+        ; For each row we want to skip, add the MapWidth to relevant variables
+row_loop:
+        ; on every row, update the Map pointer
+        clc
+        add16 MapUpperLeftRow, MapWidth
+        clc
+        add16 MapUpperLeftColumn, MapWidth
+        clc
+        add16 MapUpperRightColumn, MapWidth
+        clc
+        add16 MapLowerLeftRow, MapWidth
+        ; do that twice for the camera scroll, since it measures 8x8 hardware tiles, not
+        ; 16x16 map tiles
+        inc CameraYTileCurrent
+        inc CameraYTileCurrent
+        dec StartingTileY
+        beq done_with_rows
+        ; on every other row, also update the Attribute pointer
+        clc
+        add16 MapUpperLeftRow, MapWidth
+        clc
+        add16 MapUpperLeftColumn, MapWidth
+        clc
+        add16 MapUpperRightColumn, MapWidth
+        clc
+        add16 MapLowerLeftRow, MapWidth
+        clc
+        add16 AttributeUpperLeftRow, AttributeWidth
+        clc
+        add16 AttributeUpperLeftColumn, AttributeWidth
+        clc
+        add16 AttributeUpperRightColumn, AttributeWidth
+        clc
+        add16 AttributeLowerLeftRow, AttributeWidth
+        inc CameraYTileCurrent
+        inc CameraYTileCurrent
+        dec StartingTileY
+        jne row_loop
+done_with_rows:
+        ; For the X coordinate we can just add it directly to both pointers. First
+        ; the map, using the original value:
+        clc
+        add16 MapUpperLeftRow, StartingTileX
+        clc
+        add16 MapUpperLeftColumn, StartingTileX
+        clc
+        add16 MapUpperRightColumn, StartingTileX
+        clc
+        add16 MapLowerLeftRow, StartingTileX
+        ; The same adjustment for the camera X
+        lda CameraXTileCurrent
+        clc
+        adc StartingTileX
+        clc
+        adc StartingTileX
+        sta CameraXTileCurrent
+        sta PpuXOffset
+        ; Now the attribute table, but using half of the width
+        lsr StartingTileX
+        clc
+        add16 AttributeUpperLeftRow, StartingTileX
+        clc
+        add16 AttributeUpperLeftColumn, StartingTileX
+        clc
+        add16 AttributeUpperRightColumn, StartingTileX
+        clc
+        add16 AttributeLowerLeftRow, StartingTileX
+
+        ; for lerping purposes
+        lda CameraXTileCurrent
+        sta CameraXTileTarget
+        lda CameraYTileCurrent
+        sta CameraYTileTarget
+
+        ; ... that should be it, in theory?
+        rts
+.endproc
+
 .proc scroll_tiles_down
         inc CameraYTileCurrent
         inc PpuYTileTarget
@@ -1334,5 +1424,13 @@ done_scrolling:
         sta CameraXScrollCurrent
         lda CameraYScrollTarget
         sta CameraYScrollCurrent
+        ; Here, update PpuXTileTarget with our stored offset, so the camera
+        ; can deal with the Hw<->Map mismatch gracefully
+        ; (we don't need to do this with PpuYTileTarget because, since it has
+        ; priority, we can execute its logic safely within the scroll routines)
+        lda CameraXTileTarget
+        sec
+        sbc PpuXOffset
+        sta PpuXTileTarget
         rts
 .endproc

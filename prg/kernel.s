@@ -123,6 +123,13 @@ CurrentEntityIndex := R2
         far_call FAR_init_attributes
         far_call FAR_init_camera
 
+        ; DEBUG, these numbers are arbitrary
+        lda #16
+        sta R0
+        lda #0
+        sta R1
+        far_call FAR_init_scroll_position
+
         ; render the initial viewport before we turn on graphics
         far_call FAR_render_initial_viewport
 
