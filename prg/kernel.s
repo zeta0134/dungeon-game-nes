@@ -12,6 +12,7 @@
         .include "map.inc"
         .include "mmc3.inc"
         .include "nes.inc"
+        .include "palette.inc"
         .include "ppu.inc"
         .include "scrolling.inc"
         .include "sprites.inc"
@@ -25,6 +26,7 @@ GameMode: .res 2
 TargetMapAddr: .res 2
 TargetMapBank: .res 1
 TargetMapEntrance: .res 1
+FadeTimer: .res 1
 
 
 
@@ -79,11 +81,50 @@ CurrentEntityIndex := R2
         sta entity_table + EntityState::PositionX, x
         sta entity_table + EntityState::PositionY, x 
 
+        ; Set our starting height to 0
+        sta entity_table + EntityState::PositionZ, x 
+        sta entity_table + EntityState::PositionZ+1, x 
+
         ; all done
         restore_previous_bank
 
         ; in theory, boxgirl is now ready to go.
         rts
+.endproc
+
+.proc demo_obj_palette
+        ; grey!
+        lda #$20
+        sta ObjPaletteBuffer+1
+        lda #$10
+        sta ObjPaletteBuffer+2
+        lda #$0F
+        sta ObjPaletteBuffer+3
+
+        ; red!
+        lda #$36
+        sta ObjPaletteBuffer+5
+        lda #$26
+        sta ObjPaletteBuffer+6
+        lda #$06
+        sta ObjPaletteBuffer+7
+
+        ; blue!
+        lda #$31
+        sta ObjPaletteBuffer+9
+        lda #$21
+        sta ObjPaletteBuffer+10
+        lda #$01
+        sta ObjPaletteBuffer+11
+
+        lda #$39
+        sta ObjPaletteBuffer+13
+        lda #$29
+        sta ObjPaletteBuffer+14
+        lda #$09
+        sta ObjPaletteBuffer+15
+        
+        rts        
 .endproc
 
 ; === Kernel Entrypoint ===
@@ -94,6 +135,16 @@ CurrentEntityIndex := R2
 .endproc
 
 ; === Game Mode Functions Follow ===
+.proc init_engine
+        lda #4
+        sta Brightness
+        st16 TargetMapAddr, (bridges)
+        lda #<.bank(bridges)
+        sta TargetMapBank
+        st16 GameMode, load_new_map
+        rts
+.endproc
+
 .proc load_new_map
         ; while we are working on level loading, disable interrupts entirely
         sei
@@ -130,6 +181,7 @@ CurrentEntityIndex := R2
         ; FOR NOW, spawn in the player and nothing else
         ; (later this will be replaced with loading the entity list defined by the level)
         jsr demo_init
+        jsr demo_obj_palette
 
         ; Initialize the map's scroll coordinates based on the camera-tracked position
         ; of the entity in slot 0 (which is usually the player)
@@ -204,6 +256,8 @@ time_waste_loop:
         far_call FAR_scroll_camera
         debug_color 0 ; disable debug colors
 
+        jsr refresh_palettes_gameloop
+
         ; starting IRQ index for the playfield
         lda inactive_irq_index
         sta R0
@@ -214,6 +268,60 @@ time_waste_loop:
         far_call FAR_generate_standard_hud
         jsr swap_irq_buffers
         jsr wait_for_next_vblank
+        rts
+.endproc
+
+; setup a fade to black
+.proc blackout_to_new_map
+        lda #40
+        sta FadeTimer
+        st16 GameMode, _blackout_to_new_map
+        rts
+.endproc
+
+.proc _blackout_to_new_map
+        ; decrement the fade timer
+        dec FadeTimer
+        ; use that to determine the current brightness
+        lda FadeTimer
+        lsr
+        lsr
+        lsr
+        jsr set_brightness
+        ; now, execute a standard game loop
+        jsr standard_gameplay_loop
+        ; finally, if our FadeTimer has reached zero, load a new map
+        lda FadeTimer
+        bne done
+        st16 GameMode, _blackout_load_new_map
+done:
+        rts
+.endproc
+
+.proc _blackout_load_new_map
+        jsr load_new_map
+        lda #0
+        sta FadeTimer
+        st16 GameMode, _blackin_load_new_map
+        rts
+.endproc
+
+.proc _blackin_load_new_map
+        ; decrement the fade timer
+        inc FadeTimer
+        ; use that to determine the current brightness
+        lda FadeTimer
+        lsr
+        lsr
+        jsr set_brightness
+        ; now, execute a standard game loop
+        jsr standard_gameplay_loop
+        ; finally, if our FadeTimer has reached zero, load a new map
+        lda FadeTimer
+        cmp #16
+        bne done
+        st16 GameMode, standard_gameplay_loop
+done:
         rts
 .endproc
 

@@ -12,6 +12,7 @@
         .include "sound.inc"
         .include "sprites.inc"
         .include "entity.inc"
+        .include "palette.inc"
         .include "physics.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
@@ -28,6 +29,7 @@ TestTileX := R4
 TestPosY := R5
 TestTileY := R6
 ExitTableAddr := R7
+MetaSpriteIndex := R9
         ; helpfully our scratch registers are still set from the physics function,
         ; so we don't need to re-do the lookup here
         
@@ -51,17 +53,17 @@ ExitTableAddr := R7
         ldy #0
         lda (ExitTableAddr), y ; length byte
         inc16 ExitTableAddr
-        beq done ; sanity check, can't leave a map with no exits defined
+        jeq done ; sanity check, can't leave a map with no exits defined
         tax ; x is otherwise unused, so it is our counter
 loop:
         ldy #ExitTableEntry::tile_x
         lda (ExitTableAddr), y
         cmp TestTileX
-        bne no_match
+        jne no_match
         ldy #ExitTableEntry::tile_y
         lda (ExitTableAddr), y
         cmp TestTileY
-        bne no_match
+        jne no_match
 
         ; MATCH FOUND (!!!)
 
@@ -80,11 +82,20 @@ loop:
         sta TargetMapEntrance
 
         ; Set the new game mode to "load a new map"
-        st16 GameMode, load_new_map
+        st16 GameMode, blackout_to_new_map
 
         ; play a nifty "whoosh" sfx
         st16 R0, sfx_teleport
         jsr play_sfx_pulse2
+
+        ; switch boxgirl to the teleport state and animation
+        ldx CurrentEntityIndex
+        lda #0
+        sta entity_table + EntityState::SpeedZ, x
+        lda entity_table + EntityState::MetaSpriteIndex, x
+        sta MetaSpriteIndex
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_teleport
+        set_update_func CurrentEntityIndex, boxgirl_teleport
 
         ; cleanup and let the kernel handle the rest
         jmp done
@@ -93,7 +104,7 @@ no_match:
         clc
         add16 ExitTableAddr, #.sizeof(ExitTableEntry)
         dex
-        bne loop
+        jne loop
         ; we did NOT find a valid exit. Do nothing!
 done:
         restore_previous_bank
@@ -104,6 +115,7 @@ done:
         .segment "PRGFIXED_8000" ; will eventually move to an AI page
         .include "animations/boxgirl/idle.inc"
         .include "animations/boxgirl/move.inc"
+        .include "animations/boxgirl/teleport.inc"
         .include "animations/shadow/flicker.inc"
 
 WALKING_SPEED = 16
@@ -162,6 +174,10 @@ FACING_RIGHT = %00000000
         ldy CurrentEntityIndex
         sta entity_table + EntityState::SpeedX, y
         sta entity_table + EntityState::SpeedY, y
+        sta entity_table + EntityState::SpeedZ, y
+        ; default our ground height to 0
+        sta entity_table + EntityState::PositionZ, y
+        sta entity_table + EntityState::PositionZ+1, y
         ; set all flag bits to 0
         sta entity_table + EntityState::Data + DATA_FLAGS, y
         ; finally, switch to the idle routine
@@ -424,14 +440,33 @@ done:
 still_idle:
         ; DEBUG DEBUG TEST REMOVE LATER
         lda #(KEY_SELECT)
+        bit ButtonsHeld
+        beq all_done
+        ; While holding select, press Up to increase the brightness:
+check_up:
+        lda #(KEY_UP)
+        bit ButtonsDown
+        beq check_down
+increase_brightness:
+        lda #8
+        cmp Brightness
+        beq check_down
+        inc Brightness
+        lda #1
+        sta ObjPaletteDirty
+        sta BgPaletteDirty
+
+check_down:
+        lda #(KEY_DOWN)
         bit ButtonsDown
         beq all_done
-        ; Select was pressed! Load the TEST map
-        st16 TargetMapAddr, (test_room_3d)
-        lda #<.bank(test_room_3d)
-        sta TargetMapBank
-        st16 GameMode, load_new_map
-
+decrease_brightness:
+        lda Brightness
+        beq check_down
+        dec Brightness
+        lda #1
+        sta ObjPaletteDirty
+        sta BgPaletteDirty
 
 all_done:
         rts
@@ -520,5 +555,21 @@ up_not_held:
         ; switch to the idle right animation and state
         jsr pick_walk_animation
 down_not_held:
+        rts
+.endproc
+
+.proc boxgirl_teleport
+        ; freeze position, and rise into the air
+        ldx CurrentEntityIndex
+        lda entity_table + EntityState::SpeedZ, x
+        sta R0
+        sadd16x entity_table + EntityState::PositionZ, R0
+        lda entity_table + EntityState::SpeedZ, x
+        adc #10
+        bmi no_store
+        sta entity_table + EntityState::SpeedZ, x
+no_store:
+        jsr set_3d_metasprite_pos        
+
         rts
 .endproc

@@ -41,12 +41,8 @@ start:
         lda #0
         sta $4010 ; DMC DMA
 
-        ; Setup our initial kernel state. For demo purposes, we will immediately
-        ; load a map for testing
-        st16 TargetMapAddr, (bridges)
-        lda #<.bank(bridges)
-        sta TargetMapBank
-        st16 GameMode, load_new_map
+        ; Setup our initial kernel state
+        st16 GameMode, init_engine
 
         ; hand control over to the kernel, which will manage game mode management
         ; for the rest of runtime
