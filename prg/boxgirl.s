@@ -429,45 +429,15 @@ done:
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
-        ; check for special ground tiles
-        far_call FAR_sense_ground
-        jsr handle_ground_tile
         ; check for state changes
         lda #(KEY_RIGHT | KEY_LEFT | KEY_UP | KEY_DOWN)
         bit ButtonsHeld
         beq still_idle
         jsr pick_walk_animation
 still_idle:
-        ; DEBUG DEBUG TEST REMOVE LATER
-        lda #(KEY_SELECT)
-        bit ButtonsHeld
-        beq all_done
-        ; While holding select, press Up to increase the brightness:
-check_up:
-        lda #(KEY_UP)
-        bit ButtonsDown
-        beq check_down
-increase_brightness:
-        lda #8
-        cmp Brightness
-        beq check_down
-        inc Brightness
-        lda #1
-        sta ObjPaletteDirty
-        sta BgPaletteDirty
-
-check_down:
-        lda #(KEY_DOWN)
-        bit ButtonsDown
-        beq all_done
-decrease_brightness:
-        lda Brightness
-        beq check_down
-        dec Brightness
-        lda #1
-        sta ObjPaletteDirty
-        sta BgPaletteDirty
-
+        ; check for special ground tiles
+        far_call FAR_sense_ground
+        jsr handle_ground_tile
 all_done:
         rts
 .endproc
