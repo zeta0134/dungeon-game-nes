@@ -1,0 +1,1 @@
+.global blobby_init

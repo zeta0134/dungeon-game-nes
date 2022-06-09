@@ -1,5 +1,6 @@
         .setcpu "6502"
 
+        .include "blobby.inc"
         .include "boxgirl.inc"
         .include "camera.inc"
         .include "debug.inc"
@@ -88,7 +89,20 @@ CurrentEntityIndex := R2
         ; all done
         restore_previous_bank
 
-        ; in theory, boxgirl is now ready to go.
+        ; now spawn in a cute blob, as a test entity
+        st16 ScratchAddr, blobby_init
+        jsr spawn_entity
+        sty CurrentEntityIndex
+        ; clear out the subpixel coordinates
+        lda #0
+        sta entity_table + EntityState::PositionX, y
+        sta entity_table + EntityState::PositionY, y
+        ; as a test, set the tile coordinates to 10, 12
+        lda #10
+        sta entity_table + EntityState::PositionX + 1, y
+        lda #13
+        sta entity_table + EntityState::PositionY + 1, y
+
         rts
 .endproc
 

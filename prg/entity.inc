@@ -1,4 +1,4 @@
-.global entity_table, spawn_entity, update_entities, set_metasprite_pos, despawn_all_entities
+.global entity_table, spawn_entity, update_entities, set_3d_metasprite_pos, despawn_all_entities
 .globalzp CurrentEntityIndex
 
 .struct EntityState

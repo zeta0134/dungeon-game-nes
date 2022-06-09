@@ -2,6 +2,7 @@
         .include "boxgirl.inc"
         .include "branch_util.inc"
         .include "collision.inc"
+        .include "entity.inc"
         .include "far_call.inc"
         .include "kernel.inc"
         .include "map.inc"
@@ -11,14 +12,9 @@
         .include "scrolling.inc"
         .include "sound.inc"
         .include "sprites.inc"
-        .include "entity.inc"
-        .include "palette.inc"
         .include "physics.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
-
-        ; temp
-        .include "levels.inc"
 
         .segment "PRGFIXED_E000"
 ; Note: this needs to bank in the map header, so it lives in fixed memory
@@ -185,91 +181,6 @@ FACING_RIGHT = %00000000
         rts
 failed_to_spawn:
         despawn_entity CurrentEntityIndex
-        rts
-.endproc
-
-
-
-; works out the proper location to display the character and shadow metasprite, based
-; on the character's position and current height relative to the ground
-.proc set_3d_metasprite_pos
-MetaSpriteIndex := R0
-        ldy CurrentEntityIndex
-
-        ; We'll work on the main sprite first
-        ldx entity_table + EntityState::MetaSpriteIndex, y
-
-        ; first, copy the coordinates into place
-        lda entity_table + EntityState::PositionX, y
-        sta metasprite_table + MetaSpriteState::PositionX, x
-        lda entity_table + EntityState::PositionX+1, y
-        sta metasprite_table + MetaSpriteState::PositionX+1, x
-        lda entity_table + EntityState::PositionY, y
-        sta metasprite_table + MetaSpriteState::PositionY, x
-        lda entity_table + EntityState::PositionY+1, y
-        sta metasprite_table + MetaSpriteState::PositionY+1, x
-
-        ; Now we need to subtract the player's height from their Y coordinate
-        sec
-        lda metasprite_table + MetaSpriteState::PositionY, x
-        sbc entity_table + EntityState::PositionZ, y
-        sta metasprite_table + MetaSpriteState::PositionY, x
-        lda metasprite_table + MetaSpriteState::PositionY+1, x
-        sbc entity_table + EntityState::PositionZ + 1, y
-        sta metasprite_table + MetaSpriteState::PositionY+1, x
-
-        ; now, shift the metasprite position to the right by 4, taking
-        ; the coordinates from *subtile* space to *pixel* space
-        .repeat 4
-        lsr metasprite_table + MetaSpriteState::PositionX+1, x
-        ror metasprite_table + MetaSpriteState::PositionX, x
-        .endrepeat
-        .repeat 4
-        lsr metasprite_table + MetaSpriteState::PositionY+1, x
-        ror metasprite_table + MetaSpriteState::PositionY, x
-        .endrepeat
-
-        ; Alright now, repeat most of the above but for the shadow sprite
-        ldx entity_table + EntityState::ShadowSpriteIndex, y
-        stx MetaSpriteIndex
-
-        ; Shadow check: is our height nonzero?
-        lda entity_table + EntityState::PositionZ, y
-        ora entity_table + EntityState::PositionZ + 1, y
-        jeq no_shadow
-
-        ; x already contains MetaSpriteIndex
-        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
-
-        ; copy the coordinates into place
-        lda entity_table + EntityState::PositionX, y
-        sta metasprite_table + MetaSpriteState::PositionX, x
-        lda entity_table + EntityState::PositionX+1, y
-        sta metasprite_table + MetaSpriteState::PositionX+1, x
-        lda entity_table + EntityState::PositionY, y
-        sta metasprite_table + MetaSpriteState::PositionY, x
-        lda entity_table + EntityState::PositionY+1, y
-        sta metasprite_table + MetaSpriteState::PositionY+1, x
-
-        ; now, shift the metasprite position to the right by 4, taking
-        ; the coordinates from *subtile* space to *pixel* space
-        .repeat 4
-        lsr metasprite_table + MetaSpriteState::PositionX+1, x
-        ror metasprite_table + MetaSpriteState::PositionX, x
-        .endrepeat
-        .repeat 4
-        lsr metasprite_table + MetaSpriteState::PositionY+1, x
-        ror metasprite_table + MetaSpriteState::PositionY, x
-        .endrepeat
-
-        ; done drawing the shadow, get outta here
-        rts
-
-no_shadow:
-        ; There is no shadow to draw; turn off the shadow animation
-        ; x already contains MetaSpriteIndex
-        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_HIDDEN
-        ; and done
         rts
 .endproc
 
