@@ -373,9 +373,6 @@ all_done:
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
-        ; check for special ground tiles
-        far_call FAR_sense_ground
-        jsr handle_ground_tile
         ; set our "last facing" bit to the right
         ldy CurrentEntityIndex
         entity_set_flag FLAG_FACING, FACING_RIGHT
@@ -386,6 +383,9 @@ all_done:
         ; switch to the idle right animation and state
         jsr pick_walk_animation
 right_not_held:
+        ; check for special ground tiles
+        far_call FAR_sense_ground
+        jsr handle_ground_tile
         rts
 .endproc
 
@@ -396,9 +396,6 @@ right_not_held:
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
-        ; check for special ground tiles
-        far_call FAR_sense_ground
-        jsr handle_ground_tile
         ; set our "last facing" bit to the left
         ldy CurrentEntityIndex
         entity_set_flag FLAG_FACING, FACING_LEFT
@@ -409,6 +406,9 @@ right_not_held:
         ; switch to the idle right animation and state
         jsr pick_walk_animation
 left_not_held:
+        ; check for special ground tiles
+        far_call FAR_sense_ground
+        jsr handle_ground_tile
         rts
 .endproc
 
@@ -419,9 +419,6 @@ left_not_held:
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
-        ; check for special ground tiles
-        far_call FAR_sense_ground
-        jsr handle_ground_tile
         ; check for state changes
         lda #KEY_UP
         bit ButtonsHeld
@@ -429,6 +426,9 @@ left_not_held:
         ; switch to the idle right animation and state
         jsr pick_walk_animation
 up_not_held:
+        ; check for special ground tiles
+        far_call FAR_sense_ground
+        jsr handle_ground_tile
         rts
 .endproc
 
@@ -439,9 +439,6 @@ up_not_held:
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
-        ; check for special ground tiles
-        far_call FAR_sense_ground
-        jsr handle_ground_tile
         ; check for state changes
         lda #KEY_DOWN
         bit ButtonsHeld
@@ -449,6 +446,9 @@ up_not_held:
         ; switch to the idle right animation and state
         jsr pick_walk_animation
 down_not_held:
+        ; check for special ground tiles
+        far_call FAR_sense_ground
+        jsr handle_ground_tile
         rts
 .endproc
 
