@@ -24,12 +24,12 @@
 ; Note: this needs to bank in the map header, so it lives in fixed memory
 .proc handle_teleport
 MapAddr := R0
-TestPosX := R3
-TestTileX := R4
-TestPosY := R5
-TestTileY := R6
-ExitTableAddr := R7
-MetaSpriteIndex := R9
+TestPosX := R5
+TestTileX := R6
+TestPosY := R7
+TestTileY := R8
+ExitTableAddr := R9
+MetaSpriteIndex := R11
         ; helpfully our scratch registers are still set from the physics function,
         ; so we don't need to re-do the lookup here
         
@@ -410,11 +410,24 @@ jump_not_pressed:
 
 .proc handle_ground_tile
 GroundType := R0
+CollisionFlags := R1
+CollisionHeights := R2
         lda GroundType
         beq done
 
-        cmp #(1 << 2) ; MAGIC NUMBER == EXIT
+        cmp #(1 << 2) ; MAGIC NUMBER == SURFACE_EXIT
         bne done
+        ; surface exits only trigger when we walk on top of them
+        ; we need to ignore a match when are not at ground level
+        ; (say, we are walking "behind" this exit)
+        
+        ldx CurrentEntityIndex
+        lda CollisionHeights
+        and #$0F
+        cmp entity_table + EntityState::GroundLevel, x
+        bne done
+        
+        ; valid tile, valid height, WHOOSH
         jsr handle_teleport
 done:
         rts

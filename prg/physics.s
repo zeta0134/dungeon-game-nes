@@ -86,16 +86,18 @@ height_not_negative:
 ; Returns: Ground value in R0
 
 .proc FAR_sense_ground
-Result := R0
+GroundType := R0
+CollisionFlags := R1
+CollisionHeights := R2
 ; union, TileAddr is used last
-TileAddr := R1
-CenterX := R1
-VerticalOffset := R2
+TileAddr := R3
+CenterX := R3
+VerticalOffset := R4
 ; normal
-TestPosX := R3
-TestTileX := R4
-TestPosY := R5
-TestTileY := R6
+TestPosX := R5
+TestTileX := R6
+TestPosY := R7
+TestTileY := R8
         ; first of all, are we even on the ground?
         ldx CurrentEntityIndex
         lda entity_table + EntityState::PositionZ, x
@@ -116,11 +118,23 @@ TestTileY := R6
         tay
         lda TilesetAttributes, y ; a now contains combined attribute byte
         and #%11111100 ; strip off the palette
-        sta Result
+        sta GroundType
+        beq boring_tile
+        ; if this is an interesting tile, do some extra work and identify
+        ; the collision properties
+        nav_map_index TestTileX, TestTileY, TileAddr
+        ldy #0
+        lda (TileAddr), y
+        tay ; now holds the collision index
+        lda collision_heights, y
+        sta CollisionHeights
+        lda collision_flags, y
+        sta CollisionFlags
+boring_tile:
         rts
         
 not_grounded:
         lda #0
-        sta Result
+        sta GroundType
         rts
 .endproc

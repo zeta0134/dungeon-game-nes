@@ -9,6 +9,9 @@
 .global FAR_collide_right_with_map
 .global FAR_update_nav_lut_ptr
 
+.global collision_heights
+.global collision_flags
+
 .macro tile_offset OffsetX, OffsetY, DestX, DestY
         ldy CurrentEntityIndex
         ; Calculate the tile coordinates for the X axis:
