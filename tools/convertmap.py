@@ -21,6 +21,7 @@ class TiledTile:
     type: str
     integer_properties: Dict[str, int]
     boolean_properties: Dict[str, bool]
+    string_properties: Dict[str, str]
 
 @dataclass
 class TiledTileSet:
@@ -40,7 +41,13 @@ class Entrance:
     x: int
     y: int
 
-BLANK_TILE = TiledTile(tiled_index=0, ordinal_index=0, integer_properties={}, boolean_properties={}, type="")
+@dataclass
+class Entity:
+    x: int
+    y: int
+    initial_state: str
+
+BLANK_TILE = TiledTile(tiled_index=0, ordinal_index=0, integer_properties={}, boolean_properties={}, string_properties={}, type="")
 
 @dataclass
 class CombinedMap:
@@ -51,6 +58,7 @@ class CombinedMap:
     tiles: [TiledTile]
     entrances: [Entrance]
     exits: [Exit]
+    entities: [Entity]
 
 def read_boolean_properties(tile_element):
     boolean_properties = {}
@@ -70,6 +78,15 @@ def read_integer_properties(tile_element):
                 integer_properties[prop.get("name")] = int(prop.get("value"))
     return integer_properties
 
+def read_string_properties(tile_element):
+    string_properties = {}
+    properties_element = tile_element.find("properties")
+    if properties_element:
+        for prop in properties_element.findall("property"):
+            if prop.get("type") == None:
+                string_properties[prop.get("name")] = prop.get("value")
+    return string_properties
+
 def read_tileset(tileset_filename, first_gid=0, name=""):
     tileset_element = ElementTree.parse(tileset_filename).getroot()
     tile_elements = tileset_element.findall("tile")
@@ -80,7 +97,8 @@ def read_tileset(tileset_filename, first_gid=0, name=""):
         tiled_type = tile_element.get("type")
         boolean_properties = read_boolean_properties(tile_element)
         integer_properties = read_integer_properties(tile_element)
-        tiled_tile = TiledTile(ordinal_index=ordinal_index, tiled_index=tiled_index, boolean_properties=boolean_properties, integer_properties=integer_properties, type=tiled_type)
+        string_properties = read_string_properties(tile_element)
+        tiled_tile = TiledTile(ordinal_index=ordinal_index, tiled_index=tiled_index, boolean_properties=boolean_properties, integer_properties=integer_properties, string_properties=string_properties, type=tiled_type)
         tiles[tiled_index] = tiled_tile
     tileset = TiledTileSet(first_gid=first_gid, tiles=tiles, name=name)
     return tileset
@@ -112,11 +130,13 @@ def combine_properties(graphics_tile, supplementary_tiles):
         tiled_index=graphics_tile.tiled_index,
         boolean_properties=dict(graphics_tile.boolean_properties),
         integer_properties=dict(graphics_tile.integer_properties),
+        string_properties=dict(graphics_tile.string_properties),
         type=graphics_tile.type
     )
     for supplementary_tile in supplementary_tiles:
         combined_tile.integer_properties = combined_tile.integer_properties | supplementary_tile.integer_properties
         combined_tile.boolean_properties = combined_tile.boolean_properties | supplementary_tile.boolean_properties
+        combined_tile.string_properties = combined_tile.string_properties | supplementary_tile.string_properties
     return combined_tile
 
 def nice_label(full_path_and_filename):
@@ -191,6 +211,20 @@ def read_exits(object_elements, tilesets):
                 exits.append(Exit(x=exit_x,y=exit_y,map_name=exit_map_name,entrance_id=exit_index))
     return exits
 
+def read_entities(object_elements, tilesets):
+    entities = []
+    for object_element in object_elements:
+        if identify_object(object_element) == "tile":
+            tile = tile_from_gid(int(object_element.get("gid")), tilesets)
+            if tile.type == "entity":
+                entity_initial_state = tile.string_properties["initial_state"]
+                entity_tile_x = math.floor(int(object_element.get("x")) / 16)
+                # for some reason, Tiled considers the origin of these things to be on their bottom, not
+                # their top, so we get different logic depending on the axis. Thanks tiled.
+                entity_tile_y = math.floor((int(object_element.get("y")) - 16) / 16)
+                entities.append(Entity(x=entity_tile_x, y=entity_tile_y, initial_state=entity_initial_state))
+    return entities
+
 def read_map(map_filename):
     map_element = ElementTree.parse(map_filename).getroot()
     map_width = int(map_element.get("width"))
@@ -230,23 +264,25 @@ def read_map(map_filename):
         combined_tiles.append(combine_properties(graphics_tile, supplementary_tiles))
 
     # Read in supplementary structures: entrances, exits, etc
-    entrances = []
+    entrances = read_entrances([], tilesets, map_width, map_height)
     exits = []
-    objectgroup = map_element.find("objectgroup")
-    if objectgroup:
-        objects = map_element.find("objectgroup").findall("object")
-        entrances = read_entrances(objects, tilesets, map_width, map_height)
-        exits = read_exits(objects, tilesets)
-    else:
-        # ensure we at least have a senisble default spawn point
-        entrances = read_entrances([], tilesets, map_width, map_height)
+    entities = []
+
+    objects = []
+    for objectgroup in map_element.findall("objectgroup"):
+        objects.extend(objectgroup.findall("object"))
+
+    entrances = read_entrances(objects, tilesets, map_width, map_height)
+    exits = read_exits(objects, tilesets)
+    entities = read_entities(objects, tilesets)
+    print(entities)
 
     # finally let's make the name something useful
     (_, plain_filename) = os.path.split(map_filename)
     (base_filename, _) = os.path.splitext(plain_filename)
     safe_label = re.sub(r'[^A-Za-z0-9\-\_]', '_', base_filename)
 
-    return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles, graphics_tilesets=graphics_tilesets, entrances=entrances, exits=exits)
+    return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles, graphics_tilesets=graphics_tilesets, entrances=entrances, exits=exits, entities=entities)
 
 def write_map_header(tilemap, output_file):
     output_file.write(ca65_label(tilemap.name) + "\n")
@@ -278,6 +314,14 @@ def write_exit_table(tilemap, output_file):
         output_file.write("  .byte %s ; entrance id\n" % exit.entrance_id)
     output_file.write("\n")
 
+def write_entity_table(tilemap, output_file):
+    output_file.write(ca65_label(tilemap.name + "_entities") + "\n")
+    output_file.write("  .byte %s ; length \n" % ca65_byte_literal(len(tilemap.entities)))
+    for entity in tilemap.entities:
+        output_file.write("  .byte %s, %s ; coordinates \n" % (ca65_byte_literal(entity.x), ca65_byte_literal(entity.y)))
+        output_file.write("  .word %s ; initial state\n" % entity.initial_state)
+    output_file.write("\n")
+
 def write_graphics_tiles(tilemap, output_file):
     raw_graphics_bytes = [tile.ordinal_index for tile in tilemap.tiles]
     compression_type, compressed_bytes = compress_smallest(raw_graphics_bytes)
@@ -306,6 +350,7 @@ def generate_collision_tileset():
             boolean_properties={
                 "is_floor": True
             },
+            string_properties={},
             type="collision"
         )
         tiles.append(vislble_surface_tile)
@@ -320,6 +365,7 @@ def generate_collision_tileset():
             boolean_properties={
                 "is_hidden_floor": True
             },
+            string_properties={},
             type="collision"
         )
         tiles.append(hidden_surface_tile)
@@ -340,6 +386,7 @@ def generate_collision_tileset():
                     "is_hidden_floor": True,
                     "is_floor": True
                 },
+                string_properties={},
                 type="collision"
             )
             tiles.append(combined_surface_tile)
@@ -387,5 +434,6 @@ if __name__ == '__main__':
         write_map_header(tilemap, output_file)
         write_entrance_table(tilemap, output_file)
         write_exit_table(tilemap, output_file)
+        write_entity_table(tilemap, output_file)
         write_graphics_tiles(tilemap, output_file)
         write_collision_tiles(tilemap, output_file)

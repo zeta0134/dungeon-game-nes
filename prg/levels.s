@@ -1,4 +1,8 @@
         .include "levels.inc"
+
+        ; levels may reference AI states, so include those references here
+        .include "blobby.inc"
+        .include "boxgirl.inc"
         
         .segment "MAPS_0_A000"
         ; Maps
