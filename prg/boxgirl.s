@@ -84,6 +84,10 @@ loop:
         st16 R0, sfx_teleport
         jsr play_sfx_pulse2
 
+        ; now that we are done with the map, we need to be in our own
+        ; bank to manipulate animations, so do that
+        restore_previous_bank
+
         ; switch boxgirl to the teleport state and animation
         ldx CurrentEntityIndex
         lda #0
@@ -94,7 +98,7 @@ loop:
         set_update_func CurrentEntityIndex, boxgirl_teleport
 
         ; cleanup and let the kernel handle the rest
-        jmp done
+        rts
 
 no_match:
         clc
