@@ -19,13 +19,7 @@
 .macro near_call label
 .scope
         .assert .bank(*) = .bank(label), error, "unsafe near call"
-        lda #<.BANK(label)
-        sta TargetBank
-        lda #<(label)
-        sta JumpTarget
-        lda #>(label)
-        sta JumpTarget+1
-        jsr launch_far_call
+        jsr label
 .endscope
 .endmacro
 
