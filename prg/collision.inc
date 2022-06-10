@@ -12,7 +12,7 @@
 .global collision_heights
 .global collision_flags
 
-.macro tile_offset OffsetX, OffsetY, DestX, DestY
+.macro tile_offset OffsetX, DestX, DestY
         ldy CurrentEntityIndex
         ; Calculate the tile coordinates for the X axis:
         clc
@@ -22,15 +22,12 @@
         lda entity_table + EntityState::PositionX+1, y
         adc #0
         sta DestX+1 ; now contains map tile for top-left
-        
-        ; now repeat this for the Y axis
-        clc
+
+        ; just copy the DestY pointer directly
         lda entity_table + EntityState::PositionY, y
-        adc OffsetY ; and throw it away; we just need the carry
         sta DestY
         lda entity_table + EntityState::PositionY+1, y
-        adc #0
-        sta DestY+1 ; now contains map tile for top-left
+        sta DestY+1
 .endmacro
 
 ; clobbers a and y

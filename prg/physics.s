@@ -20,9 +20,6 @@ VerticalOffset := R3
         ; right
         lda #(12 << 4)
         sta RightX
-        ; top
-        lda #(0 << 4)
-        sta VerticalOffset
 
         ; apply speed to position for each axis, then check the
         ; tilemap and correct for any tile collisions
@@ -101,11 +98,8 @@ TestTileY := R8
         ; left
         lda #((7 << 4) + 8) ; 7 and one half
         sta CenterX
-        ; top
-        lda #(0 << 4)
-        sta VerticalOffset
 
-        tile_offset CenterX, VerticalOffset, TestPosX, TestPosY
+        tile_offset CenterX, TestPosX, TestPosY
         graphics_map_index TestTileX, TestTileY, TileAddr
         ldy #0
         lda (TileAddr), y

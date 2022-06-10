@@ -16,6 +16,7 @@
 .endmacro
 
 ; for calls from banked code to other code within the same bank only
+; try to use this instead of jsr for banked routines
 .macro near_call label
 .scope
         .assert .bank(*) = .bank(label), error, "unsafe near call"

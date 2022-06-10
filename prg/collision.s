@@ -86,7 +86,7 @@ must_be_16:
         rts
 .endproc
 
-.macro jumping_tile_offset OffsetX, OffsetY, DestX, DestY
+.macro jumping_tile_offset OffsetX, DestX, DestY
         ldy CurrentEntityIndex
         ; Calculate the tile coordinates for the X axis:
         clc
@@ -96,23 +96,14 @@ must_be_16:
         lda entity_table + EntityState::PositionX+1, y
         adc #0
         sta DestX+1 ; now contains map tile for top-left
-        
-        ; now repeat this for the Y axis
-        clc
-        lda entity_table + EntityState::PositionY, y
-        adc OffsetY ; and throw it away; we just need the carry
-        sta DestY
-        lda entity_table + EntityState::PositionY+1, y
-        adc #0
-        sta DestY+1 ; now contains map tile for top-left
 
         ; subtract jump height here
         sec
-        lda DestY
+        lda entity_table + EntityState::PositionY, y
         sbc entity_table + EntityState::PositionZ, y
         sta DestY
-        lda DestY+1
-        sbc entity_table + EntityState::PositionZ + 1, y
+        lda entity_table + EntityState::PositionY+1, y
+        sbc entity_table + EntityState::PositionZ+1, y
         sta DestY+1
 .endmacro
 
@@ -261,7 +252,6 @@ finished:
 .proc fix_height
 LeftX := R1
 RightX := R2
-VerticalOffset := R3
 SubtileX := R4
 TileX := R5
 SubtileY := R6
@@ -305,7 +295,6 @@ done_with_height_fix:
 .proc apply_bg_priority
 LeftX := R1
 RightX := R2
-VerticalOffset := R3
 SubtileX := R4
 TileX := R5
 SubtileY := R6
@@ -326,7 +315,7 @@ GroundType := R11
 
 check_left_tile:
         ; check both tiles under our new position's hit points
-        tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
+        tile_offset LeftX, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         ldy #0
         lda (TileAddr), y
@@ -341,7 +330,7 @@ check_left_tile:
         sta GroundType
 
 check_right_tile:
-        tile_offset RightX, VerticalOffset, SubtileX, SubtileY
+        tile_offset RightX, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         ldy #0
         lda (TileAddr), y ;
@@ -384,7 +373,7 @@ shadow_visible_surface:
 
 check_left_jumping_tile:
         ; check both tiles under our new position's hit points
-        jumping_tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
+        jumping_tile_offset LeftX, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         ldy #0
         lda (TileAddr), y
@@ -400,7 +389,7 @@ check_left_jumping_tile:
         sta GroundType
 
 check_right_jumping_tile:
-        jumping_tile_offset RightX, VerticalOffset, SubtileX, SubtileY
+        jumping_tile_offset RightX, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         ldy #0
         lda (TileAddr), y ;
@@ -528,7 +517,6 @@ TileY := R7
 .proc FAR_collide_up_with_map
 LeftX := R1
 RightX := R2
-VerticalOffset := R3
 SubtileX := R4
 TileX := R5
 SubtileY := R6
@@ -538,11 +526,11 @@ HighestGround := R10
         lda #$00
         sta HighestGround
 
-        tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
+        tile_offset LeftX, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         if_not_valid TileAddr, collision_response_push_down
 
-        tile_offset RightX, VerticalOffset, SubtileX, SubtileY
+        tile_offset RightX, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         if_not_valid TileAddr, collision_response_push_down
 
@@ -554,7 +542,6 @@ HighestGround := R10
 .proc FAR_collide_down_with_map
 LeftX := R1
 RightX := R2
-VerticalOffset := R3
 SubtileX := R4
 TileX := R5
 SubtileY := R6
@@ -564,11 +551,11 @@ HighestGround := R10
         lda #$00
         sta HighestGround
 
-        tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
+        tile_offset LeftX, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         if_not_valid TileAddr, collision_response_push_up
 
-        tile_offset RightX, VerticalOffset, SubtileX, SubtileY
+        tile_offset RightX, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         if_not_valid TileAddr, collision_response_push_up
 
@@ -583,7 +570,6 @@ HighestGround := R10
 .proc FAR_collide_left_with_map
 LeftX := R1
 RightX := R2
-VerticalOffset := R3
 SubtileX := R4
 TileX := R5
 SubtileY := R6
@@ -593,11 +579,11 @@ HighestGround := R10
         lda #$00
         sta HighestGround
 
-        tile_offset RightX, VerticalOffset, SubtileX, SubtileY
+        tile_offset RightX, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         if_not_valid TileAddr, collision_response_push_right
 
-        tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
+        tile_offset LeftX, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         if_not_valid TileAddr, collision_response_push_right
 
@@ -609,7 +595,6 @@ HighestGround := R10
 .proc FAR_collide_right_with_map
 LeftX := R1
 RightX := R2
-VerticalOffset := R3
 SubtileX := R4
 TileX := R5
 SubtileY := R6
@@ -619,11 +604,11 @@ HighestGround := R10
         lda #$00
         sta HighestGround
 
-        tile_offset RightX, VerticalOffset, SubtileX, SubtileY
+        tile_offset RightX, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         if_not_valid TileAddr, collision_response_push_left
 
-        tile_offset LeftX, VerticalOffset, SubtileX, SubtileY
+        tile_offset LeftX, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         if_not_valid TileAddr, collision_response_push_left
 
