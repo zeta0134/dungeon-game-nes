@@ -6,11 +6,12 @@
         .include "entity.inc"
         .include "far_call.inc"
         .include "physics.inc"
+        .include "prng.inc"
         .include "sprites.inc"
         .include "zeropage.inc"
 
 
-        .segment "PRGFIXED_E000" ; will eventually move to an AI page
+        .segment "ENTITIES_A000" ; will eventually move to an AI page
         .include "animations/blobby/idle.inc"
         .include "animations/shadow.inc"
 
@@ -80,6 +81,13 @@ failed_to_spawn:
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
-        ; for now, do nothing else.
+        
+        ; test out the prng!
+        ldy CurrentEntityIndex
+        ldx entity_table + EntityState::MetaSpriteIndex, y
+        jsr next_rand
+        and #%00000011
+        sta metasprite_table + MetaSpriteState::PaletteOffset, x
+
         rts
 .endproc

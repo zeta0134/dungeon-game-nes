@@ -1,4 +1,13 @@
-.global entity_table, spawn_entity, update_entities, set_3d_metasprite_pos, despawn_all_entities
+; External, mostly called by the kernel
+.global FAR_spawn_entity
+.global FAR_update_entities
+.global FAR_despawn_all_entities
+
+; Internal, mostly used by entity state machines
+.global set_3d_metasprite_pos
+
+; Variables
+.global entity_table
 .globalzp CurrentEntityIndex
 
 .struct EntityState

@@ -1,5 +1,6 @@
         .setcpu "6502"
 
+        .include "far_call.inc"
         .include "kernel.inc"
         .include "irq_table.inc"
         .include "main.inc"
@@ -8,6 +9,7 @@
         .include "levels.inc"
         .include "nes.inc"
         .include "ppu.inc"
+        .include "prng.inc"
         .include "sound.inc"
         .include "sprites.inc"
         .include "word_util.inc"
@@ -30,7 +32,7 @@ start:
 
         jsr initialize_mmc3
         jsr initialize_palettes
-        jsr initialize_oam
+        far_call FAR_initialize_oam
         jsr initialize_ppu
         jsr initialize_irq_table
         jsr init_audio
@@ -40,6 +42,10 @@ start:
         sta $4017 ; APU frame counter
         lda #0
         sta $4010 ; DMC DMA
+
+        ; initialize the prng seed to a nonzero value
+        lda #1
+        sta seed
 
         ; Setup our initial kernel state
         st16 GameMode, init_engine

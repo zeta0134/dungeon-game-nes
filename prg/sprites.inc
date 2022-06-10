@@ -1,7 +1,12 @@
 .ifndef _SPRITES_INC
 _SPRITES_INC := 1
 
-.global initialize_oam, draw_metasprite, metasprite_table, update_animations, draw_metasprites, find_unused_metasprite, despawn_all_metasprites
+.global FAR_initialize_oam
+.global FAR_update_animations
+.global FAR_draw_metasprites
+.global FAR_despawn_all_metasprites
+
+.global draw_metasprite, metasprite_table, find_unused_metasprite
 .globalzp OAMTableLength, OAMEntryIndex, OAMTableAddr, MetaspritePosX, MetaspritePosY, ScratchSpritePtr
 
 FLAG_VISIBILITY      = %00000001

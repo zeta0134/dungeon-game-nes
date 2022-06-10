@@ -48,7 +48,7 @@ ScratchAddr := R0
 CurrentEntityIndex := R2
 MapAddr := R4 ; load_entities requires that MapAddr be R4
         st16 ScratchAddr, boxgirl_init
-        jsr spawn_entity
+        far_call FAR_spawn_entity
 
         ; y now contains the entity index; preserve it
         sty CurrentEntityIndex
@@ -179,8 +179,8 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         far_call FAR_init_camera
 
         ; clear all entities and metasprites
-        jsr despawn_all_entities
-        jsr despawn_all_metasprites
+        far_call FAR_despawn_all_entities
+        far_call FAR_despawn_all_metasprites
 
         ; FOR NOW, spawn in the player and nothing else
         ; (later this will be replaced with loading the entity list defined by the level)
@@ -251,11 +251,11 @@ time_waste_loop:
         debug_color LIGHTGRAY
         far_call FAR_update_camera
         debug_color TINT_R | TINT_G
-        jsr update_entities
+        far_call FAR_update_entities
         debug_color TINT_B
-        jsr update_animations
+        far_call FAR_update_animations
         debug_color TINT_B | TINT_G
-        jsr draw_metasprites
+        far_call FAR_draw_metasprites
         debug_color TINT_R
         far_call FAR_scroll_camera
         debug_color 0 ; disable debug colors

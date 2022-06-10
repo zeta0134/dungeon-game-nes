@@ -108,7 +108,7 @@ done:
 .endproc
 
 
-        .segment "PRGFIXED_8000" ; will eventually move to an AI page
+        .segment "ENTITIES_A000" ; will eventually move to an AI page
         .include "animations/boxgirl/idle.inc"
         .include "animations/boxgirl/move.inc"
         .include "animations/boxgirl/teleport.inc"

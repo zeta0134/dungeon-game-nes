@@ -18,14 +18,14 @@ entity_table:
         .align 2
 CurrentEntityFuncPtr: .word $0000
 
-        .segment "PRGFIXED_E000"
+        .segment "ENTITIES_A000"
 
 
 ; Completely despawn the entity table; used during init and later
 ; when switching levels. Note that an entity is considered inactive
 ; if the high byte of its UpdateFunc is exactly #0. This is also how
 ; an entity may despawn itself at runtime.
-.proc despawn_all_entities
+.proc FAR_despawn_all_entities
         ldy #0
 loop:
         lda #0
@@ -48,7 +48,7 @@ done:
 ; upon completion, y will contain the spawned index, or the
 ; value #$FF to indicate failure.
 
-.proc spawn_entity
+.proc FAR_spawn_entity
         ldy #0
 loop:
         lda entity_table + EntityState::UpdateFunc+1, y
@@ -71,7 +71,7 @@ spawn_failed:
         rts
 .endproc
 
-.proc update_entities
+.proc FAR_update_entities
         lda #0
         sta CurrentEntityIndex
 loop:

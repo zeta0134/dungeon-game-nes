@@ -226,7 +226,7 @@ entity_loop:
         lda (EntityTableAddr), y
         sta EntityStateFunc+1
         inc16 EntityTableAddr
-        jsr spawn_entity
+        far_call FAR_spawn_entity
         ; should the spawn fail, it means our entity table is full.
         ; there is no need to continue, and we definitely should not
         ; set the other properties

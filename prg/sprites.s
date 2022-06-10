@@ -21,7 +21,7 @@ metasprite_table:
         .tag MetaSpriteState
         .endrepeat
 
-        .segment "PRGFIXED_E000"
+        .segment "ENTITIES_A000"
         ;.org $e000
 
 
@@ -32,7 +32,7 @@ OAM_TILE = 1
 OAM_ATTRIBUTES = 2
 OAM_X_POS = 3
 
-.proc initialize_oam
+.proc FAR_initialize_oam
         st16 R0, (SHADOW_OAM)
         ldy #$0
 loop:
@@ -147,7 +147,7 @@ done:
         rts
 .endproc
 
-.proc update_animations
+.proc FAR_update_animations
 MetaSpriteCount := R0
 MetaSpriteIndex := R1
         lda #16
@@ -257,7 +257,7 @@ loop:
         rts
 .endproc
 
-.proc draw_metasprites
+.proc FAR_draw_metasprites
 MetaSpriteCount := R0
 MetaSpriteIndex := R1
         jsr update_camera_scroll
@@ -351,7 +351,7 @@ all_done:
         rts
 .endproc
 
-.proc despawn_all_metasprites
+.proc FAR_despawn_all_metasprites
 MetaSpriteCount := R0
 MetaSpriteIndex := R1
         lda #0
