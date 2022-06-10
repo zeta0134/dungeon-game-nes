@@ -32,11 +32,11 @@ VerticalOffset := R3
         bmi move_left
 move_right:
         sadd16x entity_table + EntityState::PositionX, R0
-        far_call FAR_collide_right_with_map
+        near_call FAR_collide_right_with_map
         jmp done_with_x
 move_left:
         sadd16x entity_table + EntityState::PositionX, R0
-        far_call FAR_collide_left_with_map
+        near_call FAR_collide_left_with_map
 done_with_x:
         ldx CurrentEntityIndex
         lda entity_table + EntityState::SpeedY, x
@@ -44,11 +44,11 @@ done_with_x:
         bmi move_up
 move_down:
         sadd16x entity_table + EntityState::PositionY, R0
-        far_call FAR_collide_down_with_map
+        near_call FAR_collide_down_with_map
         jmp done
 move_up:
         sadd16x entity_table + EntityState::PositionY, R0
-        far_call FAR_collide_up_with_map
+        near_call FAR_collide_up_with_map
 
 done:
         rts
