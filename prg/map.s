@@ -1,6 +1,7 @@
         .setcpu "6502"
         .include "collision.inc"
         .include "compression.inc"
+        .include "entity.inc"
         .include "far_call.inc"
         .include "map.inc"
         .include "palette.inc"
@@ -195,5 +196,61 @@ loop:
 
         lda #1
         sta BgPaletteDirty
+        rts
+.endproc
+
+.proc load_entities
+EntityStateFunc := R0
+EntityTableAddr := R2
+MapAddr := R4
+EntityCount := R5
+        ldy #MapHeader::entity_table_ptr
+        lda (MapAddr), y
+        sta EntityTableAddr
+        iny
+        lda (MapAddr), y
+        sta EntityTableAddr+1
+
+        ldy #0
+        lda (EntityTableAddr), y
+        sta EntityCount
+        beq done ; if there are no entities to load, do nothing!
+        inc16 EntityTableAddr
+entity_loop:
+        ; load the initial update function for this entity
+        ; and attempt to spawn it
+        ldy #0
+        lda (EntityTableAddr), y
+        sta EntityStateFunc
+        inc16 EntityTableAddr
+        lda (EntityTableAddr), y
+        sta EntityStateFunc+1
+        inc16 EntityTableAddr
+        jsr spawn_entity
+        ; should the spawn fail, it means our entity table is full.
+        ; there is no need to continue, and we definitely should not
+        ; set the other properties
+        cpy #$FF
+        beq done
+        ; y now contains the new entity index; preserve it
+        sty CurrentEntityIndex
+        ; now load initial properties from the entity table, and apply them
+        ; for now, this is just the starting tile coordinates
+        ldy #0
+        ldx CurrentEntityIndex
+        lda (EntityTableAddr), y
+        sta entity_table + EntityState::PositionX+1, x
+        inc16 EntityTableAddr
+        lda (EntityTableAddr), y
+        sta entity_table + EntityState::PositionY+1, x
+        inc16 EntityTableAddr
+        ; zero out the other components of the position here
+        lda #0
+        sta entity_table + EntityState::PositionX, x
+        sta entity_table + EntityState::PositionY, x
+        ; all done; next!
+        dec EntityCount
+        bne entity_loop
+done:
         rts
 .endproc

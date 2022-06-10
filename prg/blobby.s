@@ -26,9 +26,18 @@
         ; initialize that character sprite
         set_metasprite_animation R0, blobby_anim_idle
         set_metasprite_tile_offset R0, #64 ;  blobby's data is in the 2nd bank
-        set_metasprite_palette_offset R0, #0
         ldx R0
         metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
+        ; set the palette color based on the entity ID, slightly abusing the size
+        ; of EntityState being 16
+        lda CurrentEntityIndex
+        lsr
+        lsr
+        lsr
+        lsr
+        and #%00000011
+        sta R1
+        sta metasprite_table + MetaSpriteState::PaletteOffset, x
 
         ; now do the same for blobby's shadow sprite
         jsr find_unused_metasprite
@@ -42,6 +51,8 @@
         set_metasprite_animation R0, shadow_flicker
         set_metasprite_tile_offset R0, #$18 ; note: probably move this to its own bank later
         set_metasprite_palette_offset R0, #0
+
+
         ldx R0
         metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
 

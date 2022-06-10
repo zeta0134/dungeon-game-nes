@@ -292,6 +292,7 @@ def write_map_header(tilemap, output_file):
     output_file.write("  .word %s_collision\n" % tilemap.name)
     output_file.write("  .word %s_entrances\n" % tilemap.name)
     output_file.write("  .word %s_exits\n" % tilemap.name)
+    output_file.write("  .word %s_entities\n" % tilemap.name)
     output_file.write("  .word %s_tileset ; first tileset \n" % tilemap.graphics_tilesets[0].name)
     output_file.write("\n")
 
@@ -318,8 +319,8 @@ def write_entity_table(tilemap, output_file):
     output_file.write(ca65_label(tilemap.name + "_entities") + "\n")
     output_file.write("  .byte %s ; length \n" % ca65_byte_literal(len(tilemap.entities)))
     for entity in tilemap.entities:
-        output_file.write("  .byte %s, %s ; coordinates \n" % (ca65_byte_literal(entity.x), ca65_byte_literal(entity.y)))
         output_file.write("  .word %s ; initial state\n" % entity.initial_state)
+        output_file.write("  .byte %s, %s    ; coordinates \n" % (ca65_byte_literal(entity.x), ca65_byte_literal(entity.y)))
     output_file.write("\n")
 
 def write_graphics_tiles(tilemap, output_file):

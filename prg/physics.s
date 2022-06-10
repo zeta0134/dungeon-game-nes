@@ -14,12 +14,6 @@
 LeftX := R1
 RightX := R2
 VerticalOffset := R3
-        ; set our palette index to 0 by default, for debugging
-        ldx CurrentEntityIndex
-        ldy entity_table + EntityState::MetaSpriteIndex, x
-        lda #0
-        sta metasprite_table + MetaSpriteState::PaletteOffset, y
-
         ; left
         lda #(3 << 4)
         sta LeftX

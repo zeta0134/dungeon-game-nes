@@ -46,6 +46,7 @@ FadeTimer: .res 1
 .proc demo_init
 ScratchAddr := R0
 CurrentEntityIndex := R2
+MapAddr := R4 ; load_entities requires that MapAddr be R4
         st16 ScratchAddr, boxgirl_init
         jsr spawn_entity
 
@@ -55,15 +56,15 @@ CurrentEntityIndex := R2
         access_data_bank TargetMapBank
         ; load the coordinates from this map's entrance, and teleport boxgirl there
         lda TargetMapAddr
-        sta ScratchAddr
+        sta MapAddr
         lda TargetMapAddr+1
-        sta ScratchAddr+1
+        sta MapAddr+1
 
         ldy #MapHeader::entrance_table_ptr
-        lda (ScratchAddr), y
+        lda (MapAddr), y
         tax
         ldy #MapHeader::entrance_table_ptr+1
-        lda (ScratchAddr), y
+        lda (MapAddr), y
         stx ScratchAddr
         sta ScratchAddr+1
 
@@ -86,22 +87,11 @@ CurrentEntityIndex := R2
         sta entity_table + EntityState::PositionZ, x 
         sta entity_table + EntityState::PositionZ+1, x 
 
+        ; now spawn in all the other entities that this map references
+        jsr load_entities
+
         ; all done
         restore_previous_bank
-
-        ; now spawn in a cute blob, as a test entity
-        st16 ScratchAddr, blobby_init
-        jsr spawn_entity
-        sty CurrentEntityIndex
-        ; clear out the subpixel coordinates
-        lda #0
-        sta entity_table + EntityState::PositionX, y
-        sta entity_table + EntityState::PositionY, y
-        ; as a test, set the tile coordinates to 10, 12
-        lda #10
-        sta entity_table + EntityState::PositionX + 1, y
-        lda #13
-        sta entity_table + EntityState::PositionY + 1, y
 
         rts
 .endproc

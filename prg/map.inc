@@ -1,4 +1,4 @@
-.global load_map, load_tileset
+.global load_map, load_tileset, load_entities
 
 .struct MapHeader
         width .byte
@@ -7,6 +7,7 @@
         collision_ptr .word
         entrance_table_ptr .word
         exit_table_ptr .word
+        entity_table_ptr .word
         first_tileset .word
 .endstruct
 

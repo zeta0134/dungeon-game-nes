@@ -443,14 +443,6 @@ SubtileX := R4
 TileX := R5
 SubtileY := R6
 TileY := R7
-        ; todo: this
-        ; movement? Nah, *highlight*
-        ldy CurrentEntityIndex
-        lda entity_table + EntityState::MetaSpriteIndex, y
-        tay
-        lda #1
-        sta metasprite_table + MetaSpriteState::PaletteOffset, y
-
         lda #0
         sec
         sbc SubtileY
@@ -472,14 +464,6 @@ SubtileX := R4
 TileX := R5
 SubtileY := R6
 TileY := R7
-        ; todo: this
-        ; movement? Nah, *highlight*
-        ldy CurrentEntityIndex
-        lda entity_table + EntityState::MetaSpriteIndex, y
-        tay
-        lda #2
-        sta metasprite_table + MetaSpriteState::PaletteOffset, y
-
         ldy CurrentEntityIndex
         clc
         lda entity_table + EntityState::PositionY, y
@@ -497,14 +481,6 @@ SubtileX := R4
 TileX := R5
 SubtileY := R6
 TileY := R7
-        ; todo: this
-        ; movement? Nah, *highlight*
-        ldy CurrentEntityIndex
-        lda entity_table + EntityState::MetaSpriteIndex, y
-        tay
-        lda #3
-        sta metasprite_table + MetaSpriteState::PaletteOffset, y
-
         lda #0
         sec
         sbc SubtileX
@@ -530,14 +506,6 @@ SubtileX := R4
 TileX := R5
 SubtileY := R6
 TileY := R7
-        ; todo: this
-        ; movement? Nah, *highlight*
-        ldy CurrentEntityIndex
-        lda entity_table + EntityState::MetaSpriteIndex, y
-        tay
-        lda #3
-        sta metasprite_table + MetaSpriteState::PaletteOffset, y
-
         ldy CurrentEntityIndex
         clc
         lda entity_table + EntityState::PositionX, y
