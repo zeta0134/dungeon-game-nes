@@ -12,7 +12,7 @@
 
 .global collision_heights
 .global collision_flags
-.global hidden_surface_height_lut
+.global hidden_surface_height_lut, hidden_surface_reverse_height_lut
 
 .macro tile_offset OffsetX, DestX, DestY
         ldy CurrentEntityIndex
@@ -110,11 +110,8 @@ GroundType := R11
         sta GroundType
 
         ldx CurrentEntityIndex
-        lda entity_table + EntityState::GroundLevel, x
-        asl
-        asl
-        asl
-        asl
+        ldy entity_table + EntityState::GroundLevel, x
+        lda hidden_surface_reverse_height_lut, y
         sta GroundLevel
 
 check_left_tile:

@@ -27,6 +27,9 @@ VerticalOffset := R3
         ldx CurrentEntityIndex
         lda entity_table + EntityState::SpeedX, x
         sta R0
+        ; if we aren't moving horizontally, don't perform collision
+        ; in this direction at all
+        beq done_with_x
         bmi move_left
 move_right:
         sadd16x entity_table + EntityState::PositionX, R0
@@ -39,6 +42,11 @@ done_with_x:
         ldx CurrentEntityIndex
         lda entity_table + EntityState::SpeedY, x
         sta R0
+        ; if we aren't moving vertically, don't perform collision
+        ; in this direction at all.
+        ; TODO: if the map changes, do we need to unconditioanlly perform
+        ; some basic collision check?
+        beq done
         bmi move_up
 move_down:
         sadd16x entity_table + EntityState::PositionY, R0
@@ -47,6 +55,7 @@ move_down:
 move_up:
         sadd16x entity_table + EntityState::PositionY, R0
         near_call FAR_collide_up_with_map
+        jmp done
 
 done:
         apply_bg_priority        

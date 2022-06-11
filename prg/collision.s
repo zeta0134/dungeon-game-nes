@@ -32,6 +32,11 @@ hidden_surface_height_lut:
 
 .include "../build/collision_tileset.incs"
 
+hidden_surface_reverse_height_lut:
+        .repeat 16, i
+        .byte (i << 4)
+        .endrep
+
 nav_lut_width_128_low:
         .repeat 128, i
         .byte <(NavMapData + (128 * i))
