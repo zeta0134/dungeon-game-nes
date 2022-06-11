@@ -48,6 +48,7 @@ move_up:
         near_call FAR_collide_up_with_map
 
 done:
+        near_call FAR_apply_bg_priority        
         rts
 .endproc
 

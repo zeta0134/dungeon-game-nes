@@ -8,6 +8,7 @@
 .global FAR_collide_left_with_map
 .global FAR_collide_right_with_map
 .global FAR_update_nav_lut_ptr
+.global FAR_apply_bg_priority
 
 .global collision_heights
 .global collision_flags

@@ -249,7 +249,7 @@ done_with_height_fix:
         rts
 .endproc
 
-.proc apply_bg_priority
+.proc FAR_apply_bg_priority
 LeftX := R1
 RightX := R2
 SubtileX := R4
@@ -490,7 +490,7 @@ HighestGround := R10
         if_not_valid collision_response_push_down
 
         jsr fix_height
-        jsr apply_bg_priority
+        ;jsr apply_bg_priority
         rts
 .endproc
 
@@ -513,7 +513,7 @@ HighestGround := R10
         if_not_valid collision_response_push_up
 
         jsr fix_height
-        jsr apply_bg_priority
+        ;jsr apply_bg_priority
         rts
 .endproc
 
@@ -539,7 +539,7 @@ HighestGround := R10
         if_not_valid collision_response_push_right
 
         jsr fix_height
-        jsr apply_bg_priority
+        ;jsr apply_bg_priority
         rts
 .endproc
 
@@ -562,6 +562,6 @@ HighestGround := R10
         if_not_valid collision_response_push_left
 
         jsr fix_height
-        jsr apply_bg_priority
+        ;jsr apply_bg_priority
         rts
 .endproc
