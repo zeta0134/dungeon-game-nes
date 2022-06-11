@@ -224,8 +224,6 @@ MetaSpriteIndex := R0
         ldx MetaSpriteIndex
         metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
 
-        jsr set_3d_metasprite_pos
-
         ; set sane defaults for physics variables
         lda #0
         ldy CurrentEntityIndex
@@ -235,10 +233,18 @@ MetaSpriteIndex := R0
         ; default our height above the ground to 0
         sta entity_table + EntityState::PositionZ, y
         sta entity_table + EntityState::PositionZ+1, y
+        ; Our hitbox is at the bottom of our feet, but the spawning routine only gives us
+        ; a tile coordinate, causing us to land at the top of our tile. That looks weird,
+        ; so fix it here
+        lda #$C0
+        sta entity_table + EntityState::PositionY, y
 
         ; register ourselves as a sorted entity, for proper back-to-front fake depth
         lda CurrentEntityIndex
         jsr register_sorted_entity
+
+        ; Perform an initial draw with all of our updated properties
+        jsr set_3d_metasprite_pos
 
         rts
 failed_to_spawn:
