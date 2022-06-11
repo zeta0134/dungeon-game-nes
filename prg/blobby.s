@@ -70,6 +70,12 @@
         sta entity_table + EntityState::PositionZ+1, y
         ; finally, switch to the idle routine
         set_update_func CurrentEntityIndex, blobby_idle
+
+        ; DEBUG: register each blob as a "high priority" sprite
+        ; (just to test out that system)
+        lda CurrentEntityIndex
+        jsr register_sorted_entity
+
         rts
 failed_to_spawn:
         despawn_entity CurrentEntityIndex
@@ -81,13 +87,5 @@ failed_to_spawn:
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
-        
-        ; test out the prng!
-        ldy CurrentEntityIndex
-        ldx entity_table + EntityState::MetaSpriteIndex, y
-        jsr next_rand
-        and #%00000011
-        sta metasprite_table + MetaSpriteState::PaletteOffset, x
-
         rts
 .endproc

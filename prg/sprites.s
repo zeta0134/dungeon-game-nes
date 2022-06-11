@@ -1,4 +1,5 @@
         .setcpu "6502"
+        .include "entity.inc"
         .include "sprites.inc"
         .include "scrolling.inc"
         .include "word_util.inc"
@@ -21,6 +22,16 @@ metasprite_table:
         .tag MetaSpriteState
         .endrepeat
 
+sorted_entity_table:
+        .res 16
+high_priority_table:
+        .res 16
+low_priority_table:
+        .res 16
+
+HighPriorityCount: .res 1
+LowPriorityCount: .res 1
+SortedEntityCount: .res 1
         .segment "ENTITIES_A000"
         ;.org $e000
 
@@ -257,20 +268,8 @@ loop:
         rts
 .endproc
 
-.proc FAR_draw_metasprites
-MetaSpriteCount := R0
+.proc draw_one_metasprite
 MetaSpriteIndex := R1
-        jsr update_camera_scroll
-        jsr hide_all_sprites
-        lda #16
-        sta MetaSpriteCount
-        lda #0
-        sta MetaSpriteIndex
-        ; note: for now, jump over the test sprite
-        ; TODO: something smarter than this
-        lda #16
-        sta OAMEntryIndex
-metasprite_loop:
         ; sanity check: is this animation enabled? ie, is the high byte
         ; of the animation data non-zero?
         ldx MetaSpriteIndex
@@ -341,6 +340,296 @@ metasprite_loop:
         ; finally
         jsr draw_metasprite
 next_metasprite:
+        rts
+.endproc
+
+; call this with the index to register in A
+.proc register_high_priority_metasprite
+        ldx HighPriorityCount
+        sta high_priority_table, x
+        inc HighPriorityCount
+        rts
+.endproc
+
+; call this with the index to register in A
+; please don't call this while the table is empty >_<
+.proc unregister_high_priority_metasprite
+        ; first find the entry to remove
+        ldx #0
+loop:
+        cmp high_priority_table, x
+        beq found_it
+        inx
+        cpx HighPriorityCount
+        bne loop
+not_found:
+        ; oh well
+        rts
+found_it:
+        ; shift the entire list down to fill the space
+        txa
+        tay
+        iny
+shift_loop:
+        lda high_priority_table, y
+        sta high_priority_table, x
+        inx
+        iny
+        cpy #16
+        beq done_shifting
+        jmp shift_loop
+done_shifting:
+        dec HighPriorityCount
+        rts
+.endproc
+
+.proc draw_high_priority_metasprites
+MetaSpriteIndex := R1
+HighPriorityIndex := R2
+        lda #0
+        sta HighPriorityIndex
+        cmp HighPriorityCount
+        beq all_done ; if there's nothing to draw here, bail
+
+metasprite_loop:
+        ldx HighPriorityIndex
+        lda high_priority_table, x
+        sta MetaSpriteIndex
+        ; note: for now, jump over the test sprite
+        ; TODO: something smarter than this
+        jsr draw_one_metasprite
+        inc HighPriorityIndex
+        lda HighPriorityIndex
+        cmp HighPriorityCount
+        bne metasprite_loop
+all_done:
+        rts
+.endproc
+
+; call this with the index to register in A
+.proc register_low_priority_metasprite
+        ldx LowPriorityCount
+        sta low_priority_table, x
+        inc LowPriorityCount
+        rts
+.endproc
+
+; call this with the index to register in A
+; please don't call this while the table is empty >_<
+.proc unregister_low_priority_metasprite
+        ; first find the entry to remove
+        ldx #0
+loop:
+        cmp low_priority_table, x
+        beq found_it
+        inx
+        cpx LowPriorityCount
+        bne loop
+not_found:
+        ; oh well
+        rts
+found_it:
+        ; shift the entire list down to fill the space
+        txa
+        tay
+        iny
+shift_loop:
+        lda low_priority_table, y
+        sta low_priority_table, x
+        inx
+        iny
+        cpy #16
+        beq done_shifting
+        jmp shift_loop
+done_shifting:
+        dec LowPriorityCount
+        rts
+.endproc
+
+.proc draw_low_priority_metasprites
+MetaSpriteIndex := R1
+LowPriorityIndex := R2
+        lda #0
+        sta LowPriorityIndex
+        cmp LowPriorityCount
+        beq all_done ; if there's nothing to draw here, bail
+
+metasprite_loop:
+        ldx LowPriorityIndex
+        lda low_priority_table, x
+        sta MetaSpriteIndex
+        ; note: for now, jump over the test sprite
+        ; TODO: something smarter than this
+        jsr draw_one_metasprite
+        inc LowPriorityIndex
+        lda LowPriorityIndex
+        cmp LowPriorityCount
+        bne metasprite_loop
+all_done:
+        rts
+.endproc
+
+; call this with the index to register in A
+.proc register_sorted_entity
+        ldx SortedEntityCount
+        sta sorted_entity_table, x
+        inc SortedEntityCount
+        rts
+.endproc
+
+; call this with the index to register in A
+; please don't call this while the table is empty >_<
+.proc unregister_sorted_entity
+        ; first find the entry to remove
+        ldx #0
+loop:
+        cmp sorted_entity_table, x
+        beq found_it
+        inx
+        cpx SortedEntityCount
+        bne loop
+not_found:
+        ; oh well
+        rts
+found_it:
+        ; shift the entire list down to fill the space
+        txa
+        tay
+        iny
+shift_loop:
+        lda sorted_entity_table, y
+        sta sorted_entity_table, x
+        inx
+        iny
+        cpy #16
+        beq done_shifting
+        jmp shift_loop
+done_shifting:
+        dec SortedEntityCount
+        rts
+.endproc
+
+.proc draw_sorted_entities
+MetaSpriteIndex := R1
+EntityIndex := R0
+        ; bail if there is nothing to draw
+        lda SortedEntityCount
+        beq all_done
+
+        lda #0
+        sta EntityIndex
+loop:
+        ; Draw the entity's main sprite
+        ldx EntityIndex
+        ldy sorted_entity_table, x
+        lda entity_table + EntityState::MetaSpriteIndex, y
+        sta MetaSpriteIndex
+        jsr draw_one_metasprite
+        ; Now draw the shadow sprite
+        ; (assume all registers were clobbered)
+        ldx EntityIndex
+        ldy sorted_entity_table, x
+        lda entity_table + EntityState::ShadowSpriteIndex, y
+        sta MetaSpriteIndex
+        jsr draw_one_metasprite
+        ; iterate
+        inc EntityIndex
+        lda EntityIndex
+        cmp SortedEntityCount
+        bne loop
+all_done:
+        rts
+.endproc
+
+
+.proc sort_entities
+EntityIndex := R0
+AdjustedDepthA := R1
+AdjustedDepthB := R3
+        ; bail if there are fewer than 2 entities
+        lda SortedEntityCount
+        cmp #2
+        bcc all_done
+
+        lda #1
+        sta EntityIndex
+loop:
+        ; compute AdjustedDepth for the first object
+        ldx EntityIndex
+        ldy sorted_entity_table - 1, x
+        lda entity_table + EntityState::PositionY, y
+        sta AdjustedDepthA
+        lda entity_table + EntityState::PositionY+1, y
+        clc
+        adc entity_table + EntityState::GroundLevel, y
+        sta AdjustedDepthA+1
+
+        ; compute AdjustedDepth for the second object
+        ldx EntityIndex
+        ldy sorted_entity_table, x
+        lda entity_table + EntityState::PositionY, y
+        sta AdjustedDepthB
+        lda entity_table + EntityState::PositionY+1, y
+        clc
+        adc entity_table + EntityState::GroundLevel, y
+        sta AdjustedDepthB+1
+
+        ; if A is less than B, perform a swap
+        cmp16 AdjustedDepthA, AdjustedDepthB
+        bcc swap_needed
+no_swap:
+        inc EntityIndex
+        lda EntityIndex
+        cmp SortedEntityCount
+        bne loop
+        ; all done
+        rts
+
+swap_needed:
+        ldx EntityIndex
+        lda sorted_entity_table-1, x
+        ldy sorted_entity_table, x
+        sta sorted_entity_table, x
+        tya
+        sta sorted_entity_table-1, x
+        ; do NOT loop! exit immediately, we're done
+all_done:
+        rts
+.endproc
+
+.proc FAR_draw_metasprites
+        ; setup
+        jsr update_camera_scroll
+        jsr hide_all_sprites
+        ; start drawing at OAM entry 4 for now
+        ; (maybe later we draw particles first?)
+        lda #16
+        sta OAMEntryIndex
+
+        jsr draw_high_priority_metasprites
+        jsr draw_sorted_entities
+        jsr draw_low_priority_metasprites
+
+        ; perform entity sorting
+        jsr sort_entities
+        rts
+.endproc
+
+.proc old_draw_metasprites
+MetaSpriteCount := R0
+MetaSpriteIndex := R1
+        jsr update_camera_scroll
+        jsr hide_all_sprites
+        lda #16
+        sta MetaSpriteCount
+        lda #0
+        sta MetaSpriteIndex
+        ; note: for now, jump over the test sprite
+        ; TODO: something smarter than this
+        lda #16
+        sta OAMEntryIndex
+metasprite_loop:
+        jsr draw_one_metasprite
         clc
         lda #.sizeof(MetaSpriteState)
         adc MetaSpriteIndex
@@ -371,5 +660,19 @@ next_metasprite:
         dec MetaSpriteCount
         bne loop
 done:
+
+        ; also clear out our lists, since we just invalidated them completely
+        lda #0
+        sta HighPriorityCount
+        sta LowPriorityCount
+        sta SortedEntityCount
+        lda #$FF
+        ldx #0
+object_despawn_loop:
+        sta sorted_entity_table, x
+        inx
+        cpx #16
+        bne object_despawn_loop
+
         rts
 .endproc

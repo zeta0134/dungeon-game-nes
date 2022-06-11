@@ -6,6 +6,14 @@ _SPRITES_INC := 1
 .global FAR_draw_metasprites
 .global FAR_despawn_all_metasprites
 
+.global register_high_priority_metasprite
+.global unregister_high_priority_metasprite
+.global register_low_priority_metasprite
+.global unregister_low_priority_metasprite
+.global register_sorted_entity
+.global unregister_sorted_entity
+
+
 .global draw_metasprite, metasprite_table, find_unused_metasprite
 .globalzp OAMTableLength, OAMEntryIndex, OAMTableAddr, MetaspritePosX, MetaspritePosY, ScratchSpritePtr
 

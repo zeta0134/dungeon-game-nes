@@ -156,7 +156,7 @@ FACING_RIGHT = %00000000
         jsr find_unused_metasprite
         lda #$FF
         cmp R0
-        beq failed_to_spawn
+        jeq failed_to_spawn
         ldy CurrentEntityIndex
         lda R0
         sta entity_table + EntityState::ShadowSpriteIndex, y
@@ -182,6 +182,12 @@ FACING_RIGHT = %00000000
         sta entity_table + EntityState::Data + DATA_FLAGS, y
         ; finally, switch to the idle routine
         set_update_func CurrentEntityIndex, boxgirl_idle
+
+        ; DEBUG: register boxgirl as a sorted entity
+        ; (maybe not so debug?)
+        lda CurrentEntityIndex
+        jsr register_sorted_entity
+
         rts
 failed_to_spawn:
         despawn_entity CurrentEntityIndex
