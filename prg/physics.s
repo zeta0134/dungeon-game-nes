@@ -137,3 +137,34 @@ not_grounded:
         sta GroundType
         rts
 .endproc
+
+; No sensing logic, just grab the collision heights and flags
+; underneath our feet
+.proc FAR_ground_nav_properties
+CollisionFlags := R1
+CollisionHeights := R2
+; union, TileAddr is used last
+TileAddr := R3
+CenterX := R3
+VerticalOffset := R4
+; normal
+TestPosX := R5
+TestTileX := R6
+TestPosY := R7
+TestTileY := R8
+        ; left
+        lda #((7 << 4) + 8) ; 7 and one half
+        sta CenterX
+
+        tile_offset CenterX, TestPosX, TestPosY
+        nav_map_index TestTileX, TestTileY, TileAddr
+
+        ldy #0
+        lda (TileAddr), y
+        tay ; now holds the collision index
+        lda collision_heights, y
+        sta CollisionHeights
+        lda collision_flags, y
+        sta CollisionFlags
+        rts
+.endproc

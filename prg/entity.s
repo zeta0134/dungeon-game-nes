@@ -1,6 +1,9 @@
         .setcpu "6502"
         .include "branch_util.inc"
+        .include "collision.inc"
+        .include "far_call.inc"
         .include "entity.inc"
+        .include "physics.inc"
         .include "sprites.inc"
         .include "scrolling.inc"
         .include "word_util.inc"
@@ -195,6 +198,8 @@ blank_metasprite_frames:
 ; and a shadow underneath, which is most in-game objects
 .proc standard_entity_init
 MetaSpriteIndex := R0
+CollisionFlags := R1
+CollisionHeights := R2
         ; allocate the main character sprite
         jsr find_unused_metasprite
         lda #$FF
@@ -226,18 +231,24 @@ MetaSpriteIndex := R0
 
         ; set sane defaults for physics variables
         lda #0
-        ldy CurrentEntityIndex
-        sta entity_table + EntityState::SpeedX, y
-        sta entity_table + EntityState::SpeedY, y
-        sta entity_table + EntityState::SpeedZ, y
+        ldx CurrentEntityIndex
+        sta entity_table + EntityState::SpeedX, x
+        sta entity_table + EntityState::SpeedY, x
+        sta entity_table + EntityState::SpeedZ, x
         ; default our height above the ground to 0
-        sta entity_table + EntityState::PositionZ, y
-        sta entity_table + EntityState::PositionZ+1, y
+        sta entity_table + EntityState::PositionZ, x
+        sta entity_table + EntityState::PositionZ+1, x
         ; Our hitbox is at the bottom of our feet, but the spawning routine only gives us
         ; a tile coordinate, causing us to land at the top of our tile. That looks weird,
         ; so fix it here
         lda #$C0
-        sta entity_table + EntityState::PositionY, y
+        sta entity_table + EntityState::PositionY, x
+
+        ; Set our initial ground height based on the block we spawned on
+        far_call FAR_ground_nav_properties
+        lda CollisionHeights
+        and #$0F ; keep the surface height only
+        sta entity_table + EntityState::GroundLevel, x
 
         ; register ourselves as a sorted entity, for proper back-to-front fake depth
         lda CurrentEntityIndex
