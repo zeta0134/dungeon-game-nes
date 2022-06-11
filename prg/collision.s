@@ -86,6 +86,27 @@ must_be_16:
         rts
 .endproc
 
+.macro cheaty_tile_offset OffsetX, DestX, DestY
+        ; identical to tile_offset, but throws away the
+        ; lower bytes intead of keeping them. Useful in functions
+        ; that only need to consider the tile index
+        ldy CurrentEntityIndex
+        ; Calculate the tile coordinates for the X axis:
+        clc
+        lda entity_table + EntityState::PositionX, y
+        adc OffsetX ; and throw it away; we just need the carry
+        ;sta DestX
+        lda entity_table + EntityState::PositionX+1, y
+        adc #0
+        sta DestX+1 ; now contains map tile for top-left
+
+        ; just copy the DestY pointer directly
+        ;lda entity_table + EntityState::PositionY, y
+        ;sta DestY
+        lda entity_table + EntityState::PositionY+1, y
+        sta DestY+1
+.endmacro
+
 .macro jumping_tile_offset OffsetX, DestX, DestY
         ldy CurrentEntityIndex
         ; Calculate the tile coordinates for the X axis:
@@ -272,7 +293,7 @@ GroundType := R11
 
 check_left_tile:
         ; check both tiles under our new position's hit points
-        tile_offset LeftX, SubtileX, SubtileY
+        cheaty_tile_offset LeftX, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         ldy #0
         lda (TileAddr), y
@@ -287,7 +308,7 @@ check_left_tile:
         sta GroundType
 
 check_right_tile:
-        tile_offset RightX, SubtileX, SubtileY
+        cheaty_tile_offset RightX, SubtileX, SubtileY
         nav_map_index TileX, TileY, TileAddr
         ldy #0
         lda (TileAddr), y ;
