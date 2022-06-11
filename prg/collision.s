@@ -113,7 +113,7 @@ must_be_16:
         clc
         lda entity_table + EntityState::PositionX, y
         adc OffsetX ; and throw it away; we just need the carry
-        sta DestX
+        ;sta DestX
         lda entity_table + EntityState::PositionX+1, y
         adc #0
         sta DestX+1 ; now contains map tile for top-left
@@ -122,7 +122,7 @@ must_be_16:
         sec
         lda entity_table + EntityState::PositionY, y
         sbc entity_table + EntityState::PositionZ, y
-        sta DestY
+        ;sta DestY
         lda entity_table + EntityState::PositionY+1, y
         sbc entity_table + EntityState::PositionZ+1, y
         sta DestY+1
