@@ -1,4 +1,4 @@
-.global GameMode
+.globalzp GameMode
 .global TargetMapAddr, TargetMapBank, TargetMapEntrance
 
 .global wait_for_next_vblank
