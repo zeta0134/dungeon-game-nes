@@ -115,6 +115,9 @@ cmp AdjustedGround
 
 .macro hidden_surface_matches_adjusted_ground
 lda ColHeights
+; note: we could spend 256 bytes on a LUT and save
+; 4 cycles by replacing these with lda lut, x, with x
+; set to ColHeights
 lsr
 lsr
 lsr
@@ -122,8 +125,15 @@ lsr
 cmp AdjustedGround
 .endmacro
 
-.macro if_not_valid TileAddr, HandleResponse
+.macro if_not_valid HandleResponse
 .scope
+LeftX := R1
+RightX := R2
+SubtileX := R4
+TileX := R5
+SubtileY := R6
+TileY := R7
+TileAddr := R8
 HighestGround := R10
 AdjustedGround := R12
 AdjustedHeight := R13
@@ -132,99 +142,48 @@ ColHeights := R15
         ; initialize our ground level to match the player's starting height
         ldx CurrentEntityIndex
         lda entity_table + EntityState::GroundLevel, x
+        clc
+        adc entity_table + EntityState::PositionZ + 1, x
         sta AdjustedGround
-        ; For jumping, we need to know if the player's currnet height can clear
-        ; tiles. We only care about the high byte of PositionZ for this check
-        lda entity_table + EntityState::PositionZ + 1, x
-        sta AdjustedHeight
-
-        ; consider TileAddr to be authorative for our second loop's purposes
-        lda TileAddr
-        sta ScratchTileAddr
-        lda TileAddr+1
-        sta ScratchTileAddr+1
+        ; subtract the player's jumping height from their hitpoint TileY
+        sec
+        lda TileY
+        sbc entity_table + EntityState::PositionZ + 1, x
+        sta TileY
+        ; now our Tile coordinates point to the highest block the player could
+        ; theoretically clear. We'll start our loop here
+        nav_map_index TileX, TileY, TileAddr
 
         ; y will pretty much stay 0 for most of this routine, for quick indexing
         ldy #0
-
-jump_loop:
-        lda (ScratchTileAddr), y ; now contains collision index
+loop:
+        lda (TileAddr), y ; now contains collision index
         tax
         lda collision_heights, x
         sta ColHeights
         lda collision_flags, x
         sta ColFlags
         ; If the high bit of ColFlags is set, then this tile has a visible surface
-        bpl check_hidden_surface_jump
-check_surface_jump:
+        bpl check_hidden_surface
+check_surface:
         ; compare the visible surface here with our adjusted ground
         ; If it matches, we've found a valid tile and can stop here
         surface_matches_adjusted_ground
         beq is_valid_move
-check_hidden_surface_jump:
+check_hidden_surface:
         bit ColFlags
-        bvc no_hidden_surface_jump
+        bvc no_hidden_surface
         ; compare the hidden surface now, same as before
         hidden_surface_matches_adjusted_ground
         beq is_valid_move
-no_hidden_surface_jump:
-        ; if the player is jumping we need to scan the map upwards
-        ; first decrement their height
-        dec AdjustedHeight
-        ; If this drops below 0, we're done. We've failed to locate a valid floor even
-        ; considering the player's jump height
-        bmi done_with_jump_checks
-        ; The player still has some jumping left, so move UP one row in the map data:
-        sec
-        sub16 ScratchTileAddr, MapWidth
-        inc AdjustedGround
-        jmp jump_loop
-
-done_with_jump_checks:
-        ; If we get here, we didn't find a valid surface to jump on. Now we'll reset our scratch address:
-        lda TileAddr
-        sta ScratchTileAddr
-        lda TileAddr+1
-        sta ScratchTileAddr+1
-        ; And also reset to the player's ground height
-        ldx CurrentEntityIndex
-        lda entity_table + EntityState::GroundLevel, x
-        sta AdjustedGround
-
-        ; To avoid a redundant check, the falling loop has a slightly different structure
-fall_loop:
-        ; If our Adjusted Ground has reached 0, we're done. There are no tiles "below" us to check
-        lda AdjustedGround
-        beq invalid_move
-        ; otherwise, move one row DOWN in the map data
+no_hidden_surface:
         dec AdjustedGround
+        ; if we dropped below floor_height = 0, there are no more valid tiles to consider
+        bmi invalid_move 
+        ; otherwise, move to the next map row
         clc
-        add16 ScratchTileAddr, MapWidth
-
-        lda (ScratchTileAddr), y ; now contains collision index
-        tax
-        lda collision_heights, x
-        sta ColHeights
-        lda collision_flags, x
-        sta ColFlags
-        ; Now check for visible/hidden surfaces for falling onto, just as above
-        ; If the high bit of ColFlags is set, then this tile has a visible surface
-        bpl check_hidden_surface_fall
-check_surface_fall:
-        ; compare the visible surface here with our adjusted ground
-        ; If it matches, we've found a valid tile and can stop here
-        surface_matches_adjusted_ground
-        beq is_valid_move
-check_hidden_surface_fall:
-        bit ColFlags
-        bvc no_hidden_surface_fall
-        ; compare the hidden surface now, same as before
-        hidden_surface_matches_adjusted_ground
-        beq is_valid_move
-no_hidden_surface_fall:
-        ; If we get here, this tile was invalid for falling.
-        ; We've already decremented everything, so just continue the loop
-        jmp fall_loop
+        add16 TileAddr, MapWidth
+        jmp loop
 
 invalid_move:
         ; If we get here, neither a jump nor a fall located a valid tile, so we need to treat this
@@ -243,8 +202,6 @@ is_valid_move:
         bcc finished
 write_highest_surface:
         sta HighestGround
-
-
 finished:
 .endscope
 .endmacro
@@ -527,12 +484,10 @@ HighestGround := R10
         sta HighestGround
 
         tile_offset LeftX, SubtileX, SubtileY
-        nav_map_index TileX, TileY, TileAddr
-        if_not_valid TileAddr, collision_response_push_down
+        if_not_valid collision_response_push_down
 
         tile_offset RightX, SubtileX, SubtileY
-        nav_map_index TileX, TileY, TileAddr
-        if_not_valid TileAddr, collision_response_push_down
+        if_not_valid collision_response_push_down
 
         jsr fix_height
         jsr apply_bg_priority
@@ -552,12 +507,10 @@ HighestGround := R10
         sta HighestGround
 
         tile_offset LeftX, SubtileX, SubtileY
-        nav_map_index TileX, TileY, TileAddr
-        if_not_valid TileAddr, collision_response_push_up
+        if_not_valid collision_response_push_up
 
         tile_offset RightX, SubtileX, SubtileY
-        nav_map_index TileX, TileY, TileAddr
-        if_not_valid TileAddr, collision_response_push_up
+        if_not_valid collision_response_push_up
 
         jsr fix_height
         jsr apply_bg_priority
@@ -580,12 +533,10 @@ HighestGround := R10
         sta HighestGround
 
         tile_offset RightX, SubtileX, SubtileY
-        nav_map_index TileX, TileY, TileAddr
-        if_not_valid TileAddr, collision_response_push_right
+        if_not_valid collision_response_push_right
 
         tile_offset LeftX, SubtileX, SubtileY
-        nav_map_index TileX, TileY, TileAddr
-        if_not_valid TileAddr, collision_response_push_right
+        if_not_valid collision_response_push_right
 
         jsr fix_height
         jsr apply_bg_priority
@@ -605,12 +556,10 @@ HighestGround := R10
         sta HighestGround
 
         tile_offset RightX, SubtileX, SubtileY
-        nav_map_index TileX, TileY, TileAddr
-        if_not_valid TileAddr, collision_response_push_left
+        if_not_valid collision_response_push_left
 
         tile_offset LeftX, SubtileX, SubtileY
-        nav_map_index TileX, TileY, TileAddr
-        if_not_valid TileAddr, collision_response_push_left
+        if_not_valid collision_response_push_left
 
         jsr fix_height
         jsr apply_bg_priority
