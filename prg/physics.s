@@ -1,4 +1,5 @@
         .setcpu "6502"
+        .include "branch_util.inc"
         .include "sprites.inc"
         .include "entity.inc"
         .include "collision.inc"
@@ -48,7 +49,7 @@ move_up:
         near_call FAR_collide_up_with_map
 
 done:
-        near_call FAR_apply_bg_priority        
+        apply_bg_priority        
         rts
 .endproc
 

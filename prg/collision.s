@@ -23,6 +23,13 @@ ScratchTileAddr: .res 2 ; used by the collision scanning routines
 
         .segment "PHYSICS_A000"
 
+.align 256
+
+hidden_surface_height_lut:
+        .repeat 256, i
+        .byte ((i & $F0) >> 4)
+        .endrep
+
 .include "../build/collision_tileset.incs"
 
 nav_lut_width_128_low:
@@ -86,48 +93,6 @@ must_be_16:
         rts
 .endproc
 
-.macro cheaty_tile_offset OffsetX, DestX, DestY
-        ; identical to tile_offset, but throws away the
-        ; lower bytes intead of keeping them. Useful in functions
-        ; that only need to consider the tile index
-        ldy CurrentEntityIndex
-        ; Calculate the tile coordinates for the X axis:
-        clc
-        lda entity_table + EntityState::PositionX, y
-        adc OffsetX ; and throw it away; we just need the carry
-        ;sta DestX
-        lda entity_table + EntityState::PositionX+1, y
-        adc #0
-        sta DestX+1 ; now contains map tile for top-left
-
-        ; just copy the DestY pointer directly
-        ;lda entity_table + EntityState::PositionY, y
-        ;sta DestY
-        lda entity_table + EntityState::PositionY+1, y
-        sta DestY+1
-.endmacro
-
-.macro jumping_tile_offset OffsetX, DestX, DestY
-        ldy CurrentEntityIndex
-        ; Calculate the tile coordinates for the X axis:
-        clc
-        lda entity_table + EntityState::PositionX, y
-        adc OffsetX ; and throw it away; we just need the carry
-        ;sta DestX
-        lda entity_table + EntityState::PositionX+1, y
-        adc #0
-        sta DestX+1 ; now contains map tile for top-left
-
-        ; subtract jump height here
-        sec
-        lda entity_table + EntityState::PositionY, y
-        sbc entity_table + EntityState::PositionZ, y
-        ;sta DestY
-        lda entity_table + EntityState::PositionY+1, y
-        sbc entity_table + EntityState::PositionZ+1, y
-        sta DestY+1
-.endmacro
-
 .macro surface_matches_adjusted_ground
 lda ColHeights
 and #$0F
@@ -135,14 +100,8 @@ cmp AdjustedGround
 .endmacro
 
 .macro hidden_surface_matches_adjusted_ground
-lda ColHeights
-; note: we could spend 256 bytes on a LUT and save
-; 4 cycles by replacing these with lda lut, x, with x
-; set to ColHeights
-lsr
-lsr
-lsr
-lsr
+ldx ColHeights
+lda hidden_surface_height_lut, x
 cmp AdjustedGround
 .endmacro
 
@@ -227,7 +186,8 @@ finished:
 .endscope
 .endmacro
 
-.proc fix_height
+.macro fix_height
+.scope
 LeftX := R1
 RightX := R2
 SubtileX := R4
@@ -267,143 +227,8 @@ HeightDifference := R11
         adc HeightDifference
         sta entity_table + EntityState::PositionY+1, x
 done_with_height_fix:
-        rts
-.endproc
-
-.proc FAR_apply_bg_priority
-LeftX := R1
-RightX := R2
-SubtileX := R4
-TileX := R5
-SubtileY := R6
-TileY := R7
-TileAddr := R8
-GroundLevel := R10
-GroundType := R11
-        lda #0
-        sta GroundType
-
-        ldx CurrentEntityIndex
-        lda entity_table + EntityState::GroundLevel, x
-        asl
-        asl
-        asl
-        asl
-        sta GroundLevel
-
-check_left_tile:
-        ; check both tiles under our new position's hit points
-        cheaty_tile_offset LeftX, SubtileX, SubtileY
-        nav_map_index TileX, TileY, TileAddr
-        ldy #0
-        lda (TileAddr), y
-        tay
-        ; if the hidden surface height matches our player's height
-        lda collision_heights, y
-        and #$F0
-        cmp GroundLevel
-        bne check_right_tile
-        ; collect the flags and stash them
-        lda collision_flags, y
-        sta GroundType
-
-check_right_tile:
-        cheaty_tile_offset RightX, SubtileX, SubtileY
-        nav_map_index TileX, TileY, TileAddr
-        ldy #0
-        lda (TileAddr), y ;
-        tay
-        ; if the hidden surface height matches our player's height
-        lda collision_heights, y
-        and #$F0
-        cmp GroundLevel
-        bne check_combined_flags
-        ; combine these flags with the previous value and store them
-        lda collision_flags, y
-        ora GroundType
-        sta GroundType
-
-check_combined_flags:
-        ; at this point if bit 6 is set, one of our shadow hit points is "behind" a surface,
-        bit GroundType
-        jvc shadow_visible_surface
-shadow_hidden_surface:
-        ldx CurrentEntityIndex
-        ldy entity_table + EntityState::ShadowSpriteIndex, x
-        lda metasprite_table + MetaSpriteState::PaletteOffset, y
-        ora #%00100000 ; set the bgPriority bit
-        sta metasprite_table + MetaSpriteState::PaletteOffset, y
-        ; now we check the player sprite and apply bgPriority to it also, if appropriate
-        jmp check_left_jumping_tile
-shadow_visible_surface:
-        ldx CurrentEntityIndex
-        ldy entity_table + EntityState::ShadowSpriteIndex, x
-        lda metasprite_table + MetaSpriteState::PaletteOffset, y
-        and #%11011111 ; clear the bgPriority bit
-        sta metasprite_table + MetaSpriteState::PaletteOffset, y
-        ; If the shadow isn't behind something, then we don't try to put the player sprite behing
-        ; something either
-        jmp visible_surface
-
-        ; Okay, now perform a similar check but for the base of the player's jump height
-        ; This tries to ensure that if the player jumps out of the bgPriority region, we don't
-        ; apply it incorrectly and have them slip behind nearby scene geometry
-
-check_left_jumping_tile:
-        ; check both tiles under our new position's hit points
-        jumping_tile_offset LeftX, SubtileX, SubtileY
-        nav_map_index TileX, TileY, TileAddr
-        ldy #0
-        lda (TileAddr), y
-        tay
-        ; if the hidden surface height matches our player's height
-        lda collision_heights, y
-        and #$F0
-        cmp GroundLevel
-        bne check_right_jumping_tile
-        ; collect the flags and stash them
-        ; (note: this also clears the result from the shadow round of checks)
-        lda collision_flags, y
-        sta GroundType
-
-check_right_jumping_tile:
-        jumping_tile_offset RightX, SubtileX, SubtileY
-        nav_map_index TileX, TileY, TileAddr
-        ldy #0
-        lda (TileAddr), y ;
-        tay
-        ; if the hidden surface height matches our player's height
-        lda collision_heights, y
-        and #$F0
-        cmp GroundLevel
-        bne check_combined_jumping_flags
-        ; combine these flags with the previous value and store them
-        lda collision_flags, y
-        ora GroundType
-        sta GroundType
-
-check_combined_jumping_flags:
-        ; at this point if bit 6 is set, in addition to our shadow being behind a surface, our
-        ; player position is *also* behind a surface. Hopefully that same surface.
-        bit GroundType
-        bvc visible_surface
-
-hidden_surface:
-        ldx CurrentEntityIndex
-        ldy entity_table + EntityState::MetaSpriteIndex, x
-        lda metasprite_table + MetaSpriteState::PaletteOffset, y
-        ora #%00100000 ; set the bgPriority bit
-        sta metasprite_table + MetaSpriteState::PaletteOffset, y
-        rts
-
-visible_surface:
-        ldx CurrentEntityIndex
-        ldy entity_table + EntityState::MetaSpriteIndex, x
-        lda metasprite_table + MetaSpriteState::PaletteOffset, y
-        and #%11011111 ; clear the bgPriority bit
-        sta metasprite_table + MetaSpriteState::PaletteOffset, y
-        rts
-.endproc
+.endscope
+.endmacro
 
 .proc collision_response_push_down
 SubtileX := R4
@@ -510,8 +335,7 @@ HighestGround := R10
         tile_offset RightX, SubtileX, SubtileY
         if_not_valid collision_response_push_down
 
-        jsr fix_height
-        ;jsr apply_bg_priority
+        fix_height
         rts
 .endproc
 
@@ -533,8 +357,7 @@ HighestGround := R10
         tile_offset RightX, SubtileX, SubtileY
         if_not_valid collision_response_push_up
 
-        jsr fix_height
-        ;jsr apply_bg_priority
+        fix_height
         rts
 .endproc
 
@@ -559,8 +382,7 @@ HighestGround := R10
         tile_offset LeftX, SubtileX, SubtileY
         if_not_valid collision_response_push_right
 
-        jsr fix_height
-        ;jsr apply_bg_priority
+        fix_height
         rts
 .endproc
 
@@ -582,7 +404,6 @@ HighestGround := R10
         tile_offset LeftX, SubtileX, SubtileY
         if_not_valid collision_response_push_left
 
-        jsr fix_height
-        ;jsr apply_bg_priority
+        fix_height
         rts
 .endproc
