@@ -6,6 +6,7 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
+        .include "animations/shadow.inc"
 
         .zeropage
 CurrentEntityIndex: .byte $00
@@ -178,5 +179,69 @@ no_shadow:
         ; x already contains MetaSpriteIndex
         metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_HIDDEN
         ; and done
+        rts
+.endproc
+
+blank_metasprite:
+        .word blank_metasprite_frames
+        .byte 1 ; length in frames
+
+blank_metasprite_frames:
+        .word blank_metasprite_frames ; doesn't matter, not used
+        .byte $00, $00, $0; oam length, mapper, delay frames
+
+; Most entities will perform some common setup w/ respect to their
+; sprites. This routine is appropriate for anything with a main sprite
+; and a shadow underneath, which is most in-game objects
+.proc standard_entity_init
+MetaSpriteIndex := R0
+        ; allocate the main character sprite
+        jsr find_unused_metasprite
+        lda #$FF
+        cmp MetaSpriteIndex
+        jeq failed_to_spawn
+        ldy CurrentEntityIndex
+        lda MetaSpriteIndex
+        sta entity_table + EntityState::MetaSpriteIndex, y
+        ; basic initialization of the main sprite
+        set_metasprite_animation MetaSpriteIndex, blank_metasprite
+        set_metasprite_tile_offset MetaSpriteIndex, #0
+        set_metasprite_palette_offset MetaSpriteIndex, #0
+        ldx MetaSpriteIndex
+        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
+        ; allocate a shadow sprite
+        jsr find_unused_metasprite
+        lda #$FF
+        cmp MetaSpriteIndex
+        jeq failed_to_spawn
+        ldy CurrentEntityIndex
+        lda MetaSpriteIndex
+        sta entity_table + EntityState::ShadowSpriteIndex, y
+        ; basic init for the shadow sprite
+        set_metasprite_animation MetaSpriteIndex, shadow_flicker
+        set_metasprite_tile_offset MetaSpriteIndex, #$18 ; note: probably move this to its own bank later
+        set_metasprite_palette_offset MetaSpriteIndex, #0
+        ldx MetaSpriteIndex
+        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
+
+        jsr set_3d_metasprite_pos
+
+        ; set sane defaults for physics variables
+        lda #0
+        ldy CurrentEntityIndex
+        sta entity_table + EntityState::SpeedX, y
+        sta entity_table + EntityState::SpeedY, y
+        sta entity_table + EntityState::SpeedZ, y
+        ; default our height above the ground to 0
+        sta entity_table + EntityState::PositionZ, y
+        sta entity_table + EntityState::PositionZ+1, y
+
+        ; register ourselves as a sorted entity, for proper back-to-front fake depth
+        lda CurrentEntityIndex
+        jsr register_sorted_entity
+
+        rts
+failed_to_spawn:
+        despawn_entity CurrentEntityIndex
         rts
 .endproc

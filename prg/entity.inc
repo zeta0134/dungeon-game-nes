@@ -5,6 +5,7 @@
 
 ; Internal, mostly used by entity state machines
 .global set_3d_metasprite_pos
+.global standard_entity_init
 
 ; Variables
 .global entity_table

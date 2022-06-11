@@ -138,59 +138,29 @@ FACING_RIGHT = %00000000
 ; mostly performs a whole bunch of one-time setup
 ; expects the entity position to have been set by whatever did the initial spawning
 .proc boxgirl_init
-        ; allocate our main character sprite
-        jsr find_unused_metasprite
+MetaSpriteIndex := R0
+        ; First perform standard entity init
+        jsr standard_entity_init
+        ; If spawning fails, it will leave #$FF in MetaSpriteIndex, which
+        ; we can check for here
         lda #$FF
-        cmp R0
-        jeq failed_to_spawn
-        ldy CurrentEntityIndex
-        lda R0
-        sta entity_table + EntityState::MetaSpriteIndex, y
-        ; basic initialization of the main sprite
-        set_metasprite_animation R0, boxgirl_anim_idle_right
-        set_metasprite_tile_offset R0, #0
-        set_metasprite_palette_offset R0, #0
-        ldx R0
-        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
-        ; allocate a shadow sprite
-        jsr find_unused_metasprite
-        lda #$FF
-        cmp R0
-        jeq failed_to_spawn
-        ldy CurrentEntityIndex
-        lda R0
-        sta entity_table + EntityState::ShadowSpriteIndex, y
-        ; basic init for the shadow sprite
-        set_metasprite_animation R0, shadow_flicker
-        set_metasprite_tile_offset R0, #$18 ; note: probably move this to its own bank later
-        set_metasprite_palette_offset R0, #0
-        ldx R0
-        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
+        cmp MetaSpriteIndex
+        beq failed_to_spawn
 
-        jsr set_3d_metasprite_pos
-
-        ; use data bytes 0 and 1 to track speed
-        lda #0
+        ; Now perform boxgirl specific setup
+        ; First the main animation metasprite
         ldy CurrentEntityIndex
-        sta entity_table + EntityState::SpeedX, y
-        sta entity_table + EntityState::SpeedY, y
-        sta entity_table + EntityState::SpeedZ, y
-        ; default our ground height to 0
-        sta entity_table + EntityState::PositionZ, y
-        sta entity_table + EntityState::PositionZ+1, y
+        lda entity_table + EntityState::MetaSpriteIndex, y 
+        sta MetaSpriteIndex
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_idle_right
+        
         ; set all flag bits to 0
         sta entity_table + EntityState::Data + DATA_FLAGS, y
-        ; finally, switch to the idle routine
+
+        ;finally, switch boxgirl to the idle routine
         set_update_func CurrentEntityIndex, boxgirl_idle
-
-        ; DEBUG: register boxgirl as a sorted entity
-        ; (maybe not so debug?)
-        lda CurrentEntityIndex
-        jsr register_sorted_entity
-
-        rts
+        
 failed_to_spawn:
-        despawn_entity CurrentEntityIndex
         rts
 .endproc
 
