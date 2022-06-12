@@ -412,3 +412,158 @@ HighestGround := R10
         fix_height
         rts
 .endproc
+
+
+; standard hitbox:
+; 4px in from each side
+; 0px off the ground
+; height of 16px
+; intended to be suitable for most interactions
+.proc aabb_standard_vs_standard
+EntityIndexA := R0
+EntityIndexB := R1
+ScratchA := R2
+ScratchB := R4
+
+LeftX = (4 << 4)
+RightX = (12 << 4)
+TopY = LeftX
+BottomY = RightX
+
+        ldx EntityIndexA
+        ldy EntityIndexB
+        ; === X Axis, A-left < B-right ===
+        clc
+        lda entity_table + EntityState::PositionX, x
+        adc #LeftX
+        sta ScratchA
+        lda entity_table + EntityState::PositionX+1, x
+        adc #0
+        sta ScratchA+1
+
+        clc
+        lda entity_table + EntityState::PositionX, y
+        adc #RightX
+        sta ScratchB
+        lda entity_table + EntityState::PositionX+1, y
+        adc #0
+        sta ScratchB
+
+        cmp16 ScratchA, ScratchB
+        jcs no_collision
+
+        ; === X Axis, B-left < A-right ===
+        clc
+        lda entity_table + EntityState::PositionX, y
+        adc #LeftX
+        sta ScratchA
+        lda entity_table + EntityState::PositionX+1, y
+        adc #0
+        sta ScratchA+1
+
+        clc
+        lda entity_table + EntityState::PositionX, x
+        adc #RightX
+        sta ScratchB
+        lda entity_table + EntityState::PositionX+1, x
+        adc #0
+        sta ScratchB
+
+        cmp16 ScratchA, ScratchB
+        jcs no_collision
+
+        ; === Y Axis, A-top < B-bottom ===
+        clc
+        lda entity_table + EntityState::PositionY, x
+        adc #LeftX
+        sta ScratchA
+        lda entity_table + EntityState::PositionY+1, x
+        adc #0
+        adc entity_table + EntityState::GroundLevel, x
+        sta ScratchA+1
+
+        clc
+        lda entity_table + EntityState::PositionY, y
+        adc #RightX
+        sta ScratchB
+        lda entity_table + EntityState::PositionY+1, y
+        adc #0
+        adc entity_table + EntityState::GroundLevel, y
+        sta ScratchB
+
+        cmp16 ScratchA, ScratchB
+        jcs no_collision
+
+        ; === Y Axis, B-top < A-bottom ===
+        clc
+        lda entity_table + EntityState::PositionY, y
+        adc #LeftX
+        sta ScratchA
+        lda entity_table + EntityState::PositionY+1, y
+        adc #0
+        adc entity_table + EntityState::GroundLevel, y
+        sta ScratchA+1
+
+        clc
+        lda entity_table + EntityState::PositionY, x
+        adc #RightX
+        sta ScratchB
+        lda entity_table + EntityState::PositionY+1, x
+        adc #0
+        adc entity_table + EntityState::GroundLevel, x
+        sta ScratchB
+
+        cmp16 ScratchA, ScratchB
+        jcs no_collision
+
+        ; === Z Axis, A-lower < B-upper ===
+        clc
+        lda entity_table + EntityState::PositionZ, x
+        adc #LeftX
+        sta ScratchA
+        lda entity_table + EntityState::PositionZ+1, x
+        adc #0
+        adc entity_table + EntityState::GroundLevel, x
+        sta ScratchA+1
+
+        clc
+        lda entity_table + EntityState::PositionZ, y
+        adc #RightX
+        sta ScratchB
+        lda entity_table + EntityState::PositionZ+1, y
+        adc #0
+        adc entity_table + EntityState::GroundLevel, y
+        sta ScratchB
+
+        cmp16 ScratchA, ScratchB
+        jcs no_collision
+
+        ; === Z Axis, B-lower < A-upper ===
+        clc
+        lda entity_table + EntityState::PositionZ, y
+        adc #LeftX
+        sta ScratchA
+        lda entity_table + EntityState::PositionZ+1, y
+        adc #0
+        adc entity_table + EntityState::GroundLevel, y
+        sta ScratchA+1
+
+        clc
+        lda entity_table + EntityState::PositionZ, x
+        adc #RightX
+        sta ScratchB
+        lda entity_table + EntityState::PositionZ+1, x
+        adc #0
+        adc entity_table + EntityState::GroundLevel, x
+        sta ScratchB
+
+        cmp16 ScratchA, ScratchB
+        jcs no_collision
+oh_gosh_a_collision:
+        lda #1
+        rts
+no_collision:
+        lda #0
+        rts
+.endproc
+
