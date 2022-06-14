@@ -16,7 +16,7 @@ CurrentEntityIndex: .byte $00
 
         .segment "RAM"
 entity_table:
-        .repeat 16
+        .repeat MAX_ENTITIES
         .tag EntityState
         .endrepeat
         .align 2

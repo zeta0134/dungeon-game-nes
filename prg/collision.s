@@ -419,16 +419,19 @@ HighestGround := R10
 ; 0px off the ground
 ; height of 16px
 ; intended to be suitable for most interactions
-.proc aabb_standard_vs_standard
-EntityIndexA := R0
-EntityIndexB := R1
-ScratchA := R2
-ScratchB := R4
+.proc FAR_aabb_standard_vs_standard
+EntityIndexA := R4
+EntityIndexB := R5
+CollisionResult := R6
+ScratchA := R6
+ScratchB := R8
 
 LeftX = (4 << 4)
 RightX = (12 << 4)
 TopY = LeftX
 BottomY = RightX
+LowerZ = (0)
+UpperZ = (15 << 4)
 
         ldx EntityIndexA
         ldy EntityIndexB
@@ -447,7 +450,7 @@ BottomY = RightX
         sta ScratchB
         lda entity_table + EntityState::PositionX+1, y
         adc #0
-        sta ScratchB
+        sta ScratchB+1
 
         cmp16 ScratchA, ScratchB
         jcs no_collision
@@ -467,7 +470,7 @@ BottomY = RightX
         sta ScratchB
         lda entity_table + EntityState::PositionX+1, x
         adc #0
-        sta ScratchB
+        sta ScratchB+1
 
         cmp16 ScratchA, ScratchB
         jcs no_collision
@@ -475,7 +478,7 @@ BottomY = RightX
         ; === Y Axis, A-top < B-bottom ===
         clc
         lda entity_table + EntityState::PositionY, x
-        adc #LeftX
+        adc #TopY
         sta ScratchA
         lda entity_table + EntityState::PositionY+1, x
         adc #0
@@ -484,12 +487,12 @@ BottomY = RightX
 
         clc
         lda entity_table + EntityState::PositionY, y
-        adc #RightX
+        adc #BottomY
         sta ScratchB
         lda entity_table + EntityState::PositionY+1, y
         adc #0
         adc entity_table + EntityState::GroundLevel, y
-        sta ScratchB
+        sta ScratchB+1
 
         cmp16 ScratchA, ScratchB
         jcs no_collision
@@ -497,7 +500,7 @@ BottomY = RightX
         ; === Y Axis, B-top < A-bottom ===
         clc
         lda entity_table + EntityState::PositionY, y
-        adc #LeftX
+        adc #TopY
         sta ScratchA
         lda entity_table + EntityState::PositionY+1, y
         adc #0
@@ -506,12 +509,12 @@ BottomY = RightX
 
         clc
         lda entity_table + EntityState::PositionY, x
-        adc #RightX
+        adc #BottomY
         sta ScratchB
         lda entity_table + EntityState::PositionY+1, x
         adc #0
         adc entity_table + EntityState::GroundLevel, x
-        sta ScratchB
+        sta ScratchB+1
 
         cmp16 ScratchA, ScratchB
         jcs no_collision
@@ -519,7 +522,7 @@ BottomY = RightX
         ; === Z Axis, A-lower < B-upper ===
         clc
         lda entity_table + EntityState::PositionZ, x
-        adc #LeftX
+        adc #LowerZ
         sta ScratchA
         lda entity_table + EntityState::PositionZ+1, x
         adc #0
@@ -528,12 +531,12 @@ BottomY = RightX
 
         clc
         lda entity_table + EntityState::PositionZ, y
-        adc #RightX
+        adc #UpperZ
         sta ScratchB
         lda entity_table + EntityState::PositionZ+1, y
         adc #0
         adc entity_table + EntityState::GroundLevel, y
-        sta ScratchB
+        sta ScratchB+1
 
         cmp16 ScratchA, ScratchB
         jcs no_collision
@@ -541,7 +544,7 @@ BottomY = RightX
         ; === Z Axis, B-lower < A-upper ===
         clc
         lda entity_table + EntityState::PositionZ, y
-        adc #LeftX
+        adc #LowerZ
         sta ScratchA
         lda entity_table + EntityState::PositionZ+1, y
         adc #0
@@ -550,20 +553,22 @@ BottomY = RightX
 
         clc
         lda entity_table + EntityState::PositionZ, x
-        adc #RightX
+        adc #UpperZ
         sta ScratchB
         lda entity_table + EntityState::PositionZ+1, x
         adc #0
         adc entity_table + EntityState::GroundLevel, x
-        sta ScratchB
+        sta ScratchB+1
 
         cmp16 ScratchA, ScratchB
         jcs no_collision
-oh_gosh_a_collision:
+oh_boy_a_collision:
         lda #1
+        sta CollisionResult
         rts
 no_collision:
         lda #0
+        sta CollisionResult
         rts
 .endproc
 

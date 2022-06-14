@@ -10,3 +10,4 @@
 .import blobby_anim_chargeA
 .import blobby_anim_chargeB
 .import blobby_anim_chargeC
+.import blobby_anim_squish

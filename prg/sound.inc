@@ -8,6 +8,7 @@
 .global play_sfx_dpcm
 
 .global sfx_jump
+.global sfx_bounce
 .global sfx_teleport
 .global orchestra_hit_sample
 

@@ -22,14 +22,25 @@
         GroundLevel .byte
         MetaSpriteIndex .byte ; Entities without drawables may repurpose these bytes
         ShadowSpriteIndex .byte
-        Data .byte 2 ; arbitrary bytes for any purpose really
+        CollisionMask .byte ; Touch of death, man!
+        CollisionResponse .byte ; for entities that need to know when they are bumped, squished, or set on fire
+        Data .byte 5 ; arbitrary bytes for any purpose really
 .endstruct
+
+MAX_ENTITIES = 12
+
+COLLISION_GROUP_BOUNCE =    %00000001
+COLLISION_GROUP_WEAKHIT =   %00000010
+COLLISION_GROUP_STRONGHIT = %00000100
+COLLISION_GROUP_DAMAGING =  %00000110
+
 
 .macro despawn_entity EntityIndex
         lda #0
         ldy EntityIndex
         sta entity_table + EntityState::UpdateFunc, y
         sta entity_table + EntityState::UpdateFunc+1, y
+        sta entity_table + EntityState::CollisionMask, y
 .endmacro
 
 .macro set_update_func EntityIndex, FunctionAddr

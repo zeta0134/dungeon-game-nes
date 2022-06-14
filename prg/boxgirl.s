@@ -2,6 +2,7 @@
         .include "boxgirl.inc"
         .include "branch_util.inc"
         .include "collision.inc"
+        .include "debug.inc"
         .include "entity.inc"
         .include "far_call.inc"
         .include "kernel.inc"
@@ -165,6 +166,7 @@ failed_to_spawn:
 .endproc
 
 JUMP_SPEED = 48
+BOUNCE_SPEED = 56
 
 .proc apply_jump
         ldx CurrentEntityIndex
@@ -324,6 +326,65 @@ done:
         rts
 .endproc
 
+.proc collide_with_bouncy
+TargetEntity := R0
+EntityIndexA := R4
+EntityIndexB := R5
+CollisionResult = R6
+        ; first off, are we airbourne and moving downwards?
+        ldx CurrentEntityIndex
+        lda entity_table + EntityState::PositionZ, x
+        ora entity_table + EntityState::PositionZ + 1, x
+        beq grounded
+        lda entity_table + EntityState::SpeedZ, x
+        bpl moving_upwards
+
+        lda CurrentEntityIndex
+        sta EntityIndexA
+        lda #.sizeof(EntityState)
+        sta TargetEntity
+loop:
+        ldx TargetEntity
+        lda entity_table + EntityState::CollisionMask, x
+        and #COLLISION_GROUP_BOUNCE
+        beq entity_finished
+check_collision:
+        lda TargetEntity
+        sta EntityIndexB
+        far_call FAR_aabb_standard_vs_standard
+        lda CollisionResult
+        bne bounce_found
+entity_finished:
+        lda TargetEntity
+        clc
+        adc #.sizeof(EntityState)
+        bcs no_bounce_found        
+        sta TargetEntity
+        jmp loop
+grounded:
+moving_upwards:
+no_bounce_found:
+        ; do nothing!
+        rts
+bounce_found:
+        ; Tell the entity we bounced on it
+        ldx TargetEntity
+        lda #COLLISION_GROUP_BOUNCE
+        sta entity_table + EntityState::CollisionResponse, x
+        ; Give ourselves a higher jump than usual
+        ldx CurrentEntityIndex
+        lda #BOUNCE_SPEED
+        sta entity_table + EntityState::SpeedZ, x
+        ; play a jump sfx
+        ; TODO: make this a bounce-specific sfx
+        st16 R0, sfx_bounce
+        jsr play_sfx_pulse2
+
+        ; that is all for now :)
+
+        rts
+.endproc
+
 ; === States ===
 
 .proc boxgirl_idle
@@ -342,6 +403,9 @@ still_idle:
         ; check for special ground tiles
         far_call FAR_sense_ground
         jsr handle_ground_tile
+        debug_color TINT_R | TINT_B
+        jsr collide_with_bouncy
+        debug_color TINT_R | TINT_G
 all_done:
         rts
 .endproc
@@ -366,6 +430,9 @@ right_not_held:
         ; check for special ground tiles
         far_call FAR_sense_ground
         jsr handle_ground_tile
+        debug_color TINT_R | TINT_B
+        jsr collide_with_bouncy
+        debug_color TINT_R | TINT_G
         rts
 .endproc
 
@@ -389,6 +456,9 @@ left_not_held:
         ; check for special ground tiles
         far_call FAR_sense_ground
         jsr handle_ground_tile
+        debug_color TINT_R | TINT_B
+        jsr collide_with_bouncy
+        debug_color TINT_R | TINT_G
         rts
 .endproc
 
@@ -409,6 +479,9 @@ up_not_held:
         ; check for special ground tiles
         far_call FAR_sense_ground
         jsr handle_ground_tile
+        debug_color TINT_R | TINT_B
+        jsr collide_with_bouncy
+        debug_color TINT_R | TINT_G
         rts
 .endproc
 
@@ -429,6 +502,9 @@ down_not_held:
         ; check for special ground tiles
         far_call FAR_sense_ground
         jsr handle_ground_tile
+        debug_color TINT_R | TINT_B
+        jsr collide_with_bouncy
+        debug_color TINT_R | TINT_G
         rts
 .endproc
 

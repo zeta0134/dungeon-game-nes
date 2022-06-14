@@ -10,9 +10,12 @@
 .global FAR_update_nav_lut_ptr
 .global FAR_apply_bg_priority
 
+.global FAR_aabb_standard_vs_standard
+
 .global collision_heights
 .global collision_flags
 .global hidden_surface_height_lut, hidden_surface_reverse_height_lut
+
 
 .macro tile_offset OffsetX, DestX, DestY
         ldy CurrentEntityIndex
