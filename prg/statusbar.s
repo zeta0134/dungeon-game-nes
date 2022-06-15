@@ -5,27 +5,55 @@
 
         .segment "PRGFIXED_E000"
 
-;BLANK = 128
-;FILL = 129
-;BORDER_ML = 130
-;BORDER_BL = 131
-;BORDER_BM = 132
-;BORDER_MR = 133
-;BORDER_BR = 134
-;BORDER_TL = 135
-;BORDER_TM = 136
-;BORDER_TR = 137
 
-BLANK = 3
-FILL = 2
-BORDER_ML = 4
-BORDER_BL = 5
-BORDER_BM = 6
-BORDER_MR = 7
-BORDER_BR = 8
-BORDER_TL = 9
-BORDER_TM = 10
-BORDER_TR = 11
+BLANK = $00
+FILL = $00
+BORDER_ML = $73
+BORDER_BL = $70
+BORDER_BM = $72
+BORDER_MR = $63
+BORDER_BR = $71
+BORDER_TL = $60
+BORDER_TM = $62
+BORDER_TR = $61
+
+basic_hud:
+        .incbin "../art/raw_chr/basic_hud.map"
+
+.proc init_statusbar
+        ; top row
+        lda #(OBJ_0000 | BG_1000)
+        sta PPUCTRL
+        set_ppuaddr #$2380
+        ldx #0
+top_row_loop:
+        lda basic_hud, x
+        sta PPUDATA
+        inx
+        cpx #64
+        bne top_row_loop
+        set_ppuaddr #$2780
+bottom_row_loop:
+        lda basic_hud, x
+        sta PPUDATA
+        inx
+        cpx #128
+        bne bottom_row_loop
+        ; finally, set the attribute for this whole status region to palette 3
+        set_ppuaddr #$23F8
+        lda #$FF
+        .repeat 8
+        sta PPUDATA
+        .endrepeat
+
+        set_ppuaddr #$27F8
+        lda #$FF
+        .repeat 8
+        sta PPUDATA
+        .endrepeat
+        ; done with basic setup
+        rts
+.endproc
 
 .proc demo_init_statusbar
         ; first, blank out this whole region

@@ -206,7 +206,7 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         far_call FAR_render_initial_viewport
 
         ; init the statusarea to something not stupid
-        jsr demo_init_statusbar
+        jsr init_statusbar
 
         ; reset PPUADDR to top-left
         set_ppuaddr #$2000

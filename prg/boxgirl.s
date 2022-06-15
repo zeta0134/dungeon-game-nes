@@ -17,101 +17,8 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
-        .segment "PRGFIXED_E000"
-; Note: this needs to bank in the map header, so it lives in fixed memory
-.proc handle_teleport
-MapAddr := R0
-TestPosX := R5
-TestTileX := R6
-TestPosY := R7
-TestTileY := R8
-ExitTableAddr := R9
-MetaSpriteIndex := R11
-        ; helpfully our scratch registers are still set from the physics function,
-        ; so we don't need to re-do the lookup here
-        
-        ; The target registers are our currently loaded map. Use these to locate the
-        ; map header
-        access_data_bank TargetMapBank
-        lda TargetMapAddr
-        sta MapAddr
-        lda TargetMapAddr+1
-        sta MapAddr+1
-
-        ldy #MapHeader::exit_table_ptr
-        lda (MapAddr), y
-        sta ExitTableAddr
-        iny
-        lda (MapAddr), y
-        sta ExitTableAddr+1
-
-
-        ; loop through all the exits, stopping if we find a match for our current tile position
-        ldy #0
-        lda (ExitTableAddr), y ; length byte
-        inc16 ExitTableAddr
-        jeq done ; sanity check, can't leave a map with no exits defined
-        tax ; x is otherwise unused, so it is our counter
-loop:
-        ldy #ExitTableEntry::tile_x
-        lda (ExitTableAddr), y
-        cmp TestTileX
-        jne no_match
-        ldy #ExitTableEntry::tile_y
-        lda (ExitTableAddr), y
-        cmp TestTileY
-        jne no_match
-
-        ; MATCH FOUND (!!!)
-
-        ; Set these map details as our new target map
-        ldy #ExitTableEntry::target_map
-        lda (ExitTableAddr), y
-        sta TargetMapAddr
-        ldy #ExitTableEntry::target_map+1
-        lda (ExitTableAddr), y
-        sta TargetMapAddr+1
-        ldy #ExitTableEntry::target_bank
-        lda (ExitTableAddr), y
-        sta TargetMapBank
-        ldy #ExitTableEntry::target_entrance
-        lda (ExitTableAddr), y
-        sta TargetMapEntrance
-
-        ; Set the new game mode to "load a new map"
-        st16 GameMode, blackout_to_new_map
-
-        ; play a nifty "whoosh" sfx
-        st16 R0, sfx_teleport
-        jsr play_sfx_pulse2
-
-        ; now that we are done with the map, we need to be in our own
-        ; bank to manipulate animations, so do that
-        restore_previous_bank
-
-        ; switch boxgirl to the teleport state and animation
-        ldx CurrentEntityIndex
-        lda #0
-        sta entity_table + EntityState::SpeedZ, x
-        lda entity_table + EntityState::MetaSpriteIndex, x
-        sta MetaSpriteIndex
-        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_teleport
-        set_update_func CurrentEntityIndex, boxgirl_teleport
-
-        ; cleanup and let the kernel handle the rest
-        rts
-
-no_match:
-        clc
-        add16 ExitTableAddr, #.sizeof(ExitTableEntry)
-        dex
-        jne loop
-        ; we did NOT find a valid exit. Do nothing!
-done:
-        restore_previous_bank
-        rts
-.endproc
-
+        .segment "RAM"
+PlayerHealth: .res 1
 
         .segment "ENTITIES_A000" ; will eventually move to an AI page
         .include "animations/boxgirl/idle.inc"
@@ -157,6 +64,12 @@ MetaSpriteIndex := R0
         
         ; set all flag bits to 0
         sta entity_table + EntityState::Data + DATA_FLAGS, y
+
+        ; player init stuff
+        ; TODO: if we don't want health maxed when loading into a new
+        ; room, we need to not do that here
+        lda #10
+        sta PlayerHealth
 
         ;finally, switch boxgirl to the idle routine
         set_update_func CurrentEntityIndex, boxgirl_idle
@@ -523,3 +436,103 @@ no_store:
 
         rts
 .endproc
+
+; === Weird stuff that needs to be fixed below === 
+; TODO: does all of this need to be in fixed? Surely there's a critical bit of it
+; and the rest can go in a banked handler
+
+        .segment "PRGFIXED_E000"
+; Note: this needs to bank in the map header, so it lives in fixed memory
+.proc handle_teleport
+MapAddr := R0
+TestPosX := R5
+TestTileX := R6
+TestPosY := R7
+TestTileY := R8
+ExitTableAddr := R9
+MetaSpriteIndex := R11
+        ; helpfully our scratch registers are still set from the physics function,
+        ; so we don't need to re-do the lookup here
+        
+        ; The target registers are our currently loaded map. Use these to locate the
+        ; map header
+        access_data_bank TargetMapBank
+        lda TargetMapAddr
+        sta MapAddr
+        lda TargetMapAddr+1
+        sta MapAddr+1
+
+        ldy #MapHeader::exit_table_ptr
+        lda (MapAddr), y
+        sta ExitTableAddr
+        iny
+        lda (MapAddr), y
+        sta ExitTableAddr+1
+
+
+        ; loop through all the exits, stopping if we find a match for our current tile position
+        ldy #0
+        lda (ExitTableAddr), y ; length byte
+        inc16 ExitTableAddr
+        jeq done ; sanity check, can't leave a map with no exits defined
+        tax ; x is otherwise unused, so it is our counter
+loop:
+        ldy #ExitTableEntry::tile_x
+        lda (ExitTableAddr), y
+        cmp TestTileX
+        jne no_match
+        ldy #ExitTableEntry::tile_y
+        lda (ExitTableAddr), y
+        cmp TestTileY
+        jne no_match
+
+        ; MATCH FOUND (!!!)
+
+        ; Set these map details as our new target map
+        ldy #ExitTableEntry::target_map
+        lda (ExitTableAddr), y
+        sta TargetMapAddr
+        ldy #ExitTableEntry::target_map+1
+        lda (ExitTableAddr), y
+        sta TargetMapAddr+1
+        ldy #ExitTableEntry::target_bank
+        lda (ExitTableAddr), y
+        sta TargetMapBank
+        ldy #ExitTableEntry::target_entrance
+        lda (ExitTableAddr), y
+        sta TargetMapEntrance
+
+        ; Set the new game mode to "load a new map"
+        st16 GameMode, blackout_to_new_map
+
+        ; play a nifty "whoosh" sfx
+        st16 R0, sfx_teleport
+        jsr play_sfx_pulse2
+
+        ; now that we are done with the map, we need to be in our own
+        ; bank to manipulate animations, so do that
+        restore_previous_bank
+
+        ; switch boxgirl to the teleport state and animation
+        ldx CurrentEntityIndex
+        lda #0
+        sta entity_table + EntityState::SpeedZ, x
+        lda entity_table + EntityState::MetaSpriteIndex, x
+        sta MetaSpriteIndex
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_teleport
+        set_update_func CurrentEntityIndex, boxgirl_teleport
+
+        ; cleanup and let the kernel handle the rest
+        rts
+
+no_match:
+        clc
+        add16 ExitTableAddr, #.sizeof(ExitTableEntry)
+        dex
+        jne loop
+        ; we did NOT find a valid exit. Do nothing!
+done:
+        restore_previous_bank
+        rts
+.endproc
+

@@ -187,7 +187,7 @@ loop:
         lda #$30
         sta BgPaletteBuffer, y
         iny
-        lda #$00
+        lda #$10
         sta BgPaletteBuffer, y
         iny
         lda #$0F

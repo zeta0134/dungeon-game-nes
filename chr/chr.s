@@ -8,7 +8,8 @@ blank_index_0:
 
         .segment "BG1"
 hud_graphics:
-        .include "../build/tilesets/statusbar.chr"
+        ;.include "../build/tilesets/statusbar.chr"
+        .incbin "../art/raw_chr/hud.chr"
 
         .segment "BG2"
         .include "../build/tilesets/tiles_3d.chr"
