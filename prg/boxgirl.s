@@ -259,6 +259,112 @@ TargetEntity := R0
         rts
 .endproc
 
+.proc knockback
+TargetEntity := R0
+DistanceX := R1
+DistanceY := R3
+SignBits := R5
+        lda #0
+        sta SignBits
+        ldx CurrentEntityIndex
+        ldy TargetEntity
+        ; first, compute the raw distance between us and the thing we hit
+        sec
+        lda entity_table + EntityState::PositionX, x
+        sbc entity_table + EntityState::PositionX, y
+        sta DistanceX
+        lda entity_table + EntityState::PositionX+1, x
+        sbc entity_table + EntityState::PositionX+1, y
+        sta DistanceX+1
+        sec
+        lda entity_table + EntityState::PositionY, x
+        sbc entity_table + EntityState::PositionY, y
+        sta DistanceY
+        lda entity_table + EntityState::PositionY+1, x
+        sbc entity_table + EntityState::PositionY+1, y
+        sta DistanceY+1
+        ; compute absolute(ish) distance, and retain the sign bits
+        lda DistanceX+1
+        rol
+        rol SignBits
+        lda DistanceX+1
+        bpl no_sign_adj_x
+        eor #$FF
+        sta DistanceX+1
+        lda DistanceX
+        eor #$FF
+        sta DistanceX
+no_sign_adj_x:
+        lda DistanceY+1
+        rol
+        rol SignBits
+        lda DistanceY+1
+        bpl no_sign_adj_y
+        eor #$FF
+        sta DistanceY+1
+        lda DistanceY
+        eor #$FF
+        sta DistanceY
+no_sign_adj_y:
+        ; now normalize that distance; first shift to the right until we empty the
+        ; high byte
+decrease_loop:
+        lda DistanceX+1
+        ora DistanceY+1
+        beq high_byte_empty
+        lsr DistanceX+1
+        ror DistanceX
+        lsr DistanceY+1
+        ror DistanceY
+        jmp decrease_loop
+high_byte_empty:
+        ; now, shift to the left until either of the two lower bytes has a 1 in
+        ; bit 7
+        lda DistanceX
+        ora DistanceY
+        ; sanity check here: if both bytes are zero, we special case
+        beq exact_position_match
+        ; if the result is negative, we're done with the loop
+        bmi normalized
+        ; otherwise, shift to the left
+        asl DistanceX
+        asl DistanceY
+        jmp high_byte_empty
+exact_position_match:
+        ; prefer to move straight down, in this case only
+        lda #$80
+        sta DistanceY
+normalized:
+        ; at this point, one of our coordinate bytes specifies +8 - +15,
+        ; and the other is around this value or less. This is actually too fast,
+        ; so shift to the right by 2 to put it in a sane range (+/- 1px or so, max)
+        lsr DistanceX
+        lsr DistanceX
+        lsr DistanceX
+        lsr DistanceY
+        lsr DistanceY
+        lsr DistanceY
+        ; Now re-apply the sign bits
+        ror SignBits
+        bcc no_y_fix
+        lda DistanceY
+        eor #$FF
+        sta DistanceY
+no_y_fix:
+        ror SignBits
+        bcc no_x_fix
+        lda DistanceX
+        eor #$FF
+        sta DistanceX
+no_x_fix:
+        ; Finally, apply this as our new entity speed
+        lda DistanceX
+        sta entity_table + EntityState::SpeedX, x
+        lda DistanceY
+        sta entity_table + EntityState::SpeedY, x
+        rts
+.endproc
+
 .proc handle_damage
 TargetEntity := R0
         dec PlayerHealth
@@ -271,12 +377,15 @@ TargetEntity := R0
         dec PlayerHealth
         beq already_on_charons_boat
 weak_hit:
-        lda #60
+        lda #0
         sta PlayerInvulnerability
+        jsr knockback
         rts
 already_on_charons_boat:
         ; we died! Oops!
-        ; For now, do nothing.
+        ; For now, do nothing. "God Mode, Activate!"
+        lda #20
+        sta PlayerHealth
         ; TODO: transition to the death state, setup reloading from the last checkpoint, etc
         rts
 .endproc
