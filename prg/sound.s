@@ -395,6 +395,14 @@ sfx_bounce:
         .byte PULSE_FREQ_HIGH, >(310) | MAX_LENGTH
         .byte END_ROW | 6
 
+sfx_weak_hit:
+        .byte 1 ; length of this sfx in rows
+        .byte PULSE_DLV, DUTY_0 | DECAY | $2
+        .byte PULSE_FREQ_LOW, <(500)
+        .byte PULSE_FREQ_HIGH, >(500) | MAX_LENGTH
+        .byte PULSE_SWEEP, S_ENABLE | S_PERIOD_0 | S_SHIFT_4
+        .byte END_ROW | 6
+
 sfx_teleport:
         .byte 4 ; length of this sfx in rows
         .byte PULSE_DLV, DUTY_2 | VOL | $C

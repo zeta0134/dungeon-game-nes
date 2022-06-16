@@ -415,6 +415,8 @@ weak_hit:
         set_update_func CurrentEntityIndex, boxgirl_stunned
         lda #10
         sta PlayerStunTimer
+        st16 R0, sfx_weak_hit
+        jsr play_sfx_pulse2
         rts
 already_on_charons_boat:
         ; we died! Oops!
