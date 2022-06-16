@@ -68,7 +68,7 @@ MetaSpriteIndex := R0
         ; player init stuff
         ; TODO: if we don't want health maxed when loading into a new
         ; room, we need to not do that here
-        lda #10
+        lda #20
         sta PlayerHealth
 
         ;finally, switch boxgirl to the idle routine
@@ -319,6 +319,13 @@ still_idle:
         debug_color TINT_R | TINT_B
         jsr collide_with_bouncy
         debug_color TINT_R | TINT_G
+
+        ; DEBUG STUFF
+        lda #(KEY_SELECT)
+        bit ButtonsDown
+        beq all_done
+        lda #0
+        sta PlayerHealth
 all_done:
         rts
 .endproc

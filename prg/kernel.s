@@ -261,6 +261,7 @@ time_waste_loop:
         debug_color 0 ; disable debug colors
 
         jsr refresh_palettes_gameloop
+        jsr update_statusbar
 
         ; starting IRQ index for the playfield
         lda inactive_irq_index

@@ -1,2 +1,2 @@
 .global init_statusbar
-.global demo_init_statusbar
+.global update_statusbar
