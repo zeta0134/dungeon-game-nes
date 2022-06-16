@@ -89,12 +89,12 @@ MetaSpriteIndex := R0
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
-        ; in our squished form, use a red palette (for now)
+        ; in our squished form, use a green palette (for now)
         ldx CurrentEntityIndex
         ldy entity_table + EntityState::MetaSpriteIndex, x
         lda metasprite_table + MetaSpriteState::PaletteOffset, y
         and #%11111100
-        ora #1
+        ora #3
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
         ; decrement our squish timer
         dec entity_table + EntityState::Data, x

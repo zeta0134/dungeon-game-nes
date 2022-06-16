@@ -20,6 +20,7 @@
         .segment "RAM"
 PlayerHealth: .res 1
 PlayerInvulnerability: .res 1
+PlayerStunTimer: .res 1
 PlayerPrimaryDirection: .res 1
 
         .segment "ENTITIES_A000" ; will eventually move to an AI page
@@ -392,19 +393,28 @@ no_x_fix:
 
 .proc handle_damage
 TargetEntity := R0
+        ; weak hits do 6 damage, 3 hearts (for testing)
+        .repeat 6
         dec PlayerHealth
         beq already_on_charons_boat
+        .endrepeat
         ; was this a strong hit?
         ldx TargetEntity
         lda entity_table + EntityState::CollisionMask, x
         and #COLLISION_GROUP_STRONGHIT
         beq weak_hit
+        ; strong hits to 6 MORE damage, for 6 hearts total
+        .repeat 6
         dec PlayerHealth
         beq already_on_charons_boat
+        .endrepeat
 weak_hit:
         lda #0
         sta PlayerInvulnerability
         jsr knockback
+        set_update_func CurrentEntityIndex, boxgirl_stunned
+        lda #10
+        sta PlayerStunTimer
         rts
 already_on_charons_boat:
         ; we died! Oops!
@@ -513,6 +523,51 @@ no_damaging_entities_found:
         debug_color TINT_R | TINT_B
         jsr collide_with_entities
         debug_color TINT_R | TINT_G
+        rts
+.endproc
+
+.proc boxgirl_stunned
+        ; ~~Ouch!~~
+        ; Are we still hurt?
+        lda PlayerStunTimer
+        beq done_being_stunned
+still_stunned:
+        dec PlayerStunTimer
+        ; use a RED palette for our damaged state (for now)
+        ldx CurrentEntityIndex
+        ldy entity_table + EntityState::MetaSpriteIndex, x
+        lda metasprite_table + MetaSpriteState::PaletteOffset, y
+        and #%11111100
+        ora #1
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
+        jmp update_ourselves
+done_being_stunned:
+        ; flip back to our standard palette
+        ldx CurrentEntityIndex
+        ldy entity_table + EntityState::MetaSpriteIndex, x
+        lda metasprite_table + MetaSpriteState::PaletteOffset, y
+        and #%11111100
+        ora #0
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
+        ; Switch back to the standard locomotion state, so the player
+        ; regains control on the next frame following this one
+        set_update_func CurrentEntityIndex, boxgirl_standard
+        ; now fall through to do standard update things
+update_ourselves:
+        ; We are stunned; do NOT process player inputs for jumping
+        ; or walking acceleration, but DO process physics normally.
+        ; we need to manually apply friction
+        apply_friction entity_table + EntityState::SpeedX, SLIPPERINESS
+        apply_friction entity_table + EntityState::SpeedY, SLIPPERINESS
+        far_call FAR_standard_entity_vertical_acceleration
+        far_call FAR_apply_standard_entity_speed
+        jsr set_3d_metasprite_pos
+        ; while stunned, we can't collide with other entities, but we
+        ; CAN still interact with standard ground tiles. Some of these
+        ; are death planes and what not, so we need to process them.
+        far_call FAR_sense_ground
+        jsr handle_ground_tile
+        ; otherwise, that's it!
         rts
 .endproc
 
