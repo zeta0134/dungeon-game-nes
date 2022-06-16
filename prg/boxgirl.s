@@ -20,6 +20,7 @@
         .segment "RAM"
 PlayerHealth: .res 1
 PlayerInvulnerability: .res 1
+PlayerPrimaryDirection: .res 1
 
         .segment "ENTITIES_A000" ; will eventually move to an AI page
         .include "animations/boxgirl/idle.inc"
@@ -73,9 +74,15 @@ MetaSpriteIndex := R0
         sta PlayerHealth
         lda #0
         sta PlayerInvulnerability
+        sta PlayerPrimaryDirection
+
+        ; default to right-facing for now
+        ; (todo: pick a direction based on how we entered the map)
+        ldy CurrentEntityIndex
+        entity_set_flag FLAG_FACING, FACING_RIGHT
 
         ;finally, switch boxgirl to the idle routine
-        set_update_func CurrentEntityIndex, boxgirl_idle
+        set_update_func CurrentEntityIndex, boxgirl_standard
         
 failed_to_spawn:
         rts
@@ -141,6 +148,12 @@ done:
 
 .proc pick_walk_animation
 MetaSpriteIndex := R0
+        lda PlayerPrimaryDirection
+        bit ButtonsHeld
+        beq old_direction_no_longer_held
+        ; keep our current animation, it's fine
+        rts
+old_direction_no_longer_held:
         ldy CurrentEntityIndex
         lda entity_table + EntityState::MetaSpriteIndex, y
         sta MetaSpriteIndex
@@ -150,7 +163,10 @@ MetaSpriteIndex := R0
         beq right_not_held
         ; switch to the walk right animation and state
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_move_right
-        set_update_func CurrentEntityIndex, boxgirl_walk_right
+        lda #KEY_RIGHT
+        sta PlayerPrimaryDirection
+        ldy CurrentEntityIndex
+        entity_set_flag FLAG_FACING, FACING_RIGHT
         rts
 right_not_held:       
         lda #KEY_LEFT
@@ -158,7 +174,10 @@ right_not_held:
         beq left_not_held
         ; switch to the walk right animation and state
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_move_left
-        set_update_func CurrentEntityIndex, boxgirl_walk_left
+        lda #KEY_LEFT
+        sta PlayerPrimaryDirection
+        ldy CurrentEntityIndex
+        entity_set_flag FLAG_FACING, FACING_LEFT
         rts
 left_not_held:
         lda #KEY_UP
@@ -166,7 +185,8 @@ left_not_held:
         beq up_not_held
         ; switch to the walk right animation and state
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_move_up
-        set_update_func CurrentEntityIndex, boxgirl_walk_up
+        lda #KEY_UP
+        sta PlayerPrimaryDirection
         rts
 up_not_held:
         lda #KEY_DOWN
@@ -174,11 +194,16 @@ up_not_held:
         beq down_not_held
         ; switch to the walk right animation and state
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_move_down
-        set_update_func CurrentEntityIndex, boxgirl_walk_down
+        lda #KEY_DOWN
+        sta PlayerPrimaryDirection
         rts
 down_not_held:
-        set_update_func CurrentEntityIndex, boxgirl_idle
-        ; pick an idle state based on our most recent walking direction
+        lda #0 ; for idle, sure
+        sta PlayerPrimaryDirection
+
+        ; pick an idle animation based on our most recent walking direction
+        ; (TODO: have an idle animation for all 4 cardinal directions, so we
+        ; don't have to cheat like this)
         ldy CurrentEntityIndex
         entity_check_flag FLAG_FACING
         bne facing_left
@@ -474,125 +499,14 @@ no_damaging_entities_found:
 
 ; === States ===
 
-.proc boxgirl_idle
+.proc boxgirl_standard
         jsr handle_jump
         jsr walking_acceleration
         ; apply physics normally
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
-        ; check for state changes
-        lda #(KEY_RIGHT | KEY_LEFT | KEY_UP | KEY_DOWN)
-        bit ButtonsHeld
-        beq still_idle
         jsr pick_walk_animation
-still_idle:
-        ; check for special ground tiles
-        far_call FAR_sense_ground
-        jsr handle_ground_tile
-        debug_color TINT_R | TINT_B
-        jsr collide_with_entities
-        debug_color TINT_R | TINT_G
-
-        ; DEBUG STUFF
-        lda #(KEY_SELECT)
-        bit ButtonsDown
-        beq all_done
-        lda #0
-        sta PlayerHealth
-all_done:
-        rts
-.endproc
-
-.proc boxgirl_walk_right
-        jsr handle_jump
-        jsr walking_acceleration
-        ; apply physics normally
-        far_call FAR_standard_entity_vertical_acceleration
-        far_call FAR_apply_standard_entity_speed
-        jsr set_3d_metasprite_pos
-        ; set our "last facing" bit to the right
-        ldy CurrentEntityIndex
-        entity_set_flag FLAG_FACING, FACING_RIGHT
-        ; check for state changes
-        lda #KEY_RIGHT
-        bit ButtonsHeld
-        bne right_not_held
-        ; switch to the idle right animation and state
-        jsr pick_walk_animation
-right_not_held:
-        ; check for special ground tiles
-        far_call FAR_sense_ground
-        jsr handle_ground_tile
-        debug_color TINT_R | TINT_B
-        jsr collide_with_entities
-        debug_color TINT_R | TINT_G
-        rts
-.endproc
-
-.proc boxgirl_walk_left
-        jsr handle_jump
-        jsr walking_acceleration
-        ; apply physics normally
-        far_call FAR_standard_entity_vertical_acceleration
-        far_call FAR_apply_standard_entity_speed
-        jsr set_3d_metasprite_pos
-        ; set our "last facing" bit to the left
-        ldy CurrentEntityIndex
-        entity_set_flag FLAG_FACING, FACING_LEFT
-        ; check for state changes
-        lda #KEY_LEFT
-        bit ButtonsHeld
-        bne left_not_held
-        ; switch to the idle right animation and state
-        jsr pick_walk_animation
-left_not_held:
-        ; check for special ground tiles
-        far_call FAR_sense_ground
-        jsr handle_ground_tile
-        debug_color TINT_R | TINT_B
-        jsr collide_with_entities
-        debug_color TINT_R | TINT_G
-        rts
-.endproc
-
-.proc boxgirl_walk_up
-        jsr handle_jump
-        jsr walking_acceleration
-        ; apply physics normally
-        far_call FAR_standard_entity_vertical_acceleration
-        far_call FAR_apply_standard_entity_speed
-        jsr set_3d_metasprite_pos
-        ; check for state changes
-        lda #KEY_UP
-        bit ButtonsHeld
-        bne up_not_held
-        ; switch to the idle right animation and state
-        jsr pick_walk_animation
-up_not_held:
-        ; check for special ground tiles
-        far_call FAR_sense_ground
-        jsr handle_ground_tile
-        debug_color TINT_R | TINT_B
-        jsr collide_with_entities
-        debug_color TINT_R | TINT_G
-        rts
-.endproc
-
-.proc boxgirl_walk_down
-        jsr handle_jump
-        jsr walking_acceleration
-        ; apply physics normally
-        far_call FAR_standard_entity_vertical_acceleration
-        far_call FAR_apply_standard_entity_speed
-        jsr set_3d_metasprite_pos
-        ; check for state changes
-        lda #KEY_DOWN
-        bit ButtonsHeld
-        bne down_not_held
-        ; switch to the idle right animation and state
-        jsr pick_walk_animation
-down_not_held:
         ; check for special ground tiles
         far_call FAR_sense_ground
         jsr handle_ground_tile
