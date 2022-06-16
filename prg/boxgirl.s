@@ -19,6 +19,7 @@
 
         .segment "RAM"
 PlayerHealth: .res 1
+PlayerInvulnerability: .res 1
 
         .segment "ENTITIES_A000" ; will eventually move to an AI page
         .include "animations/boxgirl/idle.inc"
@@ -70,6 +71,8 @@ MetaSpriteIndex := R0
         ; room, we need to not do that here
         lda #20
         sta PlayerHealth
+        lda #0
+        sta PlayerInvulnerability
 
         ;finally, switch boxgirl to the idle routine
         set_update_func CurrentEntityIndex, boxgirl_idle
@@ -239,47 +242,8 @@ done:
         rts
 .endproc
 
-.proc collide_with_bouncy
+.proc handle_bounce
 TargetEntity := R0
-EntityIndexA := R4
-EntityIndexB := R5
-CollisionResult = R6
-        ; first off, are we airbourne and moving downwards?
-        ldx CurrentEntityIndex
-        lda entity_table + EntityState::PositionZ, x
-        ora entity_table + EntityState::PositionZ + 1, x
-        beq grounded
-        lda entity_table + EntityState::SpeedZ, x
-        bpl moving_upwards
-
-        lda CurrentEntityIndex
-        sta EntityIndexA
-        lda #.sizeof(EntityState)
-        sta TargetEntity
-loop:
-        ldx TargetEntity
-        lda entity_table + EntityState::CollisionMask, x
-        and #COLLISION_GROUP_BOUNCE
-        beq entity_finished
-check_collision:
-        lda TargetEntity
-        sta EntityIndexB
-        far_call FAR_aabb_standard_vs_standard
-        lda CollisionResult
-        bne bounce_found
-entity_finished:
-        lda TargetEntity
-        clc
-        adc #.sizeof(EntityState)
-        bcs no_bounce_found        
-        sta TargetEntity
-        jmp loop
-grounded:
-moving_upwards:
-no_bounce_found:
-        ; do nothing!
-        rts
-bounce_found:
         ; Tell the entity we bounced on it
         ldx TargetEntity
         lda #COLLISION_GROUP_BOUNCE
@@ -292,9 +256,110 @@ bounce_found:
         ; TODO: make this a bounce-specific sfx
         st16 R0, sfx_bounce
         jsr play_sfx_pulse2
+        rts
+.endproc
 
-        ; that is all for now :)
+.proc handle_damage
+TargetEntity := R0
+        dec PlayerHealth
+        beq already_on_charons_boat
+        ; was this a strong hit?
+        ldx TargetEntity
+        lda entity_table + EntityState::CollisionMask, x
+        and #COLLISION_GROUP_STRONGHIT
+        beq weak_hit
+        dec PlayerHealth
+        beq already_on_charons_boat
+weak_hit:
+        lda #60
+        sta PlayerInvulnerability
+        rts
+already_on_charons_boat:
+        ; we died! Oops!
+        ; For now, do nothing.
+        ; TODO: transition to the death state, setup reloading from the last checkpoint, etc
+        rts
+.endproc
 
+.proc collide_with_entities
+TargetEntity := R0
+EntityIndexA := R4
+EntityIndexB := R5
+CollisionResult = R6
+        ; Bounce targets take the highest priority.
+        ; First off, are we airbourne and moving downwards?
+        ldx CurrentEntityIndex
+        lda entity_table + EntityState::PositionZ, x
+        ora entity_table + EntityState::PositionZ + 1, x
+        beq grounded
+        lda entity_table + EntityState::SpeedZ, x
+        bpl moving_upwards
+
+        lda CurrentEntityIndex
+        sta EntityIndexA
+        lda #.sizeof(EntityState)
+        sta TargetEntity
+bounce_loop:
+        ldx TargetEntity
+        lda entity_table + EntityState::CollisionMask, x
+        and #COLLISION_GROUP_BOUNCE
+        beq bounce_entity_finished
+        ; check_collision
+        lda TargetEntity
+        sta EntityIndexB
+        far_call FAR_aabb_standard_vs_standard
+        lda CollisionResult
+        bne bounce_found
+bounce_entity_finished:
+        lda TargetEntity
+        clc
+        adc #.sizeof(EntityState)
+        bcs no_bounce_found        
+        sta TargetEntity
+        jmp bounce_loop
+bounce_found:
+        jsr handle_bounce
+        ; since we collided with an entity on this frame, STOP HERE.
+        ; Do not process any more entities.
+        rts
+grounded:
+moving_upwards:
+no_bounce_found:
+        ; If we didn't find any bouncy entities, proceed to check for damaging ones, UNLESS
+        ; we are currently invulnerable
+        lda PlayerInvulnerability
+        bne no_damaging_entities_found
+
+        lda CurrentEntityIndex
+        sta EntityIndexA
+        lda #.sizeof(EntityState)
+        sta TargetEntity
+damage_loop:
+        ldx TargetEntity
+        lda entity_table + EntityState::CollisionMask, x
+        and #COLLISION_GROUP_DAMAGING
+        beq damage_entity_finished
+        ; check_collision
+        lda TargetEntity
+        sta EntityIndexB
+        far_call FAR_aabb_standard_vs_standard
+        lda CollisionResult
+        bne damaging_entity_found
+damage_entity_finished:
+        lda TargetEntity
+        clc
+        adc #.sizeof(EntityState)
+        bcs no_damaging_entities_found        
+        sta TargetEntity
+        jmp damage_loop
+damaging_entity_found:
+        ; Ouch! Okay, deal damage to ourselves
+        jsr handle_damage
+        ; since we collided with an entity on this frame, STOP HERE.
+        ; Do not process any more entities.
+        rts
+no_damaging_entities_found:
+        ; For now, that is all of the supported Player vs. Entity collisions
         rts
 .endproc
 
@@ -317,7 +382,7 @@ still_idle:
         far_call FAR_sense_ground
         jsr handle_ground_tile
         debug_color TINT_R | TINT_B
-        jsr collide_with_bouncy
+        jsr collide_with_entities
         debug_color TINT_R | TINT_G
 
         ; DEBUG STUFF
@@ -351,7 +416,7 @@ right_not_held:
         far_call FAR_sense_ground
         jsr handle_ground_tile
         debug_color TINT_R | TINT_B
-        jsr collide_with_bouncy
+        jsr collide_with_entities
         debug_color TINT_R | TINT_G
         rts
 .endproc
@@ -377,7 +442,7 @@ left_not_held:
         far_call FAR_sense_ground
         jsr handle_ground_tile
         debug_color TINT_R | TINT_B
-        jsr collide_with_bouncy
+        jsr collide_with_entities
         debug_color TINT_R | TINT_G
         rts
 .endproc
@@ -400,7 +465,7 @@ up_not_held:
         far_call FAR_sense_ground
         jsr handle_ground_tile
         debug_color TINT_R | TINT_B
-        jsr collide_with_bouncy
+        jsr collide_with_entities
         debug_color TINT_R | TINT_G
         rts
 .endproc
@@ -423,7 +488,7 @@ down_not_held:
         far_call FAR_sense_ground
         jsr handle_ground_tile
         debug_color TINT_R | TINT_B
-        jsr collide_with_bouncy
+        jsr collide_with_entities
         debug_color TINT_R | TINT_G
         rts
 .endproc
