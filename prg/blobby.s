@@ -65,8 +65,10 @@ MetaSpriteIndex := R0
         lda #0
         sta entity_table + EntityState::CollisionResponse, x
         ; while we are in our squished state, don't allow a second squish
+        ; or a damage impact (which is inconsistently applied due to physics
+        ; and therefore unfair)
         lda entity_table + EntityState::CollisionMask, x
-        and #($FF - COLLISION_GROUP_BOUNCE)
+        and #($FF - COLLISION_GROUP_BOUNCE - COLLISION_GROUP_WEAKHIT)
         sta entity_table + EntityState::CollisionMask, x
         ; set a squish timer using a data byte. One second seems reasonable
         lda #60
@@ -100,7 +102,7 @@ MetaSpriteIndex := R0
         ; time to bounce back to our idle state
         ; first, become squishy again
         lda entity_table + EntityState::CollisionMask, x
-        ora #COLLISION_GROUP_BOUNCE
+        ora #(COLLISION_GROUP_BOUNCE | COLLISION_GROUP_WEAKHIT)
         sta entity_table + EntityState::CollisionMask, x
         ; if something happened while we were squished, ignore it
         ; (being squished was more important)
