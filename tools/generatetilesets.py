@@ -47,16 +47,22 @@ def generate_palette_variants(input_folder, output_folder, global_palette, prefi
       im.putpalette(bg_palette(global_palette, i))
       im.save(bg_filename)
 
-def generate_tileset(input_folder, output_folder, metatile_index=0, attribute_index=0, prefix=""):
+def generate_tileset(input_folder, output_folder, metatile_index=0, attribute_index=0, chr=0, bg=0):
+  prefix = f"chr{chr}_bg{bg}_"
+
   # start by grabbing the full list of tilenames; we need the length
   # for the header
   input_filenames = png_filenames(input_folder)
+
+  # construct a nice name for the tileset; Tiled uses this for its dropdown selector
+  (_, plain_input_folder_name) = os.path.split(input_folder)
+  (_, plain_output_folder_name) = os.path.split(output_folder)
 
   # generate the XML document root and give it appropriate attributes for Tiled
   tileset_element = Element("tileset", attrib={
     "version": "1.8",
     "tiledversion": "1.8.2",
-    "name": "test_tileset",
+    "name": f"{plain_input_folder_name}_bg{bg}",
     "tilewidth": "16",
     "tileheight": "16",
     "tilecount": f"{len(input_filenames)}",
@@ -70,6 +76,23 @@ def generate_tileset(input_folder, output_folder, metatile_index=0, attribute_in
     "height": "1"
   })
   tileset_element.append(grid_element)
+  
+  # the tileset properties will carry the bank and palette data, which the map converter
+  # consumes when generating its final header
+  (_, folder_name) = os.path.split(input_folder)
+  tileset_properties_element = Element("properties")
+  tileset_properties_element.append(Element("property", attrib={
+    "name": f"chr{chr}_tileset",
+    "type": "string",
+    "value": folder_name+"_tileset"
+  }))
+  tileset_properties_element.append(Element("property", attrib={
+    "name": f"global_palette",
+    "type": "string",
+    "value": "globalpalette.pal"
+  }))
+  tileset_element.append(tileset_properties_element)
+
 
   # Okay, now, for each input filename, generate an appropriate element
   tile_id = 0
@@ -102,8 +125,17 @@ def generate_tileset(input_folder, output_folder, metatile_index=0, attribute_in
   # pretty print and output
   etree.ElementTree.indent(tileset_element)
   document = ElementTree(element=tileset_element)
-  output_path = (Path(output_folder) / (prefix+"test_tileset.tsx")).resolve()
+  output_path = (Path(output_folder) / (f"chr{chr}_{plain_input_folder_name}_bg{bg}.tsx")).resolve()
   document.write(output_path,encoding="UTF-8",xml_declaration=True)
+  return metatile_index
+
+def copy_palette(output_folder, palette_filename):
+  # I'm certain this is probably a one-liner, but I am far too lazy to look it up today
+  with open(palette_filename, "rb") as source_file:
+    data = source_file.read()
+    target_path = (Path(output_folder) / "globalpalette.pal")
+    with open(target_path, "wb") as destination_file:
+      destination_file.write(data)
 
 if len(sys.argv) != 5:
   print("Usage: generatetilesets.py <first/chr/folder> <second/chr/folder> <palette.pal> <output/folder>")
@@ -120,9 +152,16 @@ nes_global_palette = read_nes_palette(os.path.join(scriptdir,"ntscpalette.pal"))
 bg_palette_as_rgb = nes_to_rgb(palette_filename, nes_global_palette)
 
 generate_palette_variants(first_chr_folder, output_folder, bg_palette_as_rgb, prefix="chr0_")
-# generate_palette_variants(second_chr_folder, output_folder, bg_palette_as_rgb, prefix="chr1_")
+generate_palette_variants(second_chr_folder, output_folder, bg_palette_as_rgb, prefix="chr1_")
 
-generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=0, prefix="chr0_bg0_")
-generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=1, prefix="chr0_bg1_")
-generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=2, prefix="chr0_bg2_")
-generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=3, prefix="chr0_bg3_")
+generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=0, chr=0, bg=0)
+generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=1, chr=0, bg=1)
+generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=2, chr=0, bg=2)
+next_metatile_index = generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=3, chr=0, bg=3)
+
+generate_tileset(second_chr_folder, output_folder, metatile_index=next_metatile_index, attribute_index=0, chr=1, bg=0)
+generate_tileset(second_chr_folder, output_folder, metatile_index=next_metatile_index, attribute_index=1, chr=1, bg=1)
+generate_tileset(second_chr_folder, output_folder, metatile_index=next_metatile_index, attribute_index=2, chr=1, bg=2)
+generate_tileset(second_chr_folder, output_folder, metatile_index=next_metatile_index, attribute_index=3, chr=1, bg=3)
+
+copy_palette(output_folder, palette_filename)
