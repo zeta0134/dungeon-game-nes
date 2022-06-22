@@ -86,7 +86,7 @@ MetatileIndex := R10
         st16 DestAddr, (MapData)
         jsr decompress
 
-        ; And finally the collision map
+        ; then the collision map
         ldy #MapHeader::collision_ptr
         lda (MapAddr), y
         sta SourceAddr
@@ -95,6 +95,15 @@ MetatileIndex := R10
         sta SourceAddr+1
         st16 DestAddr, (NavMapData)
         jsr decompress
+
+        ; and finally the background palette
+        ldy #MapHeader::palette_ptr
+        lda (MapAddr), y
+        sta SourceAddr
+        iny
+        lda (MapAddr), y
+        sta SourceAddr+1
+        jsr load_palette
 
         ; For now that is all, we need to make sure that worked.
         rts
@@ -211,7 +220,7 @@ loop:
         lda TilesetBottomLeft, x
         ora #$80
         sta TilesetBottomLeft, x
-        
+
         lda TilesetBottomRight, x
         ora #$80
         sta TilesetBottomRight, x

@@ -10,7 +10,7 @@
         entity_table_ptr .word
         first_tileset .word
         second_tileset .word
-        palette .word
+        palette_ptr .word
 .endstruct
 
 .struct ExitTableEntry
