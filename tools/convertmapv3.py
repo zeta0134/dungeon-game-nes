@@ -307,6 +307,7 @@ def write_map_header(tilemap, output_file):
     output_file.write("  .word %s ; first tileset \n" % tilemap.chr0_label)
     output_file.write("  .word %s ; second tileset \n" % tilemap.chr1_label)
     output_file.write("  .word %s_palette\n" % tilemap.name)
+    output_file.write("  .word %s_attributes\n" % tilemap.name)
     output_file.write("\n")
 
 def write_palette_data(tilemap, output_file):
@@ -346,10 +347,37 @@ def write_graphics_tiles(tilemap, output_file):
     compression_type, compressed_bytes = compress_smallest(raw_graphics_bytes)
 
     output_file.write(ca65_label(tilemap.name + "_graphics") + "\n")
-    # for now, compression type 0 == identity, raw bytes with no compression
     output_file.write("  .byte %s ; compression type\n" % ca65_byte_literal(compression_type))
     output_file.write("  .word %s ; decompressed length in bytes\n" % ca65_word_literal(len(raw_graphics_bytes)))
     output_file.write("              ; compressed length: $%04X, ratio: %.2f:1 \n" % (len(compressed_bytes), len(raw_graphics_bytes) / len(compressed_bytes)))
+    pretty_print_table(compressed_bytes, output_file, tilemap.width)
+    output_file.write("\n")
+
+def attribute_bits(tilemap, x, y):
+    if x >= tilemap.width or y >= tilemap.height:
+        return 0
+    return tilemap.tiles[y*tilemap.width+x].integer_properties.get("attribute_index", 0) & 0x3
+
+def attribute_bytes(tilemap):
+    raw_attributes = []
+    for y in range(0, math.floor(tilemap.height / 2)):
+        for x in range(0, math.floor(tilemap.width / 2)):
+            top_left = attribute_bits(tilemap, x*2, y*2)
+            top_right = attribute_bits(tilemap, x*2+1, y*2)
+            bottom_left = attribute_bits(tilemap, x*2, y*2+1)
+            bottom_right = attribute_bits(tilemap, x*2+1, y*2+1)
+            attribute_byte = (bottom_right << 6) | (bottom_left << 4) | (top_right << 2) | (top_left)
+            raw_attributes.append(attribute_byte)
+    return raw_attributes
+
+def write_attributes(tilemap, output_file):
+    raw_attribute_bytes = attribute_bytes(tilemap)
+    compression_type, compressed_bytes = compress_smallest(raw_attribute_bytes)
+
+    output_file.write(ca65_label(tilemap.name + "_attributes") + "\n")
+    output_file.write("  .byte %s ; compression type\n" % ca65_byte_literal(compression_type))
+    output_file.write("  .word %s ; decompressed length in bytes\n" % ca65_word_literal(len(raw_attribute_bytes)))
+    output_file.write("              ; compressed length: $%04X, ratio: %.2f:1 \n" % (len(compressed_bytes), len(raw_attribute_bytes) / len(compressed_bytes)))
     pretty_print_table(compressed_bytes, output_file, tilemap.width)
     output_file.write("\n")
 
@@ -457,3 +485,4 @@ if __name__ == '__main__':
         write_entity_table(tilemap, output_file)
         write_graphics_tiles(tilemap, output_file)
         write_collision_tiles(tilemap, output_file)
+        write_attributes(tilemap, output_file)

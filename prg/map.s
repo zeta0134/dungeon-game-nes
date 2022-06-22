@@ -9,6 +9,9 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
+        .segment "RAM"
+MetatileIndex: .res 1
+
         .segment "PRGFIXED_E000"
 
 ; Loads a map into PRG RAM buffer, in preparation for drawing and gameplay
@@ -24,7 +27,6 @@ MapAddr := R4
 TilesetAddress := R6
 MetatileCount := R8
 TilesetChrBank := R9
-MetatileIndex := R10
         ; First read in the map's dimensions in tiles, and store them. The scrolling engine and
         ; several other game mechanics rely on these values
         ldy #MapHeader::width
@@ -96,7 +98,7 @@ MetatileIndex := R10
         st16 DestAddr, (NavMapData)
         jsr decompress
 
-        ; and finally the background palette
+        ; now for colors; first the background palette
         ldy #MapHeader::palette_ptr
         lda (MapAddr), y
         sta SourceAddr
@@ -104,6 +106,16 @@ MetatileIndex := R10
         lda (MapAddr), y
         sta SourceAddr+1
         jsr load_palette
+
+        ; and finally the attribute map
+        ldy #MapHeader::attributes_ptr
+        lda (MapAddr), y
+        sta SourceAddr
+        iny
+        lda (MapAddr), y
+        sta SourceAddr+1
+        st16 DestAddr, (AttributeData)
+        jsr decompress
 
         ; For now that is all, we need to make sure that worked.
         rts
@@ -120,7 +132,6 @@ DestAddr := R2
 TilesetAddress := R6
 MetatileCount := R8
 TilesetChrBank := R9
-MetatileIndex := R10
         ldy #0
 
         ; first, grab the chr bank and the metatile count, since we'll need it to unzip the data properly later
@@ -202,7 +213,6 @@ attribute_loop:
 .endproc
 
 .proc fix_second_tileset
-MetatileIndex := R10
 MetatileCount := R8
         ; start right after the first tileset, which is fine as is
         ldx MetatileIndex

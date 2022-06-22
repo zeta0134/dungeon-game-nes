@@ -11,6 +11,7 @@
         first_tileset .word
         second_tileset .word
         palette_ptr .word
+        attributes_ptr .word
 .endstruct
 
 .struct ExitTableEntry

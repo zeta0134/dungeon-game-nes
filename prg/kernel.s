@@ -175,7 +175,6 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         restore_previous_bank
         
         far_call FAR_init_map
-        far_call FAR_init_attributes
         far_call FAR_init_camera
 
         ; clear all entities and metasprites
