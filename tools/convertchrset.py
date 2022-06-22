@@ -55,7 +55,7 @@ def read_tileset(folderpath):
   for i in range(0, len(tiles)):
     tiles[i]["type"] = supported_tile_types["NORMAL"]
     for type_name, type_filenames in metadata.items():
-      if image_filenames[i] in type_filenames:
+      if png_files[i] in type_filenames:
         tiles[i]["type"] = supported_tile_types[type_name]
   return tiles
 
