@@ -22,7 +22,9 @@ SourceAddr := R0
 DestAddr := R2
 MapAddr := R4
 TilesetAddress := R6
+MetatileCount := R8
 TilesetChrBank := R9
+MetatileIndex := R10
         ; First read in the map's dimensions in tiles, and store them. The scrolling engine and
         ; several other game mechanics rely on these values
         ldy #MapHeader::width
@@ -38,8 +40,11 @@ TilesetChrBank := R9
 
         far_call FAR_update_nav_lut_ptr
 
-        ; First, decompress the tileset. This will clobber MapData, but that's okay since we're about to
+        ; First, decompress the first tileset. This will clobber MapData, but that's okay since we're about to
         ; overwrite it anyway
+        lda #0
+        sta MetatileIndex
+
         ldy #MapHeader::first_tileset
         lda (MapAddr), y
         sta TilesetAddress
@@ -49,6 +54,27 @@ TilesetChrBank := R9
         jsr load_tileset
         lda TilesetChrBank
         sta DynamicChrBank
+
+        ; now, add MetatileCount to MetatileIndex, allowing us to keep going with the next tileset
+        lda MetatileCount
+        clc
+        adc MetatileIndex
+        sta MetatileIndex
+
+        ; And now the second tileset. Notably we don't reset the MetatileIndex here, allowing it to be unzipped
+        ; immediately following the first
+        ldy #MapHeader::second_tileset
+        lda (MapAddr), y
+        sta TilesetAddress
+        iny
+        lda (MapAddr), y
+        sta TilesetAddress+1
+        jsr load_tileset
+        lda TilesetChrBank
+        sta StaticChrBank
+
+        ; the second tileset needs all of its CHR indexes adjusted to point to the proper 2k block, do that now
+        jsr fix_second_tileset
 
         ; Next decompress the blocks of data, starting with the graphics map
         ldy #MapHeader::graphics_ptr
@@ -85,18 +111,10 @@ DestAddr := R2
 TilesetAddress := R6
 MetatileCount := R8
 TilesetChrBank := R9
+MetatileIndex := R10
         ldy #0
 
-        ; First things first, load in the palette data
-        lda (TilesetAddress), y
-        sta SourceAddr
-        inc16 TilesetAddress
-        lda (TilesetAddress), y
-        sta SourceAddr+1
-        inc16 TilesetAddress
-        jsr load_palette
-
-        ; next, grab the chr bank and the metatile count, since we'll need it to unzip the data properly later
+        ; first, grab the chr bank and the metatile count, since we'll need it to unzip the data properly later
         ldy #0
         lda (TilesetAddress), y
         sta TilesetChrBank
@@ -118,11 +136,15 @@ TilesetChrBank := R9
         ; okay, now our tileset is in memory at MapData, but it's collapsed. We need to
         ; run through it one segment at a time and unzip it into its final location
 
-        ; TODO: We want to eventually load two tilesets at once. The second one needs to get
-        ; unzipped *after* the first one, so we need a way to set an offset for this routine.
+        ; we'll stop when we reach MetatileCount, but that needs to include the previous
+        ; tileset's count, if any
+        lda MetatileCount
+        clc
+        adc MetatileIndex
+        sta MetatileCount
 
         st16 SourceAddr, (MapData)
-        ldx #0
+        ldx MetatileIndex
 top_left_loop:
         lda (SourceAddr), y
         sta TilesetTopLeft, x
@@ -131,7 +153,7 @@ top_left_loop:
         cpx MetatileCount
         bne top_left_loop
 
-        ldx #0
+        ldx MetatileIndex
 top_right_loop:
         lda (SourceAddr), y
         sta TilesetTopRight, x
@@ -140,7 +162,7 @@ top_right_loop:
         cpx MetatileCount
         bne top_right_loop   
 
-        ldx #0
+        ldx MetatileIndex
 bottom_left_loop:
         lda (SourceAddr), y
         sta TilesetBottomLeft, x
@@ -149,7 +171,7 @@ bottom_left_loop:
         cpx MetatileCount
         bne bottom_left_loop
 
-        ldx #0
+        ldx MetatileIndex
 bottom_right_loop:
         lda (SourceAddr), y
         sta TilesetBottomRight, x
@@ -158,7 +180,7 @@ bottom_right_loop:
         cpx MetatileCount
         bne bottom_right_loop
 
-        ldx #0
+        ldx MetatileIndex
 attribute_loop:
         lda (SourceAddr), y
         sta TilesetAttributes, x
@@ -167,6 +189,38 @@ attribute_loop:
         cpx MetatileCount
         bne attribute_loop
 
+        rts
+.endproc
+
+.proc fix_second_tileset
+MetatileIndex := R10
+MetatileCount := R8
+        ; start right after the first tileset, which is fine as is
+        ldx MetatileIndex
+loop:
+        ; for each CHR entry in the second tileset, add 128 (by forcing the high bit to 1) so that
+        ; it now references the second 2K CHR bank, instead of the first
+        lda TilesetTopLeft, x
+        ora #$80
+        sta TilesetTopLeft, x
+
+        lda TilesetTopRight, x
+        ora #$80
+        sta TilesetTopRight, x
+
+        lda TilesetBottomLeft, x
+        ora #$80
+        sta TilesetBottomLeft, x
+        
+        lda TilesetBottomRight, x
+        ora #$80
+        sta TilesetBottomRight, x
+        ; continue until we exhaust the entire buffer
+        inx
+        ; helpfully we still have MetatileCount from the 2nd tileset copy, so we can use that here
+        cpx MetatileCount
+        bne loop
+        ; all done
         rts
 .endproc
 

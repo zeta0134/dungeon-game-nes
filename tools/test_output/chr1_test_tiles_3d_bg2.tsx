@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<tileset version="1.8" tiledversion="1.8.2" name="3d_test_tiles_bg2" tilewidth="16" tileheight="16" tilecount="8" columns="0">
+<tileset version="1.8" tiledversion="1.8.2" name="test_tiles_3d_bg2" tilewidth="16" tileheight="16" tilecount="8" columns="0">
   <grid orientation="orthagonal" width="1" height="1" />
   <properties>
-    <property name="chr1_tileset" type="string" value="3d_test_tiles_tileset" />
+    <property name="chr1_tileset" type="string" value="test_tiles_3d_tileset" />
     <property name="global_palette" type="string" value="globalpalette.pal" />
   </properties>
   <tile id="0">

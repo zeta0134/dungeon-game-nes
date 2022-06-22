@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<tileset version="1.8" tiledversion="1.8.2" name="grassy_fields_bg2" tilewidth="16" tileheight="16" tilecount="77" columns="0">
+<tileset version="1.8" tiledversion="1.8.2" name="grassy_fields_v3_bg2" tilewidth="16" tileheight="16" tilecount="77" columns="0">
   <grid orientation="orthagonal" width="1" height="1" />
   <properties>
-    <property name="chr0_tileset" type="string" value="grassy_fields_tileset" />
+    <property name="chr0_tileset" type="string" value="grassy_fields_v3_tileset" />
     <property name="global_palette" type="string" value="globalpalette.pal" />
   </properties>
   <tile id="0">

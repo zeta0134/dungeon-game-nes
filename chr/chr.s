@@ -8,7 +8,6 @@ blank_index_0:
 
         .segment "BG1"
 hud_graphics:
-        ;.include "../build/tilesets/statusbar.chr"
         .incbin "../art/raw_chr/hud.chr"
 
         .segment "BG2"
@@ -16,6 +15,12 @@ hud_graphics:
 
         .segment "BG3"
         .include "../build/tilesets/grassy_fields.chr"
+
+        .segment "BG4"
+        .include "../tools/grassy_fields_v3.chr"
+
+        .segment "BG5"
+        .include "../tools/test_tiles_3d.chr"
 
         .segment "OBJ0"
 boxgirl_graphics:

@@ -4,6 +4,7 @@
 .include "input.inc"
 .include "main.inc"
 .include "memory_util.inc"
+.include "mmc3.inc"
 .include "palette.inc"
 .include "scrolling.inc"
 .include "sound.inc"
@@ -81,6 +82,11 @@ lag_frame:
         ;   - Mostly IRQ setup here, if we miss doing this the render
         ;     will glitch pretty badly
         ; ===========================================================
+
+        ; set the static CHR bank for the playfield (in case the dialog system
+        ; or something else clobbered it. Proooobalby unnecessary, but just to
+        ; be safe)
+        mmc3_select_bank $1, StaticChrBank ; CHR 2K HIGH
 
         ; Set PPUSCROLL and also configure IRQ for screen split
         jsr setup_irq_table_for_frame
