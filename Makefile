@@ -23,8 +23,12 @@ RAW_CHR_FILES := \
 MAP_FILES := $(wildcard $(ARTDIR)/maps/*.tmx)
 BIN_FILES := \
 	$(patsubst $(ARTDIR)/maps/%.tmx,$(BUILDDIR)/maps/%.incs,$(MAP_FILES))
-TILESET_FILES := $(wildcard $(ARTDIR)/tilesets/*.tsx)
-TILESET_CHR_FILES := $(patsubst $(ARTDIR)/tilesets/%.tsx,$(BUILDDIR)/tilesets/%.chr,$(TILESET_FILES))
+
+TILESET_FOLDERS := $(wildcard $(ARTDIR)/tilesets/*)
+TILESET_CHR_FILES := $(patsubst $(ARTDIR)/tilesets/%,$(BUILDDIR)/tilesets/%.chr,$(TILESET_FOLDERS))
+
+TILESET_MAPPINGS := $(wildcard $(ARTDIR)/tileset_mappings/*.json)
+TILESET_MAPPING_FOLDERS := $(patsubst $(ARTDIR)/tileset_mappings/%.json,$(ARTDIR)/tileset_mappings/%,$(TILESET_MAPPINGS))
 
 .PRECIOUS: $(BIN_FILES) $(RAW_CHR_FILES) $(TILESET_CHR_FILES)
 
@@ -55,7 +59,7 @@ everdrive: dir $(ROM_NAME)
 $(ROM_NAME): $(SOURCEDIR)/mmc3.cfg $(O_FILES)
 	ld65 -m $(BUILDDIR)/map.txt --dbgfile $(DBG_NAME) -o $@ -C $^
 
-$(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(BIN_FILES) $(TILESET_CHR_FILES) $(BUILDDIR)/collision_tileset.incs
+$(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(BIN_FILES) $(TILESET_CHR_FILES) $(TILESET_MAPPING_FOLDERS) $(BUILDDIR)/collision_tileset.incs
 	ca65 -g -o $@ $<
 
 $(BUILDDIR)/%.o: $(CHRDIR)/%.s $(RAW_CHR_FILES) $(TILESET_CHR_FILES)
@@ -65,13 +69,16 @@ $(BUILDDIR)/sprites/%.chr: $(ARTDIR)/sprites/%.png
 	vendor/pilbmp2nes.py $< -o $@ --planes="0;1" --tile-height=16
 
 $(BUILDDIR)/maps/%.incs: $(ARTDIR)/maps/%.tmx
-	tools/convertmap.py $< $@
+	tools/convertmapv3.py $< $@
 
-$(BUILDDIR)/tilesets/%.chr: $(ARTDIR)/tilesets/%.tsx
-	tools/converttileset.py $< $@ $(basename $@).mt $(basename $@).pal
+$(BUILDDIR)/tilesets/%.chr: $(ARTDIR)/tilesets/%
+	tools/convertchrset.py $< $@ $(basename $@).mt
 
 $(BUILDDIR)/collision_tileset.incs: tools/collisiontileset.py tools/convertmap.py
 	tools/collisiontileset.py $@
+
+$(ARTDIR)/tileset_mappings/%: $(ARTDIR)/tileset_mappings/%.json
+	tools/generatetilesets.py $< $@
 
 
 

@@ -142,8 +142,8 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
 .proc init_engine
         lda #4
         sta Brightness
-        st16 TargetMapAddr, (v3_test_map)
-        lda #<.bank(v3_test_map)
+        st16 TargetMapAddr, (grassy_test_v3)
+        lda #<.bank(grassy_test_v3)
         sta TargetMapBank
         st16 GameMode, load_new_map
         rts

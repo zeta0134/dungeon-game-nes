@@ -46,6 +46,7 @@ def read_tileset(folderpath):
   png_files = sorted([f for f in filenames if pathlib.Path(f).suffix == ".png"])
   metadata_path = (Path(folderpath) / "metadata.json").resolve()
   metadata = {}
+  
   if os.path.isfile(metadata_path):
     with open(metadata_path, "r") as metadata_file:
       metadata = json.load(metadata_file)

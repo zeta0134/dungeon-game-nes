@@ -6,7 +6,7 @@ from xml.etree.ElementTree import ElementTree, Element
 from PIL import Image
 import pathlib
 from pathlib import Path
-import os, re, sys
+import json, os, re, sys
 
 def bytes_to_palette(byte_array):
   return [(byte_array[i], byte_array[i+1], byte_array[i+2]) for i in range(0, len(byte_array), 3)]
@@ -137,31 +137,37 @@ def copy_palette(output_folder, palette_filename):
     with open(target_path, "wb") as destination_file:
       destination_file.write(data)
 
-if len(sys.argv) != 5:
-  print("Usage: generatetilesets.py <first/chr/folder> <second/chr/folder> <palette.pal> <output/folder>")
+if len(sys.argv) != 3:
+  print("Usage: generatetilesets.py configuration.json <output/folder>")
   sys.exit(-1)
-first_chr_folder = sys.argv[1]
-second_chr_folder = sys.argv[2]
-palette_filename = sys.argv[3]
-output_folder = sys.argv[4]
+configuration_path = sys.argv[1]
+output_folder = sys.argv[2]
 
-pathlib.Path(output_folder).mkdir(parents=True, exist_ok=True)
+with open(configuration_path, "r") as metadata_file:
+  metadata = json.load(metadata_file)
 
-scriptdir = os.path.dirname(__file__)
-nes_global_palette = read_nes_palette(os.path.join(scriptdir,"ntscpalette.pal"))
-bg_palette_as_rgb = nes_to_rgb(palette_filename, nes_global_palette)
+  base_path = Path(configuration_path).parent.parent
+  first_chr_folder = (base_path / "tilesets" / metadata["chr0"]).resolve()
+  second_chr_folder = (base_path / "tilesets" /  metadata["chr1"]).resolve()
+  palette_filename = (base_path / "palettes" /  metadata["palette"]).resolve()
 
-generate_palette_variants(first_chr_folder, output_folder, bg_palette_as_rgb, prefix="chr0_")
-generate_palette_variants(second_chr_folder, output_folder, bg_palette_as_rgb, prefix="chr1_")
+  pathlib.Path(output_folder).mkdir(parents=True, exist_ok=True)
 
-generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=0, chr=0, bg=0)
-generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=1, chr=0, bg=1)
-generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=2, chr=0, bg=2)
-next_metatile_index = generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=3, chr=0, bg=3)
+  scriptdir = os.path.dirname(__file__)
+  nes_global_palette = read_nes_palette(os.path.join(scriptdir,"ntscpalette.pal"))
+  bg_palette_as_rgb = nes_to_rgb(palette_filename, nes_global_palette)
 
-generate_tileset(second_chr_folder, output_folder, metatile_index=next_metatile_index, attribute_index=0, chr=1, bg=0)
-generate_tileset(second_chr_folder, output_folder, metatile_index=next_metatile_index, attribute_index=1, chr=1, bg=1)
-generate_tileset(second_chr_folder, output_folder, metatile_index=next_metatile_index, attribute_index=2, chr=1, bg=2)
-generate_tileset(second_chr_folder, output_folder, metatile_index=next_metatile_index, attribute_index=3, chr=1, bg=3)
+  generate_palette_variants(first_chr_folder, output_folder, bg_palette_as_rgb, prefix="chr0_")
+  generate_palette_variants(second_chr_folder, output_folder, bg_palette_as_rgb, prefix="chr1_")
 
-copy_palette(output_folder, palette_filename)
+  generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=0, chr=0, bg=0)
+  generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=1, chr=0, bg=1)
+  generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=2, chr=0, bg=2)
+  next_metatile_index = generate_tileset(first_chr_folder, output_folder, metatile_index=0, attribute_index=3, chr=0, bg=3)
+
+  generate_tileset(second_chr_folder, output_folder, metatile_index=next_metatile_index, attribute_index=0, chr=1, bg=0)
+  generate_tileset(second_chr_folder, output_folder, metatile_index=next_metatile_index, attribute_index=1, chr=1, bg=1)
+  generate_tileset(second_chr_folder, output_folder, metatile_index=next_metatile_index, attribute_index=2, chr=1, bg=2)
+  generate_tileset(second_chr_folder, output_folder, metatile_index=next_metatile_index, attribute_index=3, chr=1, bg=3)
+
+  copy_palette(output_folder, palette_filename)

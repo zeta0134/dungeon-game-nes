@@ -11,16 +11,16 @@ hud_graphics:
         .incbin "../art/raw_chr/hud.chr"
 
         .segment "BG2"
-        .include "../build/tilesets/tiles_3d.chr"
+        ;.include "../build/tilesets/tiles_3d.chr"
 
         .segment "BG3"
-        .include "../build/tilesets/grassy_fields.chr"
+        ;.include "../build/tilesets/grassy_fields.chr"
 
         .segment "BG4"
-        .include "../tools/grassy_fields_v3.chr"
+        .include "../build/tilesets/grassy_fields_v3.chr"
 
         .segment "BG5"
-        .include "../tools/test_tiles_3d.chr"
+        .include "../build/tilesets/test_tiles_3d.chr"
 
         .segment "OBJ0"
 boxgirl_graphics:
