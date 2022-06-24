@@ -17,10 +17,10 @@ hud_graphics:
         ;.include "../build/tilesets/grassy_fields.chr"
 
         .segment "BG4"
-        .include "../build/tilesets/grassy_fields_v3.chr"
+        .include "../build/patternsets/grassy_fields_v3.chr"
 
         .segment "BG5"
-        .include "../build/tilesets/test_tiles_3d.chr"
+        .include "../build/patternsets/test_tiles_3d.chr"
 
         .segment "OBJ0"
 boxgirl_graphics:

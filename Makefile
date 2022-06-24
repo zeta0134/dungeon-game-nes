@@ -24,11 +24,11 @@ MAP_FILES := $(wildcard $(ARTDIR)/maps/*.tmx)
 BIN_FILES := \
 	$(patsubst $(ARTDIR)/maps/%.tmx,$(BUILDDIR)/maps/%.incs,$(MAP_FILES))
 
-TILESET_FOLDERS := $(wildcard $(ARTDIR)/tilesets/*)
-TILESET_CHR_FILES := $(patsubst $(ARTDIR)/tilesets/%,$(BUILDDIR)/tilesets/%.chr,$(TILESET_FOLDERS))
+PATTERNSET_FOLDERS := $(wildcard $(ARTDIR)/patternsets/*)
+PATTERNSET_CHR_FILES := $(patsubst $(ARTDIR)/patternsets/%,$(BUILDDIR)/patternsets/%.chr,$(PATTERNSET_FOLDERS))
 
-TILESET_MAPPINGS := $(wildcard $(ARTDIR)/tileset_mappings/*.json)
-TILESET_MAPPING_FOLDERS := $(patsubst $(ARTDIR)/tileset_mappings/%.json,$(ARTDIR)/tileset_mappings/%,$(TILESET_MAPPINGS))
+TILESETS := $(wildcard $(ARTDIR)/tilesets/*.json)
+TILESET_FOLDERS := $(patsubst $(ARTDIR)/tilesets/%.json,$(ARTDIR)/tilesets/%,$(TILESETS))
 
 .PRECIOUS: $(BIN_FILES) $(RAW_CHR_FILES) $(TILESET_CHR_FILES)
 
@@ -36,7 +36,7 @@ all: dir $(ROM_NAME)
 
 dir:
 	@mkdir -p build/sprites
-	@mkdir -p build/tilesets
+	@mkdir -p build/patternsets
 	@mkdir -p build/maps
 
 clean:
@@ -59,25 +59,25 @@ everdrive: dir $(ROM_NAME)
 $(ROM_NAME): $(SOURCEDIR)/mmc3.cfg $(O_FILES)
 	ld65 -m $(BUILDDIR)/map.txt --dbgfile $(DBG_NAME) -o $@ -C $^
 
-$(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(BIN_FILES) $(TILESET_CHR_FILES) $(TILESET_MAPPING_FOLDERS) $(BUILDDIR)/collision_tileset.incs
+$(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(PATTERNSET_CHR_FILES) $(BIN_FILES) $(BUILDDIR)/collision_tileset.incs
 	ca65 -g -o $@ $<
 
-$(BUILDDIR)/%.o: $(CHRDIR)/%.s $(RAW_CHR_FILES) $(TILESET_CHR_FILES)
+$(BUILDDIR)/%.o: $(CHRDIR)/%.s $(RAW_CHR_FILES) $(PATTERNSET_CHR_FILES)
 	ca65 -g -o $@ $<
 
 $(BUILDDIR)/sprites/%.chr: $(ARTDIR)/sprites/%.png
 	vendor/pilbmp2nes.py $< -o $@ --planes="0;1" --tile-height=16
 
-$(BUILDDIR)/maps/%.incs: $(ARTDIR)/maps/%.tmx
-	tools/convertmapv3.py $< $@
+$(BUILDDIR)/maps/%.incs: $(ARTDIR)/maps/%.tmx $(TILESET_FOLDERS)
+	tools/convertmap.py $< $@
 
-$(BUILDDIR)/tilesets/%.chr: $(ARTDIR)/tilesets/%
-	tools/convertchrset.py $< $@ $(basename $@).mt
+$(BUILDDIR)/patternsets/%.chr: $(ARTDIR)/patternsets/%
+	tools/convertpatternset.py $< $@ $(basename $@).mt
 
-$(BUILDDIR)/collision_tileset.incs: tools/collisiontileset.py tools/convertmap.py
-	tools/collisiontileset.py $@
+$(BUILDDIR)/collision_tileset.incs: tools/generatecollisionset.py tools/convertmap.py
+	tools/generatecollisionset.py $@
 
-$(ARTDIR)/tileset_mappings/%: $(ARTDIR)/tileset_mappings/%.json
+$(ARTDIR)/tilesets/%: $(ARTDIR)/tilesets/%.json
 	tools/generatetilesets.py $< $@
 
 

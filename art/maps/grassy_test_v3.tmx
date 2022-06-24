@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.8" tiledversion="1.8.4" orientation="orthogonal" renderorder="right-down" width="32" height="24" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="7">
- <tileset firstgid="1" source="../tileset_mappings/green_green_testings/chr0_grassy_fields_v3_bg0.tsx"/>
- <tileset firstgid="78" source="../tileset_mappings/green_green_testings/chr0_grassy_fields_v3_bg1.tsx"/>
- <tileset firstgid="155" source="../tileset_mappings/green_green_testings/chr1_test_tiles_3d_bg1.tsx"/>
- <tileset firstgid="163" source="../tileset_mappings/green_green_testings/chr0_grassy_fields_v3_bg2.tsx"/>
+ <tileset firstgid="1" source="../tilesets/green_green_testings/chr0_grassy_fields_v3_bg0.tsx"/>
+ <tileset firstgid="78" source="../tilesets/green_green_testings/chr0_grassy_fields_v3_bg1.tsx"/>
+ <tileset firstgid="155" source="../tilesets/green_green_testings/chr1_test_tiles_3d_bg1.tsx"/>
+ <tileset firstgid="163" source="../tilesets/green_green_testings/chr0_grassy_fields_v3_bg2.tsx"/>
  <tileset firstgid="240" source="../technical/floor_heights_3d.tsx"/>
  <tileset firstgid="257" source="../technical/hidden_floor_heights_3d.tsx"/>
  <tileset firstgid="274" source="../technical/technical.tsx"/>

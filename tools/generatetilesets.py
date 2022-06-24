@@ -147,8 +147,8 @@ with open(configuration_path, "r") as metadata_file:
   metadata = json.load(metadata_file)
 
   base_path = Path(configuration_path).parent.parent
-  first_chr_folder = (base_path / "tilesets" / metadata["chr0"]).resolve()
-  second_chr_folder = (base_path / "tilesets" /  metadata["chr1"]).resolve()
+  first_chr_folder = (base_path / "patternsets" / metadata["chr0"]).resolve()
+  second_chr_folder = (base_path / "patternsets" /  metadata["chr1"]).resolve()
   palette_filename = (base_path / "palettes" /  metadata["palette"]).resolve()
 
   pathlib.Path(output_folder).mkdir(parents=True, exist_ok=True)

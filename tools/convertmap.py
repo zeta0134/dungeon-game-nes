@@ -28,6 +28,7 @@ class TiledTileSet:
     name: str
     first_gid: int
     tiles: Dict[int, TiledTile]
+    string_properties: Dict[str, str]
 
 @dataclass
 class Exit:
@@ -54,11 +55,13 @@ class CombinedMap:
     name: str
     width: int
     height: int
-    graphics_tilesets: [TiledTileSet]
     tiles: [TiledTile]
     entrances: [Entrance]
     exits: [Exit]
     entities: [Entity]
+    chr0_label: str
+    chr1_label: str
+    global_palette: [int]
 
 def read_boolean_properties(tile_element):
     boolean_properties = {}
@@ -83,7 +86,7 @@ def read_string_properties(tile_element):
     properties_element = tile_element.find("properties")
     if properties_element:
         for prop in properties_element.findall("property"):
-            if prop.get("type") == None:
+            if prop.get("type") == None or prop.get("type") == "string":
                 string_properties[prop.get("name")] = prop.get("value")
     return string_properties
 
@@ -100,7 +103,13 @@ def read_tileset(tileset_filename, first_gid=0, name=""):
         string_properties = read_string_properties(tile_element)
         tiled_tile = TiledTile(ordinal_index=ordinal_index, tiled_index=tiled_index, boolean_properties=boolean_properties, integer_properties=integer_properties, string_properties=string_properties, type=tiled_type)
         tiles[tiled_index] = tiled_tile
-    tileset = TiledTileSet(first_gid=first_gid, tiles=tiles, name=name)
+    string_properties = read_string_properties(tileset_element)
+    # dirty, *dirty* hack
+    if "global_palette" in string_properties:
+        base_path = Path(tileset_filename).parent
+        palette_path = (base_path / string_properties["global_palette"]).resolve()
+        string_properties["global_palette"] = palette_path
+    tileset = TiledTileSet(first_gid=first_gid, tiles=tiles, name=name, string_properties=string_properties)
     return tileset
 
 def tile_from_gid(tile_index, tilesets):
@@ -124,7 +133,7 @@ def read_layer(layer_element, tilesets):
         return tiles
     exiterror("Non-csv encoding is not supported.")
 
-def combine_properties(graphics_tile, supplementary_tiles):
+def combine_tile_properties(graphics_tile, supplementary_tiles):
     combined_tile = TiledTile(
         ordinal_index=graphics_tile.ordinal_index,
         tiled_index=graphics_tile.tiled_index,
@@ -139,24 +148,17 @@ def combine_properties(graphics_tile, supplementary_tiles):
         combined_tile.string_properties = combined_tile.string_properties | supplementary_tile.string_properties
     return combined_tile
 
+def combine_tileset_properties(tilesets):
+    combined_properties = {}
+    for tileset in tilesets:
+        combined_properties = combined_properties | tileset.string_properties
+    return combined_properties
+
 def nice_label(full_path_and_filename):
   (_, plain_filename) = os.path.split(full_path_and_filename)
   (base_filename, _) = os.path.splitext(plain_filename)
   safe_label = re.sub(r'[^A-Za-z0-9\-\_]', '_', base_filename)
   return safe_label
-
-def identity_graphics_tilesets(layer_elements, tilesets):
-    graphics_tilesets = []
-    for layer_element in layer_elements:
-        if layer_element.get("name") == "Graphics":
-            data = layer_element.find("data")
-            if data.get("encoding") == "csv":
-                cell_values = [int(x) for x in data.text.split(",")]
-                for tile_id in cell_values:
-                    tileset = tileset_from_gid(tile_id, tilesets)
-                    if tileset and tileset not in graphics_tilesets:
-                        graphics_tilesets.append(tileset)
-    return graphics_tilesets
 
 def identify_object(object_element):
     if object_element.get("gid"):
@@ -225,6 +227,11 @@ def read_entities(object_elements, tilesets):
                 entities.append(Entity(x=entity_tile_x, y=entity_tile_y, initial_state=entity_initial_state))
     return entities
 
+def read_global_palette(filename):
+    with open(filename, "rb") as palette_file:
+        palette_raw = palette_file.read()
+        return palette_raw
+
 def read_map(map_filename):
     map_element = ElementTree.parse(map_filename).getroot()
     map_width = int(map_element.get("width"))
@@ -249,8 +256,6 @@ def read_map(map_filename):
     for layer_element in layer_elements:
         layers[layer_element.get("name")] = read_layer(layer_element, tilesets)
 
-    graphics_tilesets = identity_graphics_tilesets(layer_elements, tilesets)
-
     # At this point we should have at least one layer named "Graphics", if we don't
     # we can't continue and must bail
     graphics_layer = layers.pop("Graphics")
@@ -261,7 +266,7 @@ def read_map(map_filename):
     for tile_index in range(0, len(graphics_layer)):
         graphics_tile = graphics_layer[tile_index]
         supplementary_tiles = [supplementary_layers[layer_name][tile_index] for layer_name in supplementary_layers]
-        combined_tiles.append(combine_properties(graphics_tile, supplementary_tiles))
+        combined_tiles.append(combine_tile_properties(graphics_tile, supplementary_tiles))
 
     # Read in supplementary structures: entrances, exits, etc
     entrances = read_entrances([], tilesets, map_width, map_height)
@@ -277,12 +282,18 @@ def read_map(map_filename):
     entities = read_entities(objects, tilesets)
     print(entities)
 
+    common_tileset_properties = combine_tileset_properties(tilesets)
+    print(common_tileset_properties)
+    chr0_label = common_tileset_properties["chr0_tileset"]
+    chr1_label = common_tileset_properties["chr1_tileset"]
+    global_palette = read_global_palette(common_tileset_properties["global_palette"])
+
     # finally let's make the name something useful
     (_, plain_filename) = os.path.split(map_filename)
     (base_filename, _) = os.path.splitext(plain_filename)
     safe_label = re.sub(r'[^A-Za-z0-9\-\_]', '_', base_filename)
 
-    return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles, graphics_tilesets=graphics_tilesets, entrances=entrances, exits=exits, entities=entities)
+    return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles, entrances=entrances, exits=exits, entities=entities, chr0_label=chr0_label, chr1_label=chr1_label, global_palette=global_palette)
 
 def write_map_header(tilemap, output_file):
     output_file.write(ca65_label(tilemap.name) + "\n")
@@ -293,7 +304,15 @@ def write_map_header(tilemap, output_file):
     output_file.write("  .word %s_entrances\n" % tilemap.name)
     output_file.write("  .word %s_exits\n" % tilemap.name)
     output_file.write("  .word %s_entities\n" % tilemap.name)
-    output_file.write("  .word %s_tileset ; first tileset \n" % tilemap.graphics_tilesets[0].name)
+    output_file.write("  .word %s ; first tileset \n" % tilemap.chr0_label)
+    output_file.write("  .word %s ; second tileset \n" % tilemap.chr1_label)
+    output_file.write("  .word %s_palette\n" % tilemap.name)
+    output_file.write("  .word %s_attributes\n" % tilemap.name)
+    output_file.write("\n")
+
+def write_palette_data(tilemap, output_file):
+    output_file.write(ca65_label(tilemap.name + "_palette") + "\n")
+    pretty_print_table(tilemap.global_palette, output_file, 16)
     output_file.write("\n")
 
 def write_entrance_table(tilemap, output_file):
@@ -324,14 +343,41 @@ def write_entity_table(tilemap, output_file):
     output_file.write("\n")
 
 def write_graphics_tiles(tilemap, output_file):
-    raw_graphics_bytes = [tile.ordinal_index for tile in tilemap.tiles]
+    raw_graphics_bytes = [tile.integer_properties["metatile_index"] for tile in tilemap.tiles]
     compression_type, compressed_bytes = compress_smallest(raw_graphics_bytes)
 
     output_file.write(ca65_label(tilemap.name + "_graphics") + "\n")
-    # for now, compression type 0 == identity, raw bytes with no compression
     output_file.write("  .byte %s ; compression type\n" % ca65_byte_literal(compression_type))
     output_file.write("  .word %s ; decompressed length in bytes\n" % ca65_word_literal(len(raw_graphics_bytes)))
     output_file.write("              ; compressed length: $%04X, ratio: %.2f:1 \n" % (len(compressed_bytes), len(raw_graphics_bytes) / len(compressed_bytes)))
+    pretty_print_table(compressed_bytes, output_file, tilemap.width)
+    output_file.write("\n")
+
+def attribute_bits(tilemap, x, y):
+    if x >= tilemap.width or y >= tilemap.height:
+        return 0
+    return tilemap.tiles[y*tilemap.width+x].integer_properties.get("attribute_index", 0) & 0x3
+
+def attribute_bytes(tilemap):
+    raw_attributes = []
+    for y in range(0, math.floor(tilemap.height / 2)):
+        for x in range(0, math.floor(tilemap.width / 2)):
+            top_left = attribute_bits(tilemap, x*2, y*2)
+            top_right = attribute_bits(tilemap, x*2+1, y*2)
+            bottom_left = attribute_bits(tilemap, x*2, y*2+1)
+            bottom_right = attribute_bits(tilemap, x*2+1, y*2+1)
+            attribute_byte = (bottom_right << 6) | (bottom_left << 4) | (top_right << 2) | (top_left)
+            raw_attributes.append(attribute_byte)
+    return raw_attributes
+
+def write_attributes(tilemap, output_file):
+    raw_attribute_bytes = attribute_bytes(tilemap)
+    compression_type, compressed_bytes = compress_smallest(raw_attribute_bytes)
+
+    output_file.write(ca65_label(tilemap.name + "_attributes") + "\n")
+    output_file.write("  .byte %s ; compression type\n" % ca65_byte_literal(compression_type))
+    output_file.write("  .word %s ; decompressed length in bytes\n" % ca65_word_literal(len(raw_attribute_bytes)))
+    output_file.write("              ; compressed length: $%04X, ratio: %.2f:1 \n" % (len(compressed_bytes), len(raw_attribute_bytes) / len(compressed_bytes)))
     pretty_print_table(compressed_bytes, output_file, tilemap.width)
     output_file.write("\n")
 
@@ -433,8 +479,10 @@ if __name__ == '__main__':
 
     with open(output_filename, "w") as output_file:
         write_map_header(tilemap, output_file)
+        write_palette_data(tilemap, output_file)
         write_entrance_table(tilemap, output_file)
         write_exit_table(tilemap, output_file)
         write_entity_table(tilemap, output_file)
         write_graphics_tiles(tilemap, output_file)
         write_collision_tiles(tilemap, output_file)
+        write_attributes(tilemap, output_file)
