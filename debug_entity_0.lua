@@ -6,13 +6,19 @@ struct_members = {
   {name="PositionX",size="word",offset=2},
   {name="PositionY",size="word",offset=4},
   {name="PositionZ",size="word",offset=6},
-  {name="GroundLevel",size="byte",offset=8},
-  {name="MetaSpriteIndex",size="byte",offset=9},
-  {name="ShadowSpriteIndex",size="byte",offset=10},
-  {name="Data[SpeedX]",size="byte",offset=11},
-  {name="Data[SpeedY]",size="byte",offset=12},
-  {name="Data[SpeedZ]",size="byte",offset=13},
-  {name="Data[Flags]",size="byte",offset=14}
+  {name="Data[SpeedX]",size="byte",offset=8},
+  {name="Data[SpeedY]",size="byte",offset=9},
+  {name="Data[SpeedZ]",size="byte",offset=10},
+  {name="GroundLevel",size="byte",offset=11},
+  {name="MetaSpriteIndex",size="byte",offset=12},
+  {name="ShadowSpriteIndex",size="byte",offset=13},
+  {name="Data[CollisionMask]",size="byte",offset=14},
+  {name="Data[CollisionResponse]",size="byte",offset=15},
+  {name="Data[Flags0]",size="byte",offset=16},
+  {name="Data[Flags1]",size="byte",offset=17},
+  {name="Data[Flags2]",size="byte",offset=18},
+  {name="Data[Flags3]",size="byte",offset=19},
+  {name="Data[Flags4]",size="byte",offset=20},
 }
 
 y_offset = 10

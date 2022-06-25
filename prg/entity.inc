@@ -52,7 +52,7 @@ COLLISION_GROUP_DAMAGING =  %00000110
 .endmacro
 
 ; note: assumes Y is already set to CurrentEntityIndex
-.macro entity_set_flag flag_mask, flag_value
+.macro entity_set_flag_y flag_mask, flag_value
         lda entity_table + EntityState::Data + DATA_FLAGS, y
         and #(flag_mask ^ $FF)
         ora #flag_value
@@ -60,8 +60,23 @@ COLLISION_GROUP_DAMAGING =  %00000110
 .endmacro
 
 ; note: assumes Y is already set to CurrentEntityIndex
-.macro entity_check_flag flag_mask
+.macro entity_check_flag_y flag_mask
         lda entity_table + EntityState::Data + DATA_FLAGS, y
+        and #flag_mask
+        ; now you can beq for unset, and bne for flag set
+.endmacro
+
+; note: assumes X is already set to CurrentEntityIndex
+.macro entity_set_flag_x flag_mask, flag_value
+        lda entity_table + EntityState::Data + DATA_FLAGS, x
+        and #(flag_mask ^ $FF)
+        ora #flag_value
+        sta entity_table + EntityState::Data + DATA_FLAGS, x
+.endmacro
+
+; note: assumes X is already set to CurrentEntityIndex
+.macro entity_check_flag_x flag_mask
+        lda entity_table + EntityState::Data + DATA_FLAGS, x
         and #flag_mask
         ; now you can beq for unset, and bne for flag set
 .endmacro

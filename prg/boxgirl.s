@@ -22,6 +22,7 @@ PlayerHealth: .res 1
 PlayerInvulnerability: .res 1
 PlayerStunTimer: .res 1
 PlayerPrimaryDirection: .res 1
+CoyoteTime: .res 1
 
         .segment "ENTITIES_A000" ; will eventually move to an AI page
         .include "animations/boxgirl/idle.inc"
@@ -42,7 +43,12 @@ WALKING_ACCEL = 2
 ; (other musings, etc)
 DATA_FLAGS = 0
 
-FLAG_FACING =  %00000001
+FLAG_FACING =      %00000001
+FLAG_JUMP =        %00000010
+FLAG_DOUBLE_JUMP = %00000100
+FLAG_DASH =        %00001000
+FLAG_DOUBLE_DASH = %00010000
+
 FACING_LEFT =  %00000001
 FACING_RIGHT = %00000000
 
@@ -66,6 +72,7 @@ MetaSpriteIndex := R0
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_idle_right
         
         ; set all flag bits to 0
+        lda #0
         sta entity_table + EntityState::Data + DATA_FLAGS, y
 
         ; player init stuff
@@ -80,7 +87,7 @@ MetaSpriteIndex := R0
         ; default to right-facing for now
         ; (todo: pick a direction based on how we entered the map)
         ldy CurrentEntityIndex
-        entity_set_flag FLAG_FACING, FACING_RIGHT
+        entity_set_flag_y FLAG_FACING, FACING_RIGHT
 
         ;finally, switch boxgirl to the idle routine
         set_update_func CurrentEntityIndex, boxgirl_standard
@@ -90,14 +97,8 @@ failed_to_spawn:
 .endproc
 
 JUMP_SPEED = 48
+DOUBLE_JUMP_SPEED = 48
 BOUNCE_SPEED = 56
-
-.proc apply_jump
-        ldx CurrentEntityIndex
-        lda #JUMP_SPEED
-        sta entity_table + EntityState::SpeedZ, x
-        rts
-.endproc
 
 .proc walking_acceleration
         ldx CurrentEntityIndex
@@ -167,7 +168,7 @@ old_direction_no_longer_held:
         lda #KEY_RIGHT
         sta PlayerPrimaryDirection
         ldy CurrentEntityIndex
-        entity_set_flag FLAG_FACING, FACING_RIGHT
+        entity_set_flag_y FLAG_FACING, FACING_RIGHT
         rts
 right_not_held:       
         lda #KEY_LEFT
@@ -178,7 +179,7 @@ right_not_held:
         lda #KEY_LEFT
         sta PlayerPrimaryDirection
         ldy CurrentEntityIndex
-        entity_set_flag FLAG_FACING, FACING_LEFT
+        entity_set_flag_y FLAG_FACING, FACING_LEFT
         rts
 left_not_held:
         lda #KEY_UP
@@ -206,7 +207,7 @@ down_not_held:
         ; (TODO: have an idle animation for all 4 cardinal directions, so we
         ; don't have to cheat like this)
         ldy CurrentEntityIndex
-        entity_check_flag FLAG_FACING
+        entity_check_flag_y FLAG_FACING
         bne facing_left
 facing_right:
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_idle_right
@@ -216,28 +217,56 @@ facing_left:
         rts
 .endproc
 
-; we probably want to reorganize the states later, and separate the concept of "facing direction"
-; out from everything else, as it results in a lot of tedious duplication. Anyway though, for jumping
-; we really just need to check if the player is grounded and set their vertical speed, so let's
-; do that.
 .proc handle_jump
-        ; have we pressed the jump button?
-        lda #KEY_A
-        bit ButtonsDown
-        beq jump_not_pressed
         ; are we currently grounded? (height == 0)
         ldx CurrentEntityIndex
         lda entity_table + EntityState::PositionZ, x
         ora entity_table + EntityState::PositionZ + 1, x
         bne not_grounded
-        ; set our upwards velocity immediately; gravity will take
-        ; care of the rest
+        ; we are grounded; set the jump and double jump flags
+        entity_set_flag_x (FLAG_JUMP | FLAG_DOUBLE_JUMP), (FLAG_JUMP | FLAG_DOUBLE_JUMP)
+        ; reset coyote time as well
+        lda #3
+        sta CoyoteTime
+        jmp check_jump
+not_grounded:
+        lda CoyoteTime
+        beq check_jump
+        dec CoyoteTime
+        bne check_jump
+        ; coyote time has expired. Whether we have jumped or not, disable the first jump flag
+        entity_set_flag_x FLAG_JUMP, 0
+check_jump:
+        ; have we pressed the jump button?
+        lda #KEY_A
+        bit ButtonsDown
+        beq jump_not_pressed
+        ; may we single jump?
+        entity_check_flag_x FLAG_JUMP
+        beq check_double_jump
+        ; nifty, apply a single jump:
         lda #JUMP_SPEED
         sta entity_table + EntityState::SpeedZ, x
+        ; clear the JUMP flag
+        entity_set_flag_x FLAG_JUMP, 0
         ; play a jump sfx
         st16 R0, sfx_jump
         jsr play_sfx_pulse2
-not_grounded:
+        ; and done
+        rts
+check_double_jump:
+        ; may we double jump?
+        entity_check_flag_x FLAG_DOUBLE_JUMP
+        beq jump_not_pressed
+        ; nifty, apply a single jump:
+        lda #DOUBLE_JUMP_SPEED
+        sta entity_table + EntityState::SpeedZ, x
+        ; clear the JUMP flag
+        entity_set_flag_x FLAG_DOUBLE_JUMP, 0
+        ; play a jump sfx
+        st16 R0, sfx_jump
+        jsr play_sfx_pulse2
+        ; and done
 jump_not_pressed:
         rts
 .endproc

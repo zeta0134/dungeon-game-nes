@@ -3,7 +3,7 @@
 .global FAR_sense_ground
 .global FAR_ground_nav_properties
 
-GRAVITY_ACCEL = ($FF - 2)
+GRAVITY_ACCEL = ($FF - 3)
 TERMINAL_VELOCITY = ($FF - 60)
 
 ; what could *possibly* go wrong?
