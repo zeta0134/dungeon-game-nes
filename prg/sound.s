@@ -383,7 +383,17 @@ sfx_jump:
         .byte END_ROW | 6
         .byte PULSE_DLV, DUTY_2 | DECAY | $2
         .byte END_ROW | 2
-        
+
+sfx_double_jump:
+        .byte 2 ; length of this sfx in rows
+        .byte PULSE_DLV, DUTY_1 | DECAY | $2
+        .byte PULSE_FREQ_LOW, <(270)
+        .byte PULSE_FREQ_HIGH, >(270) | MAX_LENGTH
+        .byte PULSE_SWEEP, S_ENABLE | S_PERIOD_0 | S_SHIFT_5 | S_NEG
+        .byte END_ROW | 5
+        .byte PULSE_DLV, DUTY_2 | DECAY | $2
+        .byte END_ROW | 3
+
 sfx_bounce:
         .byte 2 ; length of this sfx in rows
         .byte PULSE_DLV, DUTY_2 | DECAY | $2

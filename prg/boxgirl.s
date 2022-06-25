@@ -264,7 +264,7 @@ check_double_jump:
         ; clear the JUMP flag
         entity_set_flag_x FLAG_DOUBLE_JUMP, 0
         ; play a jump sfx
-        st16 R0, sfx_jump
+        st16 R0, sfx_double_jump
         jsr play_sfx_pulse2
         ; and done
 jump_not_pressed:
