@@ -84,6 +84,25 @@ height_not_negative:
         rts
 .endproc
 
+.proc FAR_vertical_speed_only
+        ; Does what it says on the tin. Some states ignore gravity momentarily; this
+        ; handles speed and makes sure the player's height can't go negative, but
+        ; skips all the other fancy junk.
+        ldx CurrentEntityIndex
+        ; first apply the entity's current speed to their height coordinate
+        lda entity_table + EntityState::SpeedZ, x
+        sta R0
+        sadd16x entity_table + EntityState::PositionZ, R0
+        ; if their height coordinate is now negative, cap it at 0
+        lda entity_table + EntityState::PositionZ + 1, x
+        bpl height_not_negative
+        lda #0
+        sta entity_table + EntityState::PositionZ, x
+        sta entity_table + EntityState::PositionZ+1, x
+height_not_negative:
+        rts
+.endproc
+
 ; Clobbers: R1-R6
 ; Returns: Ground value in R0
 

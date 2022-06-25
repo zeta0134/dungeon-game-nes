@@ -1,5 +1,6 @@
 .global FAR_apply_standard_entity_speed
 .global FAR_standard_entity_vertical_acceleration
+.global FAR_vertical_speed_only
 .global FAR_sense_ground
 .global FAR_ground_nav_properties
 

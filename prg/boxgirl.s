@@ -21,7 +21,9 @@
 PlayerHealth: .res 1
 PlayerInvulnerability: .res 1
 PlayerStunTimer: .res 1
+PlayerDashTimer: .res 1
 PlayerPrimaryDirection: .res 1
+PlayerLastFacing: .res 1
 CoyoteTime: .res 1
 
         .segment "ENTITIES_A000" ; will eventually move to an AI page
@@ -33,6 +35,15 @@ CoyoteTime: .res 1
 WALKING_SPEED = 16
 WALKING_ACCEL = 3
 
+JUMP_SPEED = 48
+DOUBLE_JUMP_SPEED = 48
+BOUNCE_SPEED = 56
+
+DASH_INITIAL_SPEED = 120
+DASH_DECELERATION = 5
+DASH_DURATION = 10
+DASH_UPWARD_RISE = 4
+
 ; because of how this is used by the macro which applies friction,
 ; this must be a define and not a numeric constant
 .define SLIPPERINESS 3
@@ -43,7 +54,7 @@ WALKING_ACCEL = 3
 ; (other musings, etc)
 DATA_FLAGS = 0
 
-FLAG_FACING =      %00000001
+FLAG_IDLE_FACING = %00000001
 FLAG_JUMP =        %00000010
 FLAG_DOUBLE_JUMP = %00000100
 FLAG_DASH =        %00001000
@@ -87,7 +98,9 @@ MetaSpriteIndex := R0
         ; default to right-facing for now
         ; (todo: pick a direction based on how we entered the map)
         ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_FACING, FACING_RIGHT
+        entity_set_flag_y FLAG_IDLE_FACING, FACING_RIGHT
+        lda #KEY_RIGHT
+        sta PlayerLastFacing
 
         ;finally, switch boxgirl to the idle routine
         set_update_func CurrentEntityIndex, boxgirl_standard
@@ -95,10 +108,6 @@ MetaSpriteIndex := R0
 failed_to_spawn:
         rts
 .endproc
-
-JUMP_SPEED = 48
-DOUBLE_JUMP_SPEED = 48
-BOUNCE_SPEED = 56
 
 .proc walking_acceleration
         ldx CurrentEntityIndex
@@ -167,8 +176,9 @@ old_direction_no_longer_held:
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_move_right
         lda #KEY_RIGHT
         sta PlayerPrimaryDirection
+        sta PlayerLastFacing
         ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_FACING, FACING_RIGHT
+        entity_set_flag_y FLAG_IDLE_FACING, FACING_RIGHT
         rts
 right_not_held:       
         lda #KEY_LEFT
@@ -178,8 +188,9 @@ right_not_held:
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_move_left
         lda #KEY_LEFT
         sta PlayerPrimaryDirection
+        sta PlayerLastFacing
         ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_FACING, FACING_LEFT
+        entity_set_flag_y FLAG_IDLE_FACING, FACING_LEFT
         rts
 left_not_held:
         lda #KEY_UP
@@ -189,6 +200,7 @@ left_not_held:
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_move_up
         lda #KEY_UP
         sta PlayerPrimaryDirection
+        sta PlayerLastFacing
         rts
 up_not_held:
         lda #KEY_DOWN
@@ -198,16 +210,18 @@ up_not_held:
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_move_down
         lda #KEY_DOWN
         sta PlayerPrimaryDirection
+        sta PlayerLastFacing
         rts
 down_not_held:
         lda #0 ; for idle, sure
         sta PlayerPrimaryDirection
+        ;  note: do NOT clear PlayerLastFacing
 
         ; pick an idle animation based on our most recent walking direction
         ; (TODO: have an idle animation for all 4 cardinal directions, so we
         ; don't have to cheat like this)
         ldy CurrentEntityIndex
-        entity_check_flag_y FLAG_FACING
+        entity_check_flag_y FLAG_IDLE_FACING
         bne facing_left
 facing_right:
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_idle_right
@@ -217,26 +231,33 @@ facing_left:
         rts
 .endproc
 
-.proc handle_jump
+; certain things need to happen whenever we make contact with the ground.
+; these are those things
+.proc handle_ground_contact
         ; are we currently grounded? (height == 0)
         ldx CurrentEntityIndex
         lda entity_table + EntityState::PositionZ, x
         ora entity_table + EntityState::PositionZ + 1, x
         bne not_grounded
-        ; we are grounded; set the jump and double jump flags
-        entity_set_flag_x (FLAG_JUMP | FLAG_DOUBLE_JUMP), (FLAG_JUMP | FLAG_DOUBLE_JUMP)
+        ; we are grounded; reset abilities which restore on landing
+        entity_set_flag_x (FLAG_JUMP | FLAG_DOUBLE_JUMP | FLAG_DASH | FLAG_DOUBLE_DASH), (FLAG_JUMP | FLAG_DOUBLE_JUMP | FLAG_DASH | FLAG_DOUBLE_DASH)
         ; reset coyote time as well
         lda #3
         sta CoyoteTime
-        jmp check_jump
+        jmp done
 not_grounded:
         lda CoyoteTime
-        beq check_jump
+        beq done
         dec CoyoteTime
-        bne check_jump
+        bne done
         ; coyote time has expired. Whether we have jumped or not, disable the first jump flag
         entity_set_flag_x FLAG_JUMP, 0
-check_jump:
+done:
+        rts
+.endproc
+
+.proc handle_jump
+        ldx CurrentEntityIndex
         ; have we pressed the jump button?
         lda #KEY_A
         bit ButtonsDown
@@ -268,6 +289,118 @@ check_double_jump:
         jsr play_sfx_pulse2
         ; and done
 jump_not_pressed:
+        rts
+.endproc
+
+.proc initiate_dash
+        ; note: relies on CurrentEntityIndex already being in X
+        ; pick a dash direction based on our last cardinal facing
+check_right:
+        lda PlayerLastFacing
+        cmp #KEY_RIGHT
+        bne check_left
+
+        ; Dash to the right!
+        lda #DASH_INITIAL_SPEED
+        sta entity_table + EntityState::SpeedX, x
+        lda #0
+        sta entity_table + EntityState::SpeedY, x
+        ; TODO: switch to an appropriate dashing animation
+        ; (we don't have one at the moment)
+        jmp converge
+
+check_left:
+        lda PlayerLastFacing
+        cmp #KEY_LEFT
+        bne check_up
+
+        ; Dash to the left!
+        lda #($FF - DASH_INITIAL_SPEED)
+        sta entity_table + EntityState::SpeedX, x
+        lda #0
+        sta entity_table + EntityState::SpeedY, x
+        ; TODO: switch to an appropriate dashing animation
+        ; (we don't have one at the moment)
+        jmp converge
+
+check_up:
+        lda PlayerLastFacing
+        cmp #KEY_UP
+        bne check_down
+
+        ; Dash upwards!
+        lda #0
+        sta entity_table + EntityState::SpeedX, x
+        lda #($FF - DASH_INITIAL_SPEED)
+        sta entity_table + EntityState::SpeedY, x
+        ; TODO: switch to an appropriate dashing animation
+        ; (we don't have one at the moment)
+        jmp converge
+
+check_down:
+        lda PlayerLastFacing
+        cmp #KEY_DOWN
+        bne no_match
+
+        ; Dash downwards!
+        lda #0
+        sta entity_table + EntityState::SpeedX, x
+        lda #DASH_INITIAL_SPEED
+        sta entity_table + EntityState::SpeedY, x
+        ; TODO: switch to an appropriate dashing animation
+        ; (we don't have one at the moment)
+        jmp converge
+
+no_match:
+        ; huh? how did we get here? play an ERROR sound
+        ; TODO: except that's a "jump" sound
+        
+        st16 R0, sfx_error_buzz
+        jsr play_sfx_noise
+        rts
+
+converge:
+        ; all dashes raise the player up in the air just slightly; this is mostly to help with chaining dashes
+        ; at "ground level" onto platforms across chasms. The upward rise gives a tiny bit of wiggle room
+        ; before bad timing will clonk into the opposing wall.
+        ldx CurrentEntityIndex ; probably clobbered by picking an animation
+        lda #DASH_UPWARD_RISE
+        sta entity_table + EntityState::SpeedZ
+
+        lda #DASH_DURATION
+        sta PlayerDashTimer
+
+        set_update_func CurrentEntityIndex, boxgirl_dashing
+        ; that should be it
+        rts
+.endproc
+
+.proc handle_dash
+        ldx CurrentEntityIndex
+        ; have we pressed the dash button?
+        lda #KEY_B
+        bit ButtonsDown
+        beq dash_not_pressed
+        ; may we dash?
+        entity_check_flag_x FLAG_DASH
+        beq check_double_dash
+        ; first, consume the dash flag
+        entity_set_flag_x FLAG_DASH, 0
+        ; now, apply our dash (this will change our next state)
+        jsr initiate_dash
+        ; and done
+        rts
+check_double_dash:
+        ; may we double dash?
+        entity_check_flag_x FLAG_DOUBLE_DASH
+        beq dash_not_pressed
+        ; first consume the dash flag
+        entity_set_flag_x FLAG_DOUBLE_DASH, 0
+        ; now apply our dash (this will change our next state)
+        jsr initiate_dash
+        ; and done
+        rts
+dash_not_pressed:
         rts
 .endproc
 
@@ -541,7 +674,7 @@ no_damaging_entities_found:
 ; === States ===
 
 .proc boxgirl_standard
-        jsr handle_jump
+        jsr handle_ground_contact
         jsr walking_acceleration
         ; apply physics normally
         far_call FAR_standard_entity_vertical_acceleration
@@ -554,6 +687,9 @@ no_damaging_entities_found:
         debug_color TINT_R | TINT_B
         jsr collide_with_entities
         debug_color TINT_R | TINT_G
+        ; check for actions, and trigger behavior accordingly
+        jsr handle_jump
+        jsr handle_dash
         rts
 .endproc
 
@@ -615,6 +751,75 @@ update_ourselves:
 no_store:
         jsr set_3d_metasprite_pos        
 
+        rts
+.endproc
+
+.proc clamp_to_max_walking_speed
+check_horiz:
+        ldx CurrentEntityIndex
+        lda entity_table + EntityState::SpeedX, x
+        bmi horiz_negative
+horiz_positive:
+        max_speed entity_table + EntityState::SpeedX, #WALKING_SPEED
+        jmp check_vert
+ horiz_negative:
+        min_speed entity_table + EntityState::SpeedX, #($FF - WALKING_SPEED)
+check_vert:
+        lda entity_table + EntityState::SpeedY, x
+        bmi vert_negative
+vert_positive:
+        max_speed entity_table + EntityState::SpeedY, #WALKING_SPEED
+        rts
+vert_negative:
+        min_speed entity_table + EntityState::SpeedY, #($FF - WALKING_SPEED)
+        rts
+.endproc
+
+.proc boxgirl_dashing
+        ; Are we still dashing?
+        lda PlayerDashTimer
+        beq done_dashing
+still_dashing:
+        dec PlayerDashTimer
+        ; use a BLUE palette, to channel our inner hedgehog
+        ldx CurrentEntityIndex
+        ldy entity_table + EntityState::MetaSpriteIndex, x
+        lda metasprite_table + MetaSpriteState::PaletteOffset, y
+        and #%11111100
+        ora #2
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
+        jmp update_ourselves
+done_dashing:
+        ; flip back to our standard palette
+        ldx CurrentEntityIndex
+        ldy entity_table + EntityState::MetaSpriteIndex, x
+        lda metasprite_table + MetaSpriteState::PaletteOffset, y
+        and #%11111100
+        ora #0
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
+        ; Switch back to the standard locomotion state, so the player
+        ; regains control on the next frame following this one
+        set_update_func CurrentEntityIndex, boxgirl_standard
+        ; Clamp our horizontal velocity to sane walking values, to forbid
+        ; keeping weird momentum
+        jsr clamp_to_max_walking_speed
+        ; now fall through to do standard update things
+update_ourselves:
+        ; We are dashing! Ignore player input for a while, and simply move
+        ; along the velocity we set when we initiated this state
+        far_call FAR_apply_standard_entity_speed
+        ; Apply dash-specific friction on both axis
+        apply_friction entity_table + EntityState::SpeedX, ::DASH_DECELERATION
+        apply_friction entity_table + EntityState::SpeedY, ::DASH_DECELERATION
+        ; We ignore gravity! Instead, process the static rising velocity we had set before
+        far_call FAR_vertical_speed_only
+
+        jsr set_3d_metasprite_pos
+        ; while dashing, we can't collide with other entities, and we are
+        ; rising in the air, so there is no need to check ground tiles; we are never grounded
+        ; in this state. This is true (if brief) invulnerability
+
+        ; That's it!
         rts
 .endproc
 
