@@ -45,6 +45,8 @@ DASH_DECELERATION = 5
 DASH_DURATION = 10
 DASH_UPWARD_RISE = 4
 
+COYOTE_TIME = 3
+
 
 ; Reminder: Data only goes up to 5
 ; Some of these probably need to be global
@@ -92,6 +94,8 @@ MetaSpriteIndex := R0
         lda #0
         sta PlayerInvulnerability
         sta PlayerPrimaryDirection
+        lda #COYOTE_TIME
+        sta CoyoteTime
 
         ; default to right-facing for now
         ; (todo: pick a direction based on how we entered the map)
@@ -239,8 +243,18 @@ facing_left:
         bne not_grounded
         ; we are grounded; reset abilities which restore on landing
         entity_set_flag_x (FLAG_JUMP | FLAG_DOUBLE_JUMP | FLAG_DASH | FLAG_DOUBLE_DASH), (FLAG_JUMP | FLAG_DOUBLE_JUMP | FLAG_DASH | FLAG_DOUBLE_DASH)
+        ; if CoyoteTime is any value other than its max, we were off the ground on the previous frame.
+        lda CoyoteTime
+        cmp #COYOTE_TIME
+        beq no_landing
+        ; Play a landing sound, to signal
+        ; that landing-based abilities are now recharged
+        st16 R0, sfx_landing
+        jsr play_sfx_pulse2
+        ldx CurrentEntityIndex ; clobbered by play_sfx
+no_landing:
         ; reset coyote time as well
-        lda #3
+        lda #COYOTE_TIME
         sta CoyoteTime
         jmp done
 not_grounded:

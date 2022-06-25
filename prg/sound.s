@@ -510,3 +510,27 @@ sfx_dash_noise:
         noise_cont    0,    $F,  $1,      0
 
         noise_cont    0,    $F,  $0,      0
+
+sfx_landing:
+        ; Length in rows
+        .byte 8
+        .byte PULSE_DLV, DUTY_2 | VOL | $8
+        .byte PULSE_FREQ_LOW, <(380)
+        .byte PULSE_FREQ_HIGH, >(380) | MAX_LENGTH
+        .byte PULSE_SWEEP, S_ENABLE | S_PERIOD_0 | S_SHIFT_4
+        .byte END_ROW | 0
+        .byte PULSE_DLV, DUTY_2 | VOL | $4
+        .byte END_ROW | 0
+        .byte PULSE_DLV, DUTY_2 | VOL | $2
+        .byte END_ROW | 0
+        .byte PULSE_DLV, DUTY_2 | VOL | $6
+        .byte PULSE_FREQ_LOW, <(284)
+        .byte PULSE_FREQ_HIGH, >(284) | MAX_LENGTH
+        .byte PULSE_SWEEP, S_ENABLE | S_PERIOD_0 | S_SHIFT_5 | S_NEG
+        .byte END_ROW | 0
+        .byte PULSE_DLV, DUTY_2 | VOL | $3
+        .byte END_ROW | 0
+        .byte PULSE_DLV, DUTY_2 | VOL | $1
+        .byte END_ROW | 0
+        .byte PULSE_DLV, DUTY_2 | VOL | $1
+        .byte END_ROW | 0

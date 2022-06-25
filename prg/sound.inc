@@ -14,6 +14,7 @@
 .global sfx_weak_hit
 .global sfx_error_buzz
 .global sfx_dash_pulse, sfx_dash_noise
+.global sfx_landing
 
 
 
