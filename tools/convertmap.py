@@ -285,7 +285,7 @@ def read_map(map_filename):
     common_tileset_properties = combine_tileset_properties(tilesets)
     print(common_tileset_properties)
     chr0_label = common_tileset_properties["chr0_tileset"]
-    chr1_label = common_tileset_properties["chr1_tileset"]
+    chr1_label = common_tileset_properties.get("chr1_tileset", chr0_label)
     global_palette = read_global_palette(common_tileset_properties["global_palette"])
 
     # finally let's make the name something useful

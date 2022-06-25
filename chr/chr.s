@@ -11,16 +11,15 @@ hud_graphics:
         .incbin "../art/raw_chr/hud.chr"
 
         .segment "BG2"
-        ;.include "../build/tilesets/tiles_3d.chr"
-
-        .segment "BG3"
-        ;.include "../build/tilesets/grassy_fields.chr"
-
-        .segment "BG4"
         .include "../build/patternsets/grassy_fields_v3.chr"
 
-        .segment "BG5"
+        .segment "BG3"
         .include "../build/patternsets/test_tiles_3d.chr"
+
+        .segment "BG4"
+        .include "../build/patternsets/greybox.chr"        
+
+        .segment "BG5"
 
         .segment "OBJ0"
 boxgirl_graphics:
