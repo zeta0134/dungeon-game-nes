@@ -34,6 +34,7 @@ CoyoteTime: .res 1
 
 WALKING_SPEED = 16
 WALKING_ACCEL = 3
+SLIPPERINESS = 3
 
 JUMP_SPEED = 48
 DOUBLE_JUMP_SPEED = 48
@@ -44,9 +45,6 @@ DASH_DECELERATION = 5
 DASH_DURATION = 10
 DASH_UPWARD_RISE = 4
 
-; because of how this is used by the macro which applies friction,
-; this must be a define and not a numeric constant
-.define SLIPPERINESS 3
 
 ; Reminder: Data only goes up to 5
 ; Some of these probably need to be global
@@ -131,7 +129,7 @@ check_left:
         min_speed entity_table + EntityState::SpeedX, #(256-WALKING_SPEED)
         jmp check_up
 left_not_held:
-        apply_friction entity_table + EntityState::SpeedX, SLIPPERINESS
+        apply_friction entity_table + EntityState::SpeedX, ::SLIPPERINESS
 check_up:
         lda #KEY_UP
         bit ButtonsHeld
@@ -152,7 +150,7 @@ check_down:
         max_speed entity_table + EntityState::SpeedY, #WALKING_SPEED
         jmp done
 down_not_held:
-        apply_friction entity_table + EntityState::SpeedY, SLIPPERINESS
+        apply_friction entity_table + EntityState::SpeedY, ::SLIPPERINESS
 done:
         rts
 .endproc
@@ -730,8 +728,8 @@ update_ourselves:
         ; We are stunned; do NOT process player inputs for jumping
         ; or walking acceleration, but DO process physics normally.
         ; we need to manually apply friction
-        apply_friction entity_table + EntityState::SpeedX, SLIPPERINESS
-        apply_friction entity_table + EntityState::SpeedY, SLIPPERINESS
+        apply_friction entity_table + EntityState::SpeedX, ::SLIPPERINESS
+        apply_friction entity_table + EntityState::SpeedY, ::SLIPPERINESS
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
