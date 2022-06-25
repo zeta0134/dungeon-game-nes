@@ -371,7 +371,13 @@ converge:
         sta PlayerDashTimer
 
         set_update_func CurrentEntityIndex, boxgirl_dashing
-        ; that should be it
+
+        ; play the dash SFX
+        st16 R0, sfx_dash_pulse
+        jsr play_sfx_pulse2
+        st16 R0, sfx_dash_noise
+        jsr play_sfx_noise
+        
         rts
 .endproc
 

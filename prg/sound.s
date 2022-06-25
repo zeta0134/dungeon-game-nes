@@ -453,3 +453,60 @@ sfx_error_buzz:
         .byte END_ROW | 14
         .byte NOISE_VOL, NO_LENGTH | VOL | $0
         .byte END_ROW | 1
+
+
+
+.macro noise_init row_mode, row_period, row_vol, row_length
+        .byte NOISE_VOL, NO_LENGTH | VOL | row_vol
+        .byte NOISE_PERIOD, (row_mode << 7) | ($F - row_period)
+        .byte NOISE_LENGTH, MAX_LENGTH
+        .byte END_ROW | row_length
+.endmacro
+
+.macro noise_cont row_mode, row_period, row_vol, row_length
+        .byte NOISE_VOL, NO_LENGTH | VOL | row_vol
+        .byte NOISE_PERIOD, (row_mode << 7) | ($F - row_period)
+        .byte END_ROW | row_length
+.endmacro
+
+sfx_dash_pulse:
+        ; Length in rows
+        .byte 2
+        .byte PULSE_DLV, DUTY_2 | DECAY | $0
+        .byte PULSE_FREQ_LOW, <(1140)
+        .byte PULSE_FREQ_HIGH, >(1140) | MAX_LENGTH
+        .byte PULSE_SWEEP, S_ENABLE | S_PERIOD_0 | S_SHIFT_3
+        .byte END_ROW | 2
+        .byte PULSE_SWEEP, S_ENABLE | S_PERIOD_0 | S_SHIFT_4 | S_NEG
+        .byte END_ROW | 6
+
+sfx_dash_noise:
+        ; Length in rows
+        .byte 17 
+        ;          Mode Period  Vol  Length
+        noise_init    1,    $5,  $7,      0
+        noise_cont    1,    $4,  $5,      0
+        noise_cont    1,    $3,  $2,      0
+        noise_cont    0,    $2,  $0,      0
+
+        noise_cont    0,    $4,  $7,      0
+        noise_cont    0,    $5,  $9,      0
+        noise_cont    0,    $6,  $C,      0
+        noise_cont    0,    $7,  $A,      0
+
+        noise_cont    0,    $8,  $9,      0
+        noise_cont    0,    $9,  $7,      0
+        noise_cont    0,    $A,  $6,      0        
+        noise_cont    0,    $B,  $6,      0
+
+        noise_cont    0,    $B,  $5,      0
+        noise_cont    0,    $C,  $5,      0
+        noise_cont    0,    $C,  $5,      0
+        noise_cont    0,    $D,  $4,      0
+
+        noise_cont    0,    $D,  $3,      0
+        noise_cont    0,    $E,  $2,      0
+        noise_cont    0,    $E,  $1,      0
+        noise_cont    0,    $F,  $1,      0
+
+        noise_cont    0,    $F,  $0,      0

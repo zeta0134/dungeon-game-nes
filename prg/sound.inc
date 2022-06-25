@@ -13,6 +13,8 @@
 .global sfx_teleport
 .global sfx_weak_hit
 .global sfx_error_buzz
+.global sfx_dash_pulse, sfx_dash_noise
+
 
 
 .macro play_dpcm sample_addr, length
