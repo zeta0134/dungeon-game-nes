@@ -31,11 +31,11 @@ CoyoteTime: .res 1
         .include "animations/shadow/flicker.inc"
 
 WALKING_SPEED = 16
-WALKING_ACCEL = 2
+WALKING_ACCEL = 3
 
 ; because of how this is used by the macro which applies friction,
 ; this must be a define and not a numeric constant
-.define SLIPPERINESS 4
+.define SLIPPERINESS 3
 
 ; Reminder: Data only goes up to 5
 ; Some of these probably need to be global
