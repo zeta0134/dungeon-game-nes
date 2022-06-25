@@ -12,7 +12,8 @@
 .global sfx_bounce
 .global sfx_teleport
 .global sfx_weak_hit
-.global orchestra_hit_sample
+.global sfx_error_buzz
+
 
 .macro play_dpcm sample_addr, length
 .scope

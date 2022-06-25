@@ -370,8 +370,13 @@ S_SHIFT_7 = %00000111
 
 S_NEG = %00001000
 
-END_ROW = %10000000
+NOISE_VOL = $0
+NOISE_PERIOD = $2
+NOISE_LENGTH = $3
 
+NOISE_MODE_1 = %10000000
+
+END_ROW = %10000000
 MAX_LENGTH = %11111000
 
 sfx_jump:
@@ -436,4 +441,15 @@ sfx_teleport:
         .byte PULSE_SWEEP, S_ENABLE | S_PERIOD_0 | S_SHIFT_5 | S_NEG
         .byte END_ROW | 4
 
-        
+sfx_error_buzz:
+        .byte 4
+        .byte NOISE_VOL, NO_LENGTH | VOL | $C
+        .byte NOISE_PERIOD, NOISE_MODE_1 | ($F - $5)
+        .byte NOISE_LENGTH, MAX_LENGTH
+        .byte END_ROW | 4
+        .byte NOISE_VOL, NO_LENGTH | VOL | $0
+        .byte END_ROW | 4
+        .byte NOISE_VOL, NO_LENGTH | VOL | $C
+        .byte END_ROW | 14
+        .byte NOISE_VOL, NO_LENGTH | VOL | $0
+        .byte END_ROW | 1
