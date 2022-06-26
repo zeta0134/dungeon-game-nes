@@ -14,6 +14,7 @@
         .include "mmc3.inc"
         .include "nes.inc"
         .include "palette.inc"
+        .include "particles.inc"
         .include "ppu.inc"
         .include "scrolling.inc"
         .include "sprites.inc"
@@ -257,6 +258,9 @@ time_waste_loop:
         far_call FAR_draw_metasprites
         debug_color TINT_R
         far_call FAR_scroll_camera
+        debug_color TINT_G
+        jsr update_particles
+        jsr draw_particles
         debug_color 0 ; disable debug colors
 
         jsr refresh_palettes_gameloop

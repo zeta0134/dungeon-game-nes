@@ -36,13 +36,6 @@ SortedEntityCount: .res 1
         ;.org $e000
 
 
-SHADOW_OAM = $0200
-; offsets
-OAM_Y_POS = 0
-OAM_TILE = 1
-OAM_ATTRIBUTES = 2
-OAM_X_POS = 3
-
 .proc FAR_initialize_oam
         st16 R0, (SHADOW_OAM)
         ldy #$0

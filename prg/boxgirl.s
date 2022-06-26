@@ -13,7 +13,9 @@
         .include "scrolling.inc"
         .include "sound.inc"
         .include "sprites.inc"
+        .include "particles.inc"
         .include "physics.inc"
+        .include "prng.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
 
@@ -25,6 +27,8 @@ PlayerDashTimer: .res 1
 PlayerPrimaryDirection: .res 1
 PlayerLastFacing: .res 1
 CoyoteTime: .res 1
+
+DebugParticleCooldown: .res 1
 
         .segment "ENTITIES_A000" ; will eventually move to an AI page
         .include "animations/boxgirl/idle.inc"
@@ -708,6 +712,7 @@ no_damaging_entities_found:
         ; check for actions, and trigger behavior accordingly
         jsr handle_jump
         jsr handle_dash
+        jsr spawn_fun_particles
         rts
 .endproc
 
@@ -841,6 +846,30 @@ update_ourselves:
         rts
 .endproc
 
+.proc spawn_fun_particles
+RandomX := R0
+RandomY := R1
+        dec DebugParticleCooldown
+        bne done
+        lda #8
+        sta DebugParticleCooldown
+        ; random in any direction on the X axis
+        jsr next_rand
+        and #%00111111
+        sec
+        sbc #%00100000
+        sta RandomX
+        ; random "up" (negative) on the Y axis
+        jsr next_rand
+        and #%00001111
+        sec
+        sbc #%00110000
+        sta RandomY
+        spawn_basic_particle $80, $00, RandomX, RandomY, #37, #PARTICLE_GRAVITY, #64
+done:
+        rts
+.endproc
+
 ; === Weird stuff that needs to be fixed below === 
 ; TODO: does all of this need to be in fixed? Surely there's a critical bit of it
 ; and the rest can go in a banked handler
@@ -939,4 +968,3 @@ done:
         restore_previous_bank
         rts
 .endproc
-

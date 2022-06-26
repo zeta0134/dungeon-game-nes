@@ -25,6 +25,7 @@ hud_graphics:
 boxgirl_graphics:
         .incbin "build/sprites/greybox.chr"
         .incbin "build/sprites/shadow.chr"
+        .incbin "build/sprites/particles.chr"
 
         .segment "OBJ1"
 blobby_graphics:

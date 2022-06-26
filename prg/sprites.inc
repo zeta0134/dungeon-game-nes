@@ -1,3 +1,4 @@
+; TODO: are these guards necessary anymore?
 .ifndef _SPRITES_INC
 _SPRITES_INC := 1
 
@@ -13,9 +14,16 @@ _SPRITES_INC := 1
 .global register_sorted_entity
 .global unregister_sorted_entity
 
-
 .global draw_metasprite, metasprite_table, find_unused_metasprite
 .globalzp OAMTableLength, OAMEntryIndex, OAMTableAddr, MetaspritePosX, MetaspritePosY, ScratchSpritePtr
+.globalzp CameraScrollPixelsX, CameraScrollPixelsY
+
+SHADOW_OAM = $0200
+; offsets
+OAM_Y_POS = 0
+OAM_TILE = 1
+OAM_ATTRIBUTES = 2
+OAM_X_POS = 3
 
 FLAG_VISIBILITY      = %00000001
 VISIBILITY_DISPLAYED = %00000000
