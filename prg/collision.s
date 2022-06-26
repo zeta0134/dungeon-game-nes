@@ -134,6 +134,16 @@ ColHeights := R15
         sec
         lda TileY
         sbc entity_table + EntityState::PositionZ + 1, x
+        bpl in_bounds
+out_of_bounds:
+        ; Tile Y is currently negative, and we can't safely index the map out of bounds.
+        ; Instead, tweak AdjustedGround by this much to skip rows until we are in-bounds again
+        clc
+        adc AdjustedGround
+        sta AdjustedGround
+        ; And now set TileY to 0, the highest block we can safely check
+        lda #0
+in_bounds:
         sta TileY
         ; now our Tile coordinates point to the highest block the player could
         ; theoretically clear. We'll start our loop here
