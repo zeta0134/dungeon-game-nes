@@ -855,7 +855,7 @@ RandomX := R0
 RandomY := R1
         dec ParticleCooldown
         jne done
-        lda #3
+        lda #2
         sta ParticleCooldown
         ; random in any direction on the X axis
         jsr next_rand

@@ -76,7 +76,14 @@ ScratchY := R3
         stx CurrentParticleIndex
 loop:
         ldx CurrentParticleIndex
+        ; skip inactive particles
         lda particle_table + ParticleState::Lifetime, x
+        jeq skip_particle
+        ; skip every other particle, based on the parity between
+        ; their index and the gameloop counter
+        txa
+        eor GameloopCounter
+        and #%00000001
         jeq skip_particle
 
         ; convert the particle world coordinates into screen space

@@ -19,6 +19,7 @@ PARTICLE_PALETTE_ANIM  = %00000100
         TileCounter .byte
         TileDelay .byte
         Lifetime .byte
+        ParityByte .byte ; for no reason at all
 .endstruct
 
 ; spawn a particle relative to an entity
