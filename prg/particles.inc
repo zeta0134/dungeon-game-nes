@@ -3,8 +3,10 @@
 
 MAX_PARTICLES = 8
 
-PARTICLE_STANDARD = %00000000 ; no special behaviors
-PARTICLE_GRAVITY  = %00000001
+PARTICLE_STANDARD =      %00000000 ; no special behaviors
+PARTICLE_GRAVITY  =      %00000001
+PARTICLE_TILE_ANIM  =    %00000010
+PARTICLE_PALETTE_ANIM  = %00000100
 
 .struct ParticleState
         PositionX .word ; Most entities will have a position, but if not needed, these can be repurposed
@@ -14,6 +16,8 @@ PARTICLE_GRAVITY  = %00000001
         TileIndex .byte
         AttributeByte .byte
         Behavior .byte
+        TileCounter .byte
+        TileDelay .byte
         Lifetime .byte
 .endstruct
 
@@ -31,12 +35,21 @@ PARTICLE_GRAVITY  = %00000001
         adc #>xoff
         sta particle_table + ParticleState::PositionX+1, y
 
-        clc
+        sec
         lda entity_table + EntityState::PositionY, x
-        adc #<yoff
+        sbc #<yoff
         sta particle_table + ParticleState::PositionY, y
         lda entity_table + EntityState::PositionY+1, x
-        adc #>yoff
+        sbc #>yoff
+        sta particle_table + ParticleState::PositionY+1, y
+
+        ; for the Y position, subtract the entity's height
+        sec
+        lda particle_table + ParticleState::PositionY, y
+        sbc entity_table + EntityState::PositionZ, x
+        sta particle_table + ParticleState::PositionY, y
+        lda particle_table + ParticleState::PositionY+1, y
+        sbc entity_table + EntityState::PositionZ+1, x
         sta particle_table + ParticleState::PositionY+1, y
 
         lda xspeed
@@ -49,6 +62,9 @@ PARTICLE_GRAVITY  = %00000001
         sta particle_table + ParticleState::Behavior, y
         lda lifetime
         sta particle_table + ParticleState::Lifetime, y
+
+        lda #0
+        sta particle_table + ParticleState::AttributeByte, y 
         
         clc
         lda #.sizeof(ParticleState)
@@ -59,4 +75,13 @@ PARTICLE_GRAVITY  = %00000001
 done:
         sta NextParticleIndex
 .endscope
+.endmacro
+
+.macro spawn_advanced_particle xoff, yoff, xspeed, yspeed, tile_index, behavior, attribute_byte, tile_delay, lifetime
+        spawn_basic_particle xoff, yoff, xspeed, yspeed, tile_index, behavior, lifetime
+        lda attribute_byte
+        sta particle_table + ParticleState::AttributeByte, y 
+        lda tile_delay
+        sta particle_table + ParticleState::TileDelay, y 
+        sta particle_table + ParticleState::TileCounter, y
 .endmacro

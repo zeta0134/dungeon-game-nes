@@ -28,7 +28,7 @@ PlayerPrimaryDirection: .res 1
 PlayerLastFacing: .res 1
 CoyoteTime: .res 1
 
-DebugParticleCooldown: .res 1
+ParticleCooldown: .res 1
 
         .segment "ENTITIES_A000" ; will eventually move to an AI page
         .include "animations/boxgirl/idle.inc"
@@ -100,6 +100,8 @@ MetaSpriteIndex := R0
         sta PlayerPrimaryDirection
         lda #COYOTE_TIME
         sta CoyoteTime
+        lda #1
+        sta ParticleCooldown
 
         ; default to right-facing for now
         ; (todo: pick a direction based on how we entered the map)
@@ -712,7 +714,6 @@ no_damaging_entities_found:
         ; check for actions, and trigger behavior accordingly
         jsr handle_jump
         jsr handle_dash
-        jsr spawn_fun_particles
         rts
 .endproc
 
@@ -842,30 +843,36 @@ update_ourselves:
         ; rising in the air, so there is no need to check ground tiles; we are never grounded
         ; in this state. This is true (if brief) invulnerability
 
+        ; eye candy
+        jsr spawn_dash_particles
+
         ; That's it!
         rts
 .endproc
 
-.proc spawn_fun_particles
+.proc spawn_dash_particles
 RandomX := R0
 RandomY := R1
-        dec DebugParticleCooldown
-        bne done
-        lda #8
-        sta DebugParticleCooldown
+        dec ParticleCooldown
+        jne done
+        lda #3
+        sta ParticleCooldown
         ; random in any direction on the X axis
         jsr next_rand
-        and #%00111111
+        and #%00000111
         sec
-        sbc #%00100000
+        sbc #%00000100
         sta RandomX
         ; random "up" (negative) on the Y axis
         jsr next_rand
-        and #%00001111
+        and #%00000111
         sec
-        sbc #%00110000
+        sbc #%00000100
         sta RandomY
-        spawn_basic_particle $80, $00, RandomX, RandomY, #37, #PARTICLE_GRAVITY, #64
+
+        ldx CurrentEntityIndex
+        ;                       xoff  yoff   xspeed   yspeed tile             behavior  attribute animspeed lifetime
+        spawn_advanced_particle  $80,  $40, RandomX, RandomY, #39, #PARTICLE_TILE_ANIM,        #2,       #4,     #16
 done:
         rts
 .endproc

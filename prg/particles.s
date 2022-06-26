@@ -43,8 +43,19 @@ constant_speed:
 
         accelerate particle_table + ParticleState::SpeedY, #($FF-GRAVITY_ACCEL)
         max_speed particle_table + ParticleState::SpeedY, #($FF-TERMINAL_VELOCITY)
-
 no_gravity:
+        lda particle_table + ParticleState::Behavior, x
+        cmp #PARTICLE_TILE_ANIM
+        bne no_tile_animation
+
+        dec particle_table + ParticleState::TileCounter, x
+        bne no_tile_animation
+        inc particle_table + ParticleState::TileIndex, x
+        inc particle_table + ParticleState::TileIndex, x
+        lda particle_table + ParticleState::TileDelay, x
+        sta particle_table + ParticleState::TileCounter, x
+
+no_tile_animation:
 done_with_this_particle:
         lda CurrentParticleIndex
         clc

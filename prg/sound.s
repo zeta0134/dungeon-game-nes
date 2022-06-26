@@ -513,7 +513,7 @@ sfx_dash_noise:
 
 sfx_landing:
         ; Length in rows
-        .byte 8
+        .byte 7
         .byte PULSE_DLV, DUTY_2 | VOL | $8
         .byte PULSE_FREQ_LOW, <(380)
         .byte PULSE_FREQ_HIGH, >(380) | MAX_LENGTH
