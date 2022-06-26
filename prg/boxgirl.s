@@ -1,6 +1,7 @@
         .setcpu "6502"
         .include "boxgirl.inc"
         .include "branch_util.inc"
+        .include "camera.inc"
         .include "collision.inc"
         .include "debug.inc"
         .include "entity.inc"
@@ -395,6 +396,15 @@ converge:
         jsr play_sfx_pulse2
         st16 R0, sfx_dash_noise
         jsr play_sfx_noise
+
+        ; Apply some screen shake
+        ; (Warning: very powerful! Use responsibly)
+        lda #$01
+        sta CameraShakeSpeed
+        lda #%00000111
+        sta CameraShakeStrength
+        lda #$2
+        sta CameraShakeDecay
         
         rts
 .endproc

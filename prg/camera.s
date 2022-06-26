@@ -1,13 +1,24 @@
         .setcpu "6502"
+        .include "branch_util.inc"
         .include "camera.inc"
         .include "nes.inc"
         .include "entity.inc"
+        .include "prng.inc"
         .include "scrolling.inc"
+        .include "word_util.inc"
         .include "zeropage.inc"
 
         .segment "RAM"
 FollowCameraDesiredX: .word $0000
 FollowCameraDesiredY: .word $0000
+
+CameraShakeStrength: .byte $00
+CameraShakeSpeed: .byte $00
+CameraShakeSpeedCounter: .byte $00
+CameraShakeDecay: .byte $00
+CameraShakeDecayCounter: .byte $00
+CameraShakeX: .word $00
+CameraShakeY: .word $00
         .segment "SCROLLING_A000"
 
 .proc find_desired_follow_camera
@@ -118,8 +129,61 @@ y_less_than_maximum:
         rts
 .endproc
 
+.proc update_camera_shake
+        lda CameraShakeStrength
+        beq no_camera_shake
+
+        dec CameraShakeSpeedCounter
+        bmi apply_camera_shake
+        rts
+apply_camera_shake:
+        ; first, reset our speed counter
+        lda CameraShakeSpeed
+        sta CameraShakeSpeedCounter
+
+        ; now process strength decay
+        dec CameraShakeDecayCounter
+        bpl no_decay
+        lsr CameraShakeStrength
+        lda CameraShakeDecay
+        sta CameraShakeDecayCounter
+
+no_decay:
+        ; pick random numbers for the camera shake amount
+        jsr next_rand
+        and CameraShakeStrength
+        sta CameraShakeX
+        lda CameraShakeStrength
+        lsr
+        eor #$FF
+        adc CameraShakeX
+        sta CameraShakeX
+
+
+        jsr next_rand
+        and CameraShakeStrength
+        sta CameraShakeY
+        lda CameraShakeStrength
+        lsr
+        eor #$FF
+        adc CameraShakeY
+        sta CameraShakeY
+
+        ; all done
+        rts
+
+no_camera_shake:
+        lda #0
+        sta CameraShakeX
+        sta CameraShakeX+1
+        sta CameraShakeY
+        sta CameraShakeY+1
+        rts
+.endproc
+
 .proc lerp_target_to_desired
 Distance := R0
+        jsr update_camera_shake
         ; calculate some percentage of travel distance from target to desired
         ; first calculate the travel distance from our current scroll position
         ; to the target:
@@ -130,9 +194,23 @@ Distance := R0
         lda FollowCameraDesiredX+1
         sbc CameraXTileTarget
         sta Distance+1
+
+        ; would applying camera shake make the follow target negative?
+        clc
+        lda FollowCameraDesiredX+1
+        adc CameraShakeX
+        bmi no_x_shake
+
+        ; apply camera shake to the high byte
+        clc
+        lda Distance+1
+        adc CameraShakeX
+        sta Distance+1
+
+no_x_shake:
         ; sanity check: are we already AT the target? If so, bail now
         ora Distance
-        beq done_with_x
+        jeq done_with_x
         ; this is a signed comparison, and it's much easier to simply split the code here
         lda Distance+1
         bmi negative_x
@@ -196,6 +274,20 @@ done_with_x:
         lda FollowCameraDesiredY+1
         sbc CameraYTileTarget
         sta Distance+1
+
+        ; would applying camera shake make the follow target negative?
+        clc
+        lda FollowCameraDesiredY+1
+        adc CameraShakeY
+        bmi no_y_shake
+
+        ; apply camera shake to the high byte
+        clc
+        lda Distance+1
+        adc CameraShakeY
+        sta Distance+1
+
+no_y_shake:
         ; sanity check: are we already AT the target? If so, bail now
         ora Distance
         beq done_with_y
