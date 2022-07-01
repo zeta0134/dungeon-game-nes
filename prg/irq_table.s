@@ -143,7 +143,7 @@ loop:
         ; fancy TODO: once we have a settings screen, we could allow the user
         ; to adjust the timing of the first offset, allowing software-based
         ; calibration for varying amounts of vertical overscan
-        lda #(8 - 1)
+        lda #(3 - 1)
         sta MMC3_IRQ_LATCH
         sta MMC3_IRQ_RELOAD
         sta MMC3_IRQ_ENABLE

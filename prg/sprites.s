@@ -320,7 +320,7 @@ MetaSpriteIndex := R1
         ; top segment of the screen, which is blanked
         ; TODO: If we make this user configurable, we should use that value here
         clc
-        add16 MetaspritePosY, #8
+        add16 MetaspritePosY, #3
 
         sec
         lda MetaspritePosY
