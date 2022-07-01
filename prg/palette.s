@@ -14,7 +14,10 @@ BgPaletteDirty: .res 1
 ObjPaletteDirty: .res 1
 BgPaletteBuffer: .res 16
 ObjPaletteBuffer: .res 16
-Brightness: .res 16
+HudPaletteBuffer: .res 16
+HudGradientBuffer: .res 3
+Brightness: .res 1
+HudPaletteActive: .res 1
 
         .segment "PRGFIXED_E000"
 
@@ -83,6 +86,64 @@ brightness_table:
         .word light_palette_3
         .word white_palette
 
+.proc init_hud_palette
+        ; for now, this is a static (and quite ugly) palette for testing
+        ; The global background is always black
+        lda #$0F
+        sta HudPaletteBuffer + 0
+        ; the three normal palettes will be varying shades of pink and purple
+        lda #$04
+        sta HudPaletteBuffer + 1
+        lda #$24
+        sta HudPaletteBuffer + 2
+        lda #$34
+        sta HudPaletteBuffer + 3
+
+        lda #$05
+        sta HudPaletteBuffer + 5
+        lda #$25
+        sta HudPaletteBuffer + 6
+        lda #$35
+        sta HudPaletteBuffer + 7
+
+        lda #$06
+        sta HudPaletteBuffer + 9
+        lda #$26
+        sta HudPaletteBuffer + 10
+        lda #$36
+        sta HudPaletteBuffer + 11
+
+        lda #$07
+        sta HudPaletteBuffer + 13
+        lda #$27
+        sta HudPaletteBuffer + 14
+        lda #$37
+        sta HudPaletteBuffer + 15
+
+        ; finally, the palette gradient during the transition looks like this:
+        ; - old BG3.0
+        ; - new BG0.0
+        ; - new BG1.0
+        ; - new BG2.0
+        ; - new BG3.0
+        ; - new BG0.0
+
+        ; Since old BG3.0 and new BG0.0 will both be black, we can do a 3-color gradient
+        ; in the remaining 3 colors, like this. Let's use an ugly purple, which nothing else
+        ; uses, to make this really obvious
+
+        lda #$13
+        sta HudGradientBuffer + 0
+        lda #$23
+        sta HudGradientBuffer + 1
+        lda #$33
+        sta HudGradientBuffer + 2
+        ; all set!
+        ; TODO: make this not awful, and later, incorporate the ability icon colors in here
+
+        rts
+.endproc
+
 ; call with desired brightness in a
 .proc set_brightness
         sta Brightness
@@ -121,6 +182,7 @@ PalAddr := R0
 PalIndex := R2
         lda BgPaletteDirty
         ora ObjPaletteDirty
+        ora HudPaletteActive
         jeq done
 
         lda Brightness
@@ -132,6 +194,7 @@ PalIndex := R2
         sta PalAddr+1
 
         lda BgPaletteDirty
+        ora HudPaletteActive
         beq check_obj_palette
 
         write_vram_header_imm $3F00, #16, VRAM_INC_1
@@ -172,7 +235,7 @@ check_obj_palette:
         lda #0
         sta PalIndex
 obj_loop:
-       ; for the first entry, always use the global BG color
+       ; for the first entry, always use the global *BG* color
         ldx #0
         ldx PalIndex           ; From the original buffer
         ldy BgPaletteBuffer, x ; Grab a palette color

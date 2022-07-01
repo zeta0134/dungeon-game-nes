@@ -143,6 +143,10 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
 .proc init_engine
         lda #4
         sta Brightness
+        lda #1
+        sta HudPaletteActive
+        jsr init_hud_palette
+
         st16 TargetMapAddr, (grassy_test_v3)
         lda #<.bank(grassy_test_v3)
         sta TargetMapBank
@@ -273,6 +277,7 @@ time_waste_loop:
         lda DynamicChrBank
         sta R1
         far_call FAR_generate_basic_playfield
+        far_call FAR_generate_hud_palette_swap
         far_call FAR_generate_standard_hud
         jsr swap_irq_buffers
         jsr wait_for_next_vblank

@@ -143,6 +143,29 @@ hud_split:
         rts
 .endproc
 
+.proc FAR_generate_hud_palette_swap
+IrqGenerationIndex := R0
+        ldx IrqGenerationIndex
+        ; Here we generate a "blank" scanline, similar to the bottom of the HUD, but
+        ; with the "scanline" counter set to the magic value #$FE
+        lda #(BG_ON)
+        sta irq_table_ppumask, x
+        lda #$FE
+        sta irq_table_scanlines, x
+        lda #0
+        sta irq_table_scroll_x, x
+        lda #224
+        sta irq_table_scroll_y, x
+        lda #0
+        sta irq_table_nametable_high, x
+        sta irq_table_chr0_bank, x ; index 0 is blank
+        inc IrqGenerationIndex 
+        ; Note that this MUST now be followed with some other split, as the
+        ; palette swap terminates by applying that split.
+        ; Typically this will be either the HUD or the Dialog area.
+        rts
+.endproc
+
 .proc FAR_generate_standard_hud
 IrqGenerationIndex := R0
         ldx IrqGenerationIndex

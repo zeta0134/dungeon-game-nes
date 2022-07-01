@@ -250,22 +250,17 @@ loop:
         lda (SourceAddr), y
         sta BgPaletteBuffer, y
         iny
-        cpy #12
+        cpy #16
         bne loop
 
-        ; FOR NOW, we will load in a static HUD palette
-        lda #$30 ; ignored
-        sta BgPaletteBuffer, y
-        iny
-        lda #$30
-        sta BgPaletteBuffer, y
-        iny
-        lda #$10
-        sta BgPaletteBuffer, y
-        iny
-        lda #$0F
-        sta BgPaletteBuffer, y
-        iny
+        ; apply the hud gradient here
+        ; (these colors are not usually seen)
+        lda HudGradientBuffer + 0
+        sta BgPaletteBuffer + 4
+        lda HudGradientBuffer + 1
+        sta BgPaletteBuffer + 8
+        lda HudGradientBuffer + 2
+        sta BgPaletteBuffer + 12
 
         lda #1
         sta BgPaletteDirty

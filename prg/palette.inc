@@ -4,6 +4,10 @@
 .global ObjPaletteDirty
 .global BgPaletteBuffer
 .global ObjPaletteBuffer
+.global HudPaletteBuffer
 .global Brightness
+.global HudPaletteActive
+.global HudGradientBuffer
 
 .global set_brightness
+.global init_hud_palette

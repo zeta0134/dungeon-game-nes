@@ -5,6 +5,7 @@
         .include "irq_table.inc"
         .include "nes.inc"
         .include "mmc3.inc"
+        .include "palette.inc"
 
         .zeropage
 
@@ -215,7 +216,7 @@ split_xy_begin:
 
         ; ppu dot range here: 187 - 207
 
-        ; burn 9 cycles here
+        ; burn 11 cycles here
         nop ; 2 (6)
         nop ; 2 (6)
         php ; 4 (12)
@@ -278,7 +279,7 @@ check_2px:
         ; and some older emulators. While it should work in theory on real hardware, it is safer to also use
         ; a CPU timed delay in this case
         cmp #$02 ; 2 (6)
-        bne delay_with_mmc3_irq ; when not taken: 2 (6)
+        bne check_postirq_vector ; when not taken: 2 (6), when taken: 3 (9)
 
         ; ppu dot range here: 17 - 37
 
@@ -305,6 +306,12 @@ check_2px:
         ; and the jmp takes care of the last 3
         jmp split_xy_begin; 3 (9)
 
+check_postirq_vector:
+        ; ppu dot range here: 20 - 40
+        cmp #$FE ; 2 (6)
+        bnenw delay_with_mmc3_irq ; 2 (6) (when not taken)
+        jmp post_irq_hud_palette ; 3 (9)
+        ; in theory we could check for other special cases here, in order of "who needs more cycles at the start"
 delay_with_mmc3_irq:
         sec
         sbc #2
@@ -326,4 +333,190 @@ delay_with_mmc3_irq:
 
         ; all done
         rti
+
+        .align 2 ; tweak to make branch asserts go away
+
+post_irq_hud_palette:
+        ; ppu dot range here: 41 - 61
+
+        ; ====== Post-IRQ Scanline =============
+
+        ;delay_cycles 55
+        ; 48 cycles here (144)
+        nop
+        ldy #9
+        dey
+        bnenw *-1
+        ; and another 7 here (21)
+        php ; 4 (12)
+        plp ; 3 (9)
+        ; ppu dot range here: 206 - 226
+
+        ; note: state of w flag is known since we just came out of IRQ routine,
+        ; so we don't need to bit PPUSTATUS here
+        lda #$3F                 ; 2 (6)
+        sta PPUADDR              ; 4 (12)
+        lda #$00                 ; 2 (6) (PPUMASK: disable rendering)
+        ldx #$00                 ; 2 (6)
+        ldy HudPaletteBuffer + 0      ; 4 (12)
+        ; ppu dot range here: 248 - 268
+        sta PPUMASK ; 4 (12) disable rendering
+        stx PPUADDR ; 4 (12) second write, set to #$3F00 (bg palette hack immediately takes effect, still in hblank)
+        sty PPUDATA ; 4 (12) set BG0 to #$0F (black)
+        ; now it would take too long to set PPUADDR again, so very quickly get it *out* of
+        ; the palette zone
+        stx PPUADDR ; 4 (12)
+        stx PPUADDR ; 4 (12) set PPUADDR to $0000 (not in palette mem)
+        ; ppu dot range here: 308-328
+        ; now we can set PPUADDR properly, and we'll go from standard background (#$0F)
+        ; to background hack (still #$0F) for no visible change
+        lda #$3F    ; 2 (6)
+        sta PPUADDR ; 4 (12)
+        lda #$00    ; 2 (6)
+        sta PPUADDR ; 4 (12) set PPUADDR back to #$3F00 for BG palette hack
+        ; ppu dot range here: 3 - 23
+
+        ; === Copy BG0 ===
+
+        ;delay_cycles 70
+        ; 48 cycles here (144)
+        nop
+        ldy #9
+        dey
+        bnenw *-1
+        ; another 22 here (66)
+        ldy #3
+        nop
+        dey
+        bnenw *-2
+        ; ppu dot range here: 213 - 233
+        lda HudPaletteBuffer + 0 ; 4 (12) BG0.0
+        ldx HudPaletteBuffer + 1 ; 4 (12) BG0.1
+        ldy HudPaletteBuffer + 2 ; 4 (12) BG0.2
+        
+        ; ppu dot range here: 249 - 269
+        sta PPUDATA ; 4 (12) BG0.0
+        stx PPUDATA ; 4 (12) BG0.1
+        sty PPUDATA ; 4 (12) BG0.2
+        lda HudPaletteBuffer + 3  ; 4 (12)
+        sta PPUDATA ; 4 (12) BG0.3
+        ; now pointing to BG1.0, which we will display for the next scanline
+        ; ppu dot range here: 309 - 329
+
+        ; === Copy BG1 ===
+
+        ;delay_cycles 86
+        ; 48 cycles here (144)
+        nop
+        ldy #9
+        dey
+        bnenw *-1
+        ; another 34 cycles here (102)
+        ldy #136 ;hides 'DEY'
+        dey
+        bminw *-2
+
+        ; ppu dot range here: 214 - 234
+        
+        lda HudPaletteBuffer + 5 ; 4 (12) BG1.1
+        ldx HudPaletteBuffer + 6 ; 4 (12) BG1.2
+        ldy HudPaletteBuffer + 7 ; 4 (12) BG1.3
+
+        ; ppu dot range here: 250 - 270
+        sta PPUDATA ; 4 (12) skip past BG1.0 with a write (garbage data, not used)
+        sta PPUDATA ; 4 (12) BG1.1
+        stx PPUDATA ; 4 (12) BG1.2
+        sty PPUDATA ; 4 (12) BG1.3
+        ; now pointing to BG2.0, which we will display for the next scanline
+        ; ppu dot range here: 298 - 318
+
+        ; === Copy BG2 ===
+        
+        ;delay_cycles 85
+        ; 48 cycles here (144)
+        nop
+        ldy #9
+        dey
+        bnenw *-1
+        ; and another 37 here (111)
+        ldy #4
+        nop
+        nop
+        dey
+        bnenw *-3
+        ; ppu dot range here: 212 - 232
+
+        lda HudPaletteBuffer + 9  ; 4 (12) BG2.1
+        ldx HudPaletteBuffer + 10 ; 4 (12) BG2.2
+        ldy HudPaletteBuffer + 11 ; 4 (12) BG2.3
+
+        ; ppu dot range here: 248 - 268
+        sta PPUDATA ; 4 (12) skip past BG2.0 with a write (garbage data, not used)
+        sta PPUDATA ; 4 (12) BG2.1
+        stx PPUDATA ; 4 (12) BG2.2
+        sty PPUDATA ; 4 (12) BG2.3
+        ; now pointing to BG3.0, which we will display for the next scanline
+        ; ppu dot range here: 296 - 316
+
+        ; === Copy BG3 ===
+        ;delay_cycles 86
+        ; 48 cycles here (144)
+        nop
+        ldy #9
+        dey
+        bnenw *-1
+        ; another 38 cycles here (114)
+        nop
+        ldy #6
+        dey
+        bplnw *-1
+        ; ppu dot range here: 213 - 233
+        
+
+        lda HudPaletteBuffer + 13 ; 4 (12) BG3.1
+        ldx HudPaletteBuffer + 14 ; 4 (12) BG3.2
+        ldy HudPaletteBuffer + 15 ; 4 (12) BG3.3
+        ; ppu dot range here: 249 - 269
+        
+        sta PPUDATA ; 4 (12) skip past BG3.0 with a write (garbage data, not used)
+        sta PPUDATA ; 4 (12) BG3.1
+        stx PPUDATA ; 4 (12) BG3.2
+        sty PPUDATA ; 4 (12) BG3.3
+        ; now pointing to BG3.0, which we will display for the next scanline
+        ; ppu dot range here: 297 - 317
+
+        ; === Post-palette swap ===
+        ; We don't have enough time remaining in this scanline to fix PPUADDR, since
+        ; nametable prefetch begins at dot 320. Instead, spinwait again and do the setup
+        ; properly.
+
+        ; hrm... it might be cleaner to simply re-use the existing split/xy code, since
+        ; we have enough time. We can time it a little bit early, since we don't care
+        ; about glitches from setting PPUADDR too early (rendering is disabled) and this
+        ; should compensate for DPCM jitter
+
+        ; Specifically, setting PPUADDR early will transition us from OBJ0.0 (BG0.0) (#$0F) to
+        ; BG0 (normal rendering disabled color) (also #$0F) for no visual change.
+
+        ; not this:
+        ;delay_cycles 28 ; Ideal. Maybe check if DPCM is playing, and use this if it isn't?
+        ; but this:
+        ;delay_cycles 20 ; accounting for worst-case DPCM jitter of 4 CPU cycles, twice
+        nop ; 2 (6)
+        nop ; 2 (6)
+        nop ; 2 (6)
+        php ; 3 (9)
+        plp ; 4 (12)
+        php ; 3 (9)
+        plp ; 4 (12)        
+
+        jmp split_xy_begin ; 3 (9)
+        ; we want to end up on dot 49 - 69 here
+
+
+
+
+        ; for now, do nothing!
+        rti
+
 .endproc
