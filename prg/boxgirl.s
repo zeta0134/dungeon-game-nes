@@ -980,7 +980,15 @@ no_match:
         add16 ExitTableAddr, #.sizeof(ExitTableEntry)
         dex
         jne loop
-        ; we did NOT find a valid exit. Do nothing!
+        ; we did NOT find a valid exit. This is fairly unusual and probably
+        ; a bug; play a buzzer SFX to tell the QA tester that this should have
+        ; worked.
+
+        ; TODO: this restarts every frame, which technically gets the job done, but is
+        ; awfully ugly. When we have safe tiles, can we compare with the last of those, and
+        ; only queue up the error buzz if we don't match?
+        st16 R0, sfx_error_buzz
+        jsr play_sfx_noise
 done:
         restore_previous_bank
         rts
