@@ -86,38 +86,41 @@ brightness_table:
         .word light_palette_3
         .word white_palette
 
+hud_base_pal:
+        .incbin "../art/palettes/hud_base.pal"
+
 .proc init_hud_palette
         ; for now, this is a static (and quite ugly) palette for testing
         ; The global background is always black
         lda #$0F
         sta HudPaletteBuffer + 0
-        ; the three normal palettes will be varying shades of pink and purple
-        lda #$04
+        
+        lda hud_base_pal+1
         sta HudPaletteBuffer + 1
-        lda #$24
+        lda hud_base_pal+2
         sta HudPaletteBuffer + 2
-        lda #$34
+        lda hud_base_pal+3
         sta HudPaletteBuffer + 3
 
-        lda #$05
+        lda hud_base_pal+5
         sta HudPaletteBuffer + 5
-        lda #$25
+        lda hud_base_pal+66
         sta HudPaletteBuffer + 6
-        lda #$35
+        lda hud_base_pal+7
         sta HudPaletteBuffer + 7
 
-        lda #$06
+        lda hud_base_pal+9
         sta HudPaletteBuffer + 9
-        lda #$26
+        lda hud_base_pal+10
         sta HudPaletteBuffer + 10
-        lda #$36
+        lda hud_base_pal+11
         sta HudPaletteBuffer + 11
 
-        lda #$07
+        lda hud_base_pal+13
         sta HudPaletteBuffer + 13
-        lda #$27
+        lda hud_base_pal+14
         sta HudPaletteBuffer + 14
-        lda #$37
+        lda hud_base_pal+15
         sta HudPaletteBuffer + 15
 
         ; finally, the palette gradient during the transition looks like this:
@@ -129,14 +132,13 @@ brightness_table:
         ; - new BG0.0
 
         ; Since old BG3.0 and new BG0.0 will both be black, we can do a 3-color gradient
-        ; in the remaining 3 colors, like this. Let's use an ugly purple, which nothing else
-        ; uses, to make this really obvious
+        ; in the remaining area. Let's use a boring grey gradient
 
-        lda #$13
+        lda #$30
         sta HudGradientBuffer + 0
-        lda #$23
+        lda #$10
         sta HudGradientBuffer + 1
-        lda #$33
+        lda #$0F
         sta HudGradientBuffer + 2
         ; all set!
         ; TODO: make this not awful, and later, incorporate the ability icon colors in here
