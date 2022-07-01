@@ -147,8 +147,8 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         sta HudPaletteActive
         jsr init_hud_palette
 
-        st16 TargetMapAddr, (grassy_test_v3)
-        lda #<.bank(grassy_test_v3)
+        st16 TargetMapAddr, (debug_hub)
+        lda #<.bank(debug_hub)
         sta TargetMapBank
         st16 GameMode, load_new_map
         rts

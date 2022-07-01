@@ -6,6 +6,7 @@
         
         .segment "MAPS_0_A000"
         ; Maps
+        .include "../build/maps/debug_hub.incs"
         .include "../build/maps/grassy_test_v3.incs"
         .include "../build/maps/horizontal_platforms.incs"
         .include "../build/maps/greybox_test.incs"
