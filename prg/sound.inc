@@ -11,7 +11,9 @@
 .global sfx_double_jump
 .global sfx_bounce
 .global sfx_teleport
-.global sfx_weak_hit
+.global sfx_weak_hit_pulse
+.global sfx_weak_hit_tri
+.global sfx_weak_hit_noise
 .global sfx_error_buzz
 .global sfx_dash_pulse, sfx_dash_noise
 .global sfx_landing

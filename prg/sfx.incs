@@ -1,0 +1,263 @@
+.include "midi.inc"
+
+; === Register bitmasks, for manual writing ===
+
+PULSE_DLV = $0
+PULSE_SWEEP = $1
+PULSE_FREQ_LOW = $2
+PULSE_FREQ_HIGH = $3
+
+DUTY_0 = %00000000
+DUTY_1 = %01000000
+DUTY_2 = %10000000
+DUTY_3 = %11000000
+
+NO_LENGTH = %00100000
+VOL =       %00010000
+DECAY =     %00000000
+
+S_ENABLE = %10000000
+S_PERIOD_0 = %00000000
+S_PERIOD_1 = %00010000
+S_PERIOD_2 = %00100000
+S_PERIOD_3 = %00110000
+S_PERIOD_4 = %01000000
+S_PERIOD_5 = %01010000
+S_PERIOD_6 = %01100000
+S_PERIOD_7 = %01110000
+
+S_SHIFT_0 = %00000000
+S_SHIFT_1 = %00000001
+S_SHIFT_2 = %00000010
+S_SHIFT_3 = %00000011
+S_SHIFT_4 = %00000100
+S_SHIFT_5 = %00000101
+S_SHIFT_6 = %00000110
+S_SHIFT_7 = %00000111
+
+S_NEG = %00001000
+
+NOISE_VOL = $0
+NOISE_PERIOD = $2
+NOISE_LENGTH = $3
+
+NOISE_MODE_1 = %10000000
+
+TRI_LINEAR_COUNTER = $0
+TRI_FREQ_LOW = $2
+TRI_FREQ_HIGH = $3
+
+; === Special flags to terminate rows ===
+
+END_ROW = %10000000
+MAX_LENGTH = %11111000
+
+; === Macros to make defining long, complex sounds a bit less tedious ===
+
+.macro pulse_init pitch, volume, duty
+        
+.endmacro
+
+.macro pulse_init_sweep row_pitch, row_duty, row_volume, row_sweep_params, row_length
+        .byte PULSE_DLV, (row_duty << 6) | VOL | row_volume
+        .byte PULSE_FREQ_LOW, <(row_pitch)
+        .byte PULSE_FREQ_HIGH, >(row_pitch) | MAX_LENGTH
+        .byte PULSE_SWEEP, (S_ENABLE | row_sweep_params)
+        .byte END_ROW | row_length
+.endmacro
+
+.macro pulse_init_sweep_decay row_pitch, row_duty, row_decay, row_sweep_params, row_length
+        .byte PULSE_DLV, (row_duty << 6) | DECAY | row_decay
+        .byte PULSE_FREQ_LOW, <(row_pitch)
+        .byte PULSE_FREQ_HIGH, >(row_pitch) | MAX_LENGTH
+        .byte PULSE_SWEEP, (S_ENABLE | row_sweep_params)
+        .byte END_ROW | row_length
+.endmacro
+
+.macro pulse_cont_freq row_pitch, row_length
+        .byte PULSE_FREQ_LOW, <(row_pitch)
+        .byte PULSE_FREQ_HIGH, >(row_pitch) | MAX_LENGTH
+        .byte END_ROW | row_length
+.endmacro
+
+.macro pulse_cont_duty row_duty, row_volume, row_length
+        .byte PULSE_DLV, (row_duty << 6) | VOL | row_volume
+        .byte END_ROW | row_length
+.endmacro
+
+.macro pulse_cont_duty_decay row_duty, row_decay, row_length
+        .byte PULSE_DLV, (row_duty << 6) | DECAY | row_decay
+        .byte END_ROW | row_length
+.endmacro
+
+.macro noise_init row_mode, row_period, row_vol, row_length
+        .byte NOISE_VOL, NO_LENGTH | VOL | row_vol
+        .byte NOISE_PERIOD, (row_mode << 7) | ($F - row_period)
+        .byte NOISE_LENGTH, MAX_LENGTH
+        .byte END_ROW | row_length
+.endmacro
+
+.macro noise_cont row_mode, row_period, row_vol, row_length
+        .byte NOISE_VOL, NO_LENGTH | VOL | row_vol
+        .byte NOISE_PERIOD, (row_mode << 7) | ($F - row_period)
+        .byte END_ROW | row_length
+.endmacro
+
+.macro tri_init row_pitch, row_length
+        .byte TRI_LINEAR_COUNTER, $FF
+        .byte TRI_FREQ_LOW, <(row_pitch)
+        .byte TRI_FREQ_HIGH, >(row_pitch) | MAX_LENGTH
+        .byte END_ROW | row_length
+.endmacro
+
+.macro tri_cont row_pitch, row_length
+        .byte TRI_LINEAR_COUNTER, $FF
+        .byte TRI_FREQ_LOW, <(row_pitch)
+        .byte TRI_FREQ_HIGH, >(row_pitch) | MAX_LENGTH
+        .byte END_ROW | row_length
+.endmacro
+
+.macro tri_halt row_length
+        .byte TRI_LINEAR_COUNTER, $80
+        .byte END_ROW | row_length
+.endmacro
+
+sfx_jump:
+        .byte 2 ; length of this sfx in rows
+        ;                            pitch, duty, decay,                            sweep, length
+        pulse_init_sweep_decay   PITCH_FS3,   $1,    $2, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      6
+        pulse_cont_duty_decay                 $2,    $2,                                        2
+
+sfx_double_jump:
+        .byte 2 ; length of this sfx in rows
+        ;                            pitch, duty, decay,                            sweep, length
+        pulse_init_sweep_decay   PITCH_GS3,   $1,    $2, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      5
+        pulse_cont_duty_decay                 $2,    $2,                                        3
+
+sfx_bounce:
+        .byte 2 ; length of this sfx in rows
+        ;                            pitch, duty, decay,                            sweep, length
+        pulse_init_sweep_decay   PITCH_CS3,   $2,    $2, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      6
+        pulse_cont_freq           PITCH_F3,                                                     6
+
+sfx_weak_hit_pulse:
+        .byte 1 ; length of this sfx in rows
+        ;                            pitch, duty, decay,                    sweep, length
+        pulse_init_sweep_decay    PITCH_A2,   $0,    $2, (S_PERIOD_0 | S_SHIFT_4),      6
+
+sfx_weak_hit_tri:
+        .byte 12 ; length of this sfx in rows
+        tri_init  PITCH_E3,  0
+        tri_cont  PITCH_C3,  0
+        tri_cont  PITCH_A2,  0
+        tri_halt             0
+        tri_init  PITCH_A3,  0
+        tri_cont  PITCH_G3,  0
+        tri_cont  PITCH_F3,  0
+        tri_cont  PITCH_DS3, 0
+        tri_cont  PITCH_CS3, 0
+        tri_cont  PITCH_B2,  0
+        tri_cont  PITCH_A2,  0
+        tri_cont  PITCH_G2,  0
+
+sfx_weak_hit_noise:
+        ; Length in rows
+        .byte 28
+        ;          Mode Period  Vol  Length
+        noise_init    1,    $4,  $9,      0
+        noise_cont    0,    $3,  $6,      0
+        noise_cont    0,    $2,  $3,      0
+        noise_cont    0,    $0,  $2,      0
+        noise_cont    0,    $0,  $0,      0
+
+        noise_cont    1,    $9,  $F,      0
+        noise_cont    0,    $9,  $F,      0
+        noise_cont    0,    $9,  $E,      0
+        noise_cont    0,    $8,  $D,      0
+        noise_cont    0,    $7,  $A,      0
+        noise_cont    0,    $7,  $9,      0
+        noise_cont    0,    $7,  $7,      0
+        noise_cont    0,    $6,  $6,      0
+        noise_cont    0,    $5,  $4,      0
+        noise_cont    0,    $5,  $2,      0
+        noise_cont    0,    $4,  $1,      0
+
+        noise_cont    1,    $9,  $B,      0
+        noise_cont    0,    $9,  $B,      0
+        noise_cont    0,    $9,  $A,      0
+        noise_cont    0,    $8,  $9,      0
+        noise_cont    0,    $7,  $6,      0
+        noise_cont    0,    $7,  $5,      0
+        noise_cont    0,    $7,  $3,      0
+        noise_cont    0,    $6,  $2,      0
+        noise_cont    0,    $5,  $0,      2
+
+        noise_cont    1,    $9,  $4,      0
+        noise_cont    0,    $8,  $3,      0
+        noise_cont    0,    $7,  $1,      0
+        
+
+sfx_teleport:
+        .byte 4 ; length of this sfx in rows
+        ;                      pitch, duty, volume,                            sweep, length
+        pulse_init_sweep    PITCH_C4,   $2,     $C, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      4
+        pulse_init_sweep    PITCH_C4,   $2,     $9, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      4
+        pulse_init_sweep    PITCH_C4,   $2,     $6, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      4
+        pulse_init_sweep    PITCH_C4,   $2,     $2, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      4
+
+sfx_error_buzz:
+        ; Length in rows
+        .byte 4
+        ;          Mode Period  Vol  Length
+        noise_init    1,    $7,  $C,      4
+        noise_cont    1,    $7,  $0,      4
+        noise_cont    1,    $7,  $C,      14
+        noise_cont    1,    $7,  $0,      1
+
+sfx_dash_pulse:
+        .byte 2 ; length of this sfx in rows
+        ;                          pitch, duty,  decay,                            sweep, length
+        pulse_init_sweep_decay  PITCH_G2,   $2,     $0, (S_PERIOD_0 | S_SHIFT_3),              1
+        pulse_init_sweep_decay  PITCH_G2,   $2,     $0, (S_PERIOD_0 | S_SHIFT_4 | S_NEG),      6
+
+sfx_dash_noise:
+        ; Length in rows
+        .byte 17 
+        ;          Mode Period  Vol  Length
+        noise_init    1,    $5,  $7,      0
+        noise_cont    1,    $4,  $5,      0
+        noise_cont    1,    $3,  $2,      0
+        noise_cont    0,    $2,  $0,      0
+
+        noise_cont    0,    $4,  $7,      0
+        noise_cont    0,    $5,  $9,      0
+        noise_cont    0,    $6,  $C,      0
+        noise_cont    0,    $7,  $A,      0
+
+        noise_cont    0,    $8,  $9,      0
+        noise_cont    0,    $9,  $7,      0
+        noise_cont    0,    $A,  $6,      0        
+        noise_cont    0,    $B,  $6,      0
+
+        noise_cont    0,    $B,  $5,      0
+        noise_cont    0,    $C,  $5,      0
+        noise_cont    0,    $C,  $5,      0
+        noise_cont    0,    $D,  $4,      0
+
+        noise_cont    0,    $D,  $3,      0
+        noise_cont    0,    $E,  $2,      0
+        noise_cont    0,    $E,  $1,      0
+        noise_cont    0,    $F,  $1,      0
+
+        noise_cont    0,    $F,  $0,      0
+
+sfx_landing:
+        .byte 7 ; length of this sfx in rows
+        ;                    pitch, duty,  volume,                            sweep, length
+        pulse_init_sweep  PITCH_D3,   $2,      $8,         (S_PERIOD_0 | S_SHIFT_4),      0
+        pulse_cont_duty               $2,      $4,                                        0
+        pulse_cont_duty               $2,      $2,                                        0
+        pulse_init_sweep  PITCH_G3,   $2,      $6, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      0
+        pulse_cont_duty               $2,      $3,                                        0
+        pulse_cont_duty               $2,      $1,                                        0
+        pulse_cont_duty               $2,      $1,                                        0

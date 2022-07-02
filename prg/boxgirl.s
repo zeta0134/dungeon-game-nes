@@ -611,8 +611,15 @@ weak_hit:
         set_update_func CurrentEntityIndex, boxgirl_stunned
         lda #10
         sta PlayerStunTimer
-        st16 R0, sfx_weak_hit
+
+        ; this SFX is so meaty it has multiple components
+        st16 R0, sfx_weak_hit_pulse
         jsr play_sfx_pulse2
+        st16 R0, sfx_weak_hit_tri
+        jsr play_sfx_triangle
+        st16 R0, sfx_weak_hit_noise
+        jsr play_sfx_noise
+
         ; hit stun the game engine, for impact
         lda #10
         sta HitstunTimer
