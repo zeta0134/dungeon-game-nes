@@ -9,7 +9,8 @@ import os, json, re, sys
 
 supported_tile_types = {
   "NORMAL": 0,
-  "EXIT": 1
+  "EXIT": 1,
+  "HAZARD": 2
 }
 
 def bits_to_byte(bit_array):

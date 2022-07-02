@@ -1,5 +1,13 @@
 {
   "EXIT": [
-    "teleport_tile.png"
+    "077_teleport_tile.png"
+  ],
+  "HAZARD": [
+    "078_spikes.png",
+    "079_spikes_top.png",
+    "080_spikes_left_top.png",
+    "080_spikes_right_top.png",
+    "081_spikes_left.png",
+    "081_spikes_right.png"
   ]
 }
