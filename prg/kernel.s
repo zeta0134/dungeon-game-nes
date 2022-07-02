@@ -29,7 +29,7 @@ TargetMapAddr: .res 2
 TargetMapBank: .res 1
 TargetMapEntrance: .res 1
 FadeTimer: .res 1
-
+HitstunTimer: .res 1
 
 
         .segment "PRGFIXED_E000"
@@ -281,6 +281,34 @@ time_waste_loop:
         far_call FAR_generate_standard_hud
         jsr swap_irq_buffers
         jsr wait_for_next_vblank
+        rts
+.endproc
+
+.proc hitstun_gameplay_loop
+        dec HitstunTimer
+        bne still_in_hitstun
+        st16 GameMode, standard_gameplay_loop
+still_in_hitstun:
+        ; Update absolutely nothing! That's the whole point.
+
+        far_call FAR_update_camera
+        far_call FAR_scroll_camera
+        far_call FAR_draw_metasprites
+        jsr refresh_palettes_gameloop
+        jsr update_statusbar
+
+        ; starting IRQ index for the playfield
+        lda inactive_irq_index
+        sta R0
+        ; CHR bank to use for BG graphics
+        lda DynamicChrBank
+        sta R1
+        far_call FAR_generate_basic_playfield
+        far_call FAR_generate_hud_palette_swap
+        far_call FAR_generate_standard_hud
+        jsr swap_irq_buffers
+        jsr wait_for_next_vblank
+
         rts
 .endproc
 

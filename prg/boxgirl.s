@@ -592,7 +592,7 @@ TargetEntity := R0
         ; weak hits do 6 damage, 3 hearts (for testing)
         .repeat 6
         dec PlayerHealth
-        beq already_on_charons_boat
+        jeq already_on_charons_boat
         .endrepeat
         ; was this a strong hit?
         ldx TargetEntity
@@ -602,7 +602,7 @@ TargetEntity := R0
         ; strong hits to 6 MORE damage, for 6 hearts total
         .repeat 6
         dec PlayerHealth
-        beq already_on_charons_boat
+        jeq already_on_charons_boat
         .endrepeat
 weak_hit:
         lda #0
@@ -613,6 +613,24 @@ weak_hit:
         sta PlayerStunTimer
         st16 R0, sfx_weak_hit
         jsr play_sfx_pulse2
+        ; hit stun the game engine, for impact
+        lda #10
+        sta HitstunTimer
+        st16 GameMode, hitstun_gameplay_loop
+        ; shake the camera while we're at it
+        lda #$01
+        sta CameraShakeSpeed
+        lda #%00000111
+        sta CameraShakeStrength
+        lda #$1
+        sta CameraShakeDecay
+        ; Switch our palette over to the red one
+        ldx CurrentEntityIndex
+        ldy entity_table + EntityState::MetaSpriteIndex, x
+        lda metasprite_table + MetaSpriteState::PaletteOffset, y
+        and #%11111100
+        ora #1
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
         rts
 already_on_charons_boat:
         ; we died! Oops!
