@@ -800,6 +800,15 @@ no_damaging_entities_found:
         jsr handle_jump
         jsr handle_dash
         jsr update_invulnerability
+
+        ; DEBUG STUFF
+        lda #KEY_SELECT
+        bit ButtonsDown
+        beq no_debug
+        ; die! (for testing)
+        set_update_func CurrentEntityIndex, boxgirl_death_init
+
+no_debug:
         rts
 .endproc
 
@@ -973,7 +982,8 @@ done_with_fadeout:
         jsr set_3d_metasprite_pos
         ; hide our sprite. We are setting up for a brief camera pan before we
         ; spawn back in
-        lda entity_table + EntityState::MetaSpriteIndex
+        ldy CurrentEntityIndex
+        lda entity_table + EntityState::MetaSpriteIndex, y
         tax
         metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_HIDDEN
 
@@ -1030,6 +1040,82 @@ check_4_threshold:
         lda #4
         sta Brightness
 done_with_fadein:
+        rts
+.endproc
+
+.proc boxgirl_death_init
+MetaSpriteIndex := R0
+        ; oh dear :'(
+        ; whelp, let's load the death animation, which for debugging is the teleport anim with a red palette
+        ldx CurrentEntityIndex
+        lda #0
+        sta entity_table + EntityState::SpeedZ, x
+        lda entity_table + EntityState::MetaSpriteIndex, x
+        sta MetaSpriteIndex
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_teleport
+
+        ; set our palette color to red (for great loss of ketchup)
+        ldx CurrentEntityIndex
+        ldy entity_table + EntityState::MetaSpriteIndex, x
+        lda metasprite_table + MetaSpriteState::PaletteOffset, y
+        and #%11111100
+        ora #1
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
+
+        jsr set_3d_metasprite_pos
+
+        ; we'll use the stun timer to time the various throes of death
+        lda #30
+        sta PlayerStunTimer
+
+        ; play an appropriate death sound effect
+        ; TODO: have a death sound! and maybe a music cue!
+        ; for now, play the standard hurt SFX
+        st16 R0, sfx_weak_hit_pulse
+        jsr play_sfx_pulse2
+        st16 R0, sfx_weak_hit_tri
+        jsr play_sfx_triangle
+        st16 R0, sfx_weak_hit_noise
+        jsr play_sfx_noise
+
+        ; TODO: maybe a *big* hit stun on the whole engine here, to punctuate the event?
+        ; this is a pretty major thing
+
+        set_update_func CurrentEntityIndex, boxgirl_death_play_anim
+        rts
+.endproc
+
+.proc boxgirl_death_play_anim
+        dec PlayerStunTimer
+        bne not_quite_dead_yet
+        ; hide the player sprite, and spawn 8 particles fanning out from this location
+        ldy CurrentEntityIndex
+        lda entity_table + EntityState::MetaSpriteIndex, y
+        tax
+        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_HIDDEN
+
+        jsr spawn_death_particles
+
+        set_update_func CurrentEntityIndex, boxgirl_death_wait_for_particles
+        lda #60
+        sta PlayerStunTimer
+not_quite_dead_yet:
+        ; we don't need to do anything other than decrement the timer and wait
+        jsr set_3d_metasprite_pos
+        rts
+.endproc
+
+.proc boxgirl_death_wait_for_particles
+        dec PlayerStunTimer
+        bne not_quite_dead_yet
+        st16 GameMode, blackout_to_new_map
+        set_update_func CurrentEntityIndex, boxgirl_death_rest_in_peace
+not_quite_dead_yet:
+        rts
+.endproc
+
+.proc boxgirl_death_rest_in_peace
+        ; simply wait for the kernel to load the level
         rts
 .endproc
 
@@ -1129,6 +1215,20 @@ RandomY := R1
         ;                       xoff  yoff   xspeed   yspeed tile             behavior  attribute animspeed lifetime
         spawn_advanced_particle  $80,  $40, RandomX, RandomY, #39, #PARTICLE_TILE_ANIM,        #2,       #4,     #16
 done:
+        rts
+.endproc
+
+.proc spawn_death_particles
+        ldx CurrentEntityIndex
+        ;                    xoff  yoff   xspeed   yspeed tile             behavior      attribute, animspeed, lifetime
+        spawn_advanced_particle  $40, $180,    #$20,    #$00, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$DF,    #$00, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$00,    #$20, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$00,    #$DF, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$20,    #$DF, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$20,    #$20, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$DF,    #$20, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$DF,    #$DF, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
         rts
 .endproc
 
