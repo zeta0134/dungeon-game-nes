@@ -14,6 +14,7 @@
         .include "scrolling.inc"
         .include "sound.inc"
         .include "sprites.inc"
+        .include "palette.inc"
         .include "particles.inc"
         .include "physics.inc"
         .include "prng.inc"
@@ -28,6 +29,10 @@ PlayerDashTimer: .res 1
 PlayerPrimaryDirection: .res 1
 PlayerLastFacing: .res 1
 CoyoteTime: .res 1
+
+PlayerSafeTileX: .res 1
+PlayerSafeTileY: .res 1
+PlayerSafeTileGroundLevel: .res 1
 
 ParticleCooldown: .res 1
 
@@ -78,7 +83,7 @@ MetaSpriteIndex := R0
         ; we can check for here
         lda #$FF
         cmp MetaSpriteIndex
-        beq failed_to_spawn
+        jeq failed_to_spawn
 
         ; Now perform boxgirl specific setup
         ; First the main animation metasprite
@@ -110,6 +115,14 @@ MetaSpriteIndex := R0
         entity_set_flag_y FLAG_IDLE_FACING, FACING_RIGHT
         lda #KEY_RIGHT
         sta PlayerLastFacing
+
+        ; We spawned here, so it must be a safe tile
+        lda entity_table + EntityState::PositionX+1, x
+        sta PlayerSafeTileX
+        lda entity_table + EntityState::PositionY+1, x
+        sta PlayerSafeTileY
+        lda entity_table + EntityState::GroundLevel, x
+        sta PlayerSafeTileGroundLevel
 
         ;finally, switch boxgirl to the idle routine
         set_update_func CurrentEntityIndex, boxgirl_standard
@@ -438,16 +451,19 @@ dash_not_pressed:
         rts
 .endproc
 
+SURFACE_EXIT = 1
+RISING_HAZARD = 2
 
 .proc handle_ground_tile
 GroundType := R0
 CollisionFlags := R1
 CollisionHeights := R2
         lda GroundType
-        beq done
+        beq safe_tile
 
-        cmp #(1 << 2) ; MAGIC NUMBER == SURFACE_EXIT
-        bne done
+check_exit:
+        cmp #(SURFACE_EXIT << 2) ; MAGIC NUMBER == SURFACE_EXIT
+        bne check_rising_hazard
         ; surface exits only trigger when we walk on top of them
         ; we need to ignore a match when are not at ground level
         ; (say, we are walking "behind" this exit)
@@ -456,11 +472,34 @@ CollisionHeights := R2
         lda CollisionHeights
         and #$0F
         cmp entity_table + EntityState::GroundLevel, x
-        bne done
+        bne safe_tile
         
         ; valid tile, valid height, WHOOSH
         jsr handle_teleport
-done:
+        rts
+check_rising_hazard:
+        cmp #(RISING_HAZARD << 2) ; MAGIC NUMBER == SURFACE_EXIT
+        bne safe_tile
+        set_update_func CurrentEntityIndex, boxgirl_rising_hazard_init
+
+        rts
+safe_tile:
+        ; only record a safe tile if we are currently on the ground
+        ldx CurrentEntityIndex
+        lda entity_table + EntityState::PositionZ, x
+        ora entity_table + EntityState::PositionZ+1, x
+        bne not_safe
+
+        ; record this position as our last safe tile
+        ldx CurrentEntityIndex
+        lda entity_table + EntityState::PositionX+1, x
+        sta PlayerSafeTileX
+        lda entity_table + EntityState::PositionY+1, x
+        sta PlayerSafeTileY
+        lda entity_table + EntityState::GroundLevel, x
+        sta PlayerSafeTileGroundLevel
+
+not_safe:
         rts
 .endproc
 
@@ -810,6 +849,165 @@ update_ourselves:
 no_store:
         jsr set_3d_metasprite_pos        
 
+        rts
+.endproc
+
+.proc boxgirl_rising_hazard_init
+        ; TODO: switch to a "hurt" animation
+
+        ; TODO: we could have a custom hurt sfx, since this is a cartoonish
+        ; "bounce off the spikes" thing
+
+        ; apply some camera shake (standard for any big hit)
+        lda #$01
+        sta CameraShakeSpeed
+        lda #%00000111
+        sta CameraShakeStrength
+        lda #$2
+        sta CameraShakeDecay
+
+        ; play a standard hurt sfx for now
+        st16 R0, sfx_weak_hit_pulse
+        jsr play_sfx_pulse2
+        st16 R0, sfx_weak_hit_tri
+        jsr play_sfx_triangle
+        st16 R0, sfx_weak_hit_noise
+        jsr play_sfx_noise
+
+        ; set an appropriate stun timer, which determines how long the rising animation will play
+        lda #30
+        sta PlayerStunTimer
+
+        set_update_func CurrentEntityIndex, boxgirl_rising_hazard_react
+.endproc
+
+.proc boxgirl_rising_hazard_react
+        ; freeze horizontal position, and rise into the air at a constant speed
+        ldx CurrentEntityIndex
+        lda #$7F
+        sta R0
+        sadd16x entity_table + EntityState::PositionZ, R0
+        ; set our palette color to red (for ouchies)
+        ldy entity_table + EntityState::MetaSpriteIndex, x
+        lda metasprite_table + MetaSpriteState::PaletteOffset, y
+        and #%11111100
+        ora #1
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
+        ; keep this up for a little while
+        dec PlayerStunTimer
+        bne no_switch
+        set_update_func CurrentEntityIndex, boxgirl_hazard_recover_init
+no_switch:
+        jsr set_3d_metasprite_pos
+        ; now for excessive fanciness: fade almost to black, using the stun timer
+        ; to decide when to transition
+        lda PlayerStunTimer
+check_3_threshold:
+        cmp #12
+        bne check_2_threshold
+        lda #3
+        sta Brightness
+        jmp done_with_fadeout
+check_2_threshold:
+        cmp #8
+        bne check_1_threshold
+        lda #2
+        sta Brightness
+        jmp done_with_fadeout
+check_1_threshold:
+        cmp #4
+        bne done_with_fadeout
+        lda #1
+        sta Brightness
+done_with_fadeout:
+
+        rts
+.endproc
+
+.proc boxgirl_hazard_recover_init
+        ; teleport to the last safe tile we were standing on
+        ldx CurrentEntityIndex
+        lda PlayerSafeTileX
+        sta entity_table + EntityState::PositionX+1, x
+        lda PlayerSafeTileY
+        sta entity_table + EntityState::PositionY+1, x
+        lda PlayerSafeTileGroundLevel
+        sta entity_table + EntityState::GroundLevel, x
+        ; center us within that tile
+        lda #0
+        sta entity_table + EntityState::PositionX, x
+        lda #$C0 ; ish
+        sta entity_table + EntityState::PositionY, x
+        ; zero our height, which will hide our shadow also
+        lda #0
+        sta entity_table + EntityState::PositionZ, x
+        sta entity_table + EntityState::PositionZ+1, x
+        ; set our palette color back to normmal
+        ldy entity_table + EntityState::MetaSpriteIndex, x
+        lda metasprite_table + MetaSpriteState::PaletteOffset, y
+        and #%11111100
+        ora #0
+        sta metasprite_table + MetaSpriteState::PaletteOffset, y
+        ; draw ourselves normally
+        jsr set_3d_metasprite_pos
+        ; hide our sprite. We are setting up for a brief camera pan before we
+        ; spawn back in
+        lda entity_table + EntityState::MetaSpriteIndex
+        tax
+        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_HIDDEN
+
+
+        ; init done, now proceed to pan the camera to this position
+        set_update_func CurrentEntityIndex, boxgirl_hazard_recover_camera_pan
+        ; and we'll reuse the stun timer for the duration
+        lda #30
+        sta PlayerStunTimer
+        rts
+.endproc
+
+.proc boxgirl_hazard_recover_camera_pan
+        ; really all we need to do is wait this out
+        dec PlayerStunTimer
+        bne no_switch
+        ; Give us some height, so we fall down onto the spawn tile
+        ldx CurrentEntityIndex
+        lda #1
+        sta entity_table + EntityState::PositionZ+1, x
+        ; zero out our speed
+        lda #0
+        sta entity_table + EntityState::SpeedX, x
+        sta entity_table + EntityState::SpeedY, x
+        sta entity_table + EntityState::SpeedZ, x
+        ; make our sprite visible again
+        lda entity_table + EntityState::MetaSpriteIndex
+        tax
+        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
+        ; TODO: set invincibility frames here (not implemented yet)
+        ; finally, hand control back to the player
+        set_update_func CurrentEntityIndex, boxgirl_standard
+no_switch:
+        jsr set_3d_metasprite_pos    
+        ; now for continued fanciness: fade back in to full brightness, using the stun timer
+        ; to decide when to transition
+        lda PlayerStunTimer
+check_2_threshold:
+        cmp #6
+        bne check_3_threshold
+        lda #2
+        sta Brightness
+        jmp done_with_fadein
+check_3_threshold:
+        cmp #4
+        bne check_4_threshold
+        lda #3
+        sta Brightness
+        jmp done_with_fadein
+check_4_threshold:
+        cmp #2
+        bne done_with_fadein
+        lda #4
+        sta Brightness
+done_with_fadein:
         rts
 .endproc
 
