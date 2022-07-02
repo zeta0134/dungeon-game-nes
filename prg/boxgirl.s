@@ -117,17 +117,30 @@ MetaSpriteIndex := R0
         sta PlayerLastFacing
 
         ; We spawned here, so it must be a safe tile
-        lda entity_table + EntityState::PositionX+1, x
+        lda entity_table + EntityState::PositionX+1, y
         sta PlayerSafeTileX
-        lda entity_table + EntityState::PositionY+1, x
+        lda entity_table + EntityState::PositionY+1, y
         sta PlayerSafeTileY
-        lda entity_table + EntityState::GroundLevel, x
+        lda entity_table + EntityState::GroundLevel, y
         sta PlayerSafeTileGroundLevel
 
         ;finally, switch boxgirl to the idle routine
         set_update_func CurrentEntityIndex, boxgirl_standard
         
 failed_to_spawn:
+        rts
+.endproc
+
+.proc update_invulnerability
+        ldy CurrentEntityIndex
+        ldx entity_table + EntityState::MetaSpriteIndex, y
+        lda PlayerInvulnerability
+        beq done
+        dec PlayerInvulnerability
+        metasprite_set_flag FLAG_FLICKERING, FLICKER_ACTIVE
+        rts
+done:
+        metasprite_set_flag FLAG_FLICKERING, FLICKER_INACTIVE
         rts
 .endproc
 
@@ -644,8 +657,6 @@ TargetEntity := R0
         jeq already_on_charons_boat
         .endrepeat
 weak_hit:
-        lda #0
-        sta PlayerInvulnerability
         jsr knockback
         set_update_func CurrentEntityIndex, boxgirl_stunned
         lda #10
@@ -788,6 +799,7 @@ no_damaging_entities_found:
         ; check for actions, and trigger behavior accordingly
         jsr handle_jump
         jsr handle_dash
+        jsr update_invulnerability
         rts
 .endproc
 
@@ -817,6 +829,8 @@ done_being_stunned:
         ; Switch back to the standard locomotion state, so the player
         ; regains control on the next frame following this one
         set_update_func CurrentEntityIndex, boxgirl_standard
+        lda #60
+        sta PlayerInvulnerability
         ; now fall through to do standard update things
 update_ourselves:
         ; We are stunned; do NOT process player inputs for jumping
@@ -865,6 +879,13 @@ no_store:
         sta CameraShakeStrength
         lda #$2
         sta CameraShakeDecay
+
+        ; We might fall on a hazard while still invulnerable; this doesn't
+        ; negate the hazard. Clear this for now, so the animation doesn't
+        ; gain unnecessary flicker.
+        lda #0
+        sta PlayerInvulnerability
+        jsr update_invulnerability
 
         ; play a standard hurt sfx for now
         st16 R0, sfx_weak_hit_pulse
@@ -982,7 +1003,8 @@ done_with_fadeout:
         lda entity_table + EntityState::MetaSpriteIndex
         tax
         metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
-        ; TODO: set invincibility frames here (not implemented yet)
+        lda #60
+        sta PlayerInvulnerability
         ; finally, hand control back to the player
         set_update_func CurrentEntityIndex, boxgirl_standard
 no_switch:

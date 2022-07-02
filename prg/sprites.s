@@ -273,6 +273,17 @@ MetaSpriteIndex := R1
         metasprite_check_flag FLAG_VISIBILITY
         bne next_metasprite
 
+        metasprite_check_flag FLAG_FLICKERING
+        beq not_flickering
+        ; for flickering sprites, use the low bit of the current frame counter
+        ; and the sprite's index to control visibility, creating a 30 Hz pseudo-transparency
+        ; effect which has minimal conflict with other entities
+        lda GameloopCounter
+        eor MetaSpriteIndex
+        and #%00000001
+        beq next_metasprite
+
+not_flickering:
         ; we will at least attempt to draw this metasprite's parts.
         ; most of this data is a straight copy from the state struct
         lda metasprite_table + MetaSpriteState::PositionX, x
