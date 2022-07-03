@@ -276,6 +276,9 @@ time_waste_loop:
         ; CHR bank to use for BG graphics
         lda DynamicChrBank
         sta R1
+        ; height of the playfield
+        lda #192
+        sta R5
         far_call FAR_generate_basic_playfield
         far_call FAR_generate_hud_palette_swap
         far_call FAR_generate_standard_hud

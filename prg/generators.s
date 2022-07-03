@@ -32,9 +32,7 @@ ScratchByte := R2
 ScratchWord := R3
 ; DEBUG: lock the playfield height here to 192. Eventually to support the dialog
 ; system, we'll want this to be a parameter instead of an immediate.
-PlayfieldHeight := 192
-; DEBUG: fix the CHR0 bank to $0 for the playfield. Later we'll want this to
-; be configurable as a generator argument
+PlayfieldHeight := R5
 ; In theory we could allow making this a parameter as well, so the basic generator
 ; gains access to screen tinting abilities affecting the whole playfield. Might be
 ; useful for magic effects.
@@ -94,14 +92,14 @@ done_with_nametables:
         lda #0
         sta ScratchWord+1
         clc
-        add16 ScratchWord, #PlayfieldHeight
+        add16 ScratchWord, PlayfieldHeight
         ; If this would exceed the scroll seam...
         cmp16 #SCROLL_SEAM, ScratchWord
         bcc hud_split
 single_split:
         ; There is no need to generate a second split. Finalize this one with the full
         ; playfield height and bail
-        lda #PlayfieldHeight
+        lda PlayfieldHeight
         sta irq_table_scanlines, x
         inc IrqGenerationIndex
         rts
@@ -111,7 +109,7 @@ hud_split:
         sub16 ScratchWord, #SCROLL_SEAM
         ; Scratch word now contains the height of our *second* split. The height of the
         ; first is the size of our playfield minus this height
-        lda #PlayfieldHeight
+        lda PlayfieldHeight
         sec
         sbc ScratchWord ; if we somehow have nonzero in the high byte at this point
                         ; then something has gone terribly, terribly wrong
