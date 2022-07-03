@@ -18,6 +18,11 @@
 .global sfx_dash_pulse, sfx_dash_noise
 .global sfx_landing
 
+.global sfx_mortal_blow_noise
+.global sfx_death_spin_pulse
+.global sfx_death_spin_tri
+.global sfx_death_splat_noise
+
 
 
 .macro play_dpcm sample_addr, length

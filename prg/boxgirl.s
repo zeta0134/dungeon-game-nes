@@ -639,7 +639,8 @@ no_x_fix:
         rts
 .endproc
 
-.proc handle_damage
+; TODO: simplify this and have it call the standard damage func?
+.proc handle_entity_damage
 TargetEntity := R0
         ; weak hits do 6 damage, 3 hearts (for testing)
         .repeat 6
@@ -691,10 +692,44 @@ weak_hit:
         rts
 already_on_charons_boat:
         ; we died! Oops!
-        ; For now, do nothing. "God Mode, Activate!"
-        lda #20
-        sta PlayerHealth
-        ; TODO: transition to the death state, setup reloading from the last checkpoint, etc
+        set_update_func CurrentEntityIndex, boxgirl_death_init
+        ; this is a major event; big old hit stun
+        lda #30
+        sta HitstunTimer
+        st16 GameMode, hitstun_gameplay_loop
+
+        ; play the moral blow sfx
+        st16 R0, sfx_mortal_blow_noise
+        jsr play_sfx_noise
+        st16 R0, sfx_weak_hit_tri
+        jsr play_sfx_triangle
+
+        ; TODO: we should mute the music track here, or maybe queue up a death specific one
+
+        rts
+.endproc
+
+.proc handle_arbitrary_damage
+IncomingDamage := R0
+damage_loop:
+        dec PlayerHealth
+        beq already_on_charons_boat
+        dec IncomingDamage
+        bne damage_loop
+        ; if we get here, we're still alive
+        rts
+already_on_charons_boat:
+        ; oops! we died. Well let's get on with that
+        set_update_func CurrentEntityIndex, boxgirl_death_init
+        ; this is a major event; big old hit stun
+        lda #30
+        sta HitstunTimer
+        st16 GameMode, hitstun_gameplay_loop
+        ; play the moral blow sfx
+        st16 R0, sfx_mortal_blow_noise
+        jsr play_sfx_noise
+        st16 R0, sfx_weak_hit_tri
+        jsr play_sfx_triangle
         rts
 .endproc
 
@@ -771,7 +806,7 @@ damage_entity_finished:
         jmp damage_loop
 damaging_entity_found:
         ; Ouch! Okay, deal damage to ourselves
-        jsr handle_damage
+        jsr handle_entity_damage
         ; since we collided with an entity on this frame, STOP HERE.
         ; Do not process any more entities.
         rts
@@ -807,6 +842,15 @@ no_damaging_entities_found:
         beq no_debug
         ; die! (for testing)
         set_update_func CurrentEntityIndex, boxgirl_death_init
+        ; this is a major event; big old hit stun
+        lda #30
+        sta HitstunTimer
+        st16 GameMode, hitstun_gameplay_loop
+        ; play the moral blow sfx
+        st16 R0, sfx_mortal_blow_noise
+        jsr play_sfx_noise
+        st16 R0, sfx_weak_hit_tri
+        jsr play_sfx_triangle
 
 no_debug:
         rts
@@ -1002,7 +1046,7 @@ done_with_fadeout:
         bne no_switch
         ; Give us some height, so we fall down onto the spawn tile
         ldx CurrentEntityIndex
-        lda #1
+        lda #0
         sta entity_table + EntityState::PositionZ+1, x
         ; zero out our speed
         lda #0
@@ -1015,8 +1059,13 @@ done_with_fadeout:
         metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
         lda #60
         sta PlayerInvulnerability
-        ; finally, hand control back to the player
+        ; by default, hand control back to the player
         set_update_func CurrentEntityIndex, boxgirl_standard
+        ; but hazards deal damage, so apply that here. If the player dies from this hazard, then
+        ; they will immediately enter their death throes as a result of this call
+        lda #4 ; hazards deal two full hearts of damage (for testing)
+        sta R0
+        jsr handle_arbitrary_damage
 no_switch:
         jsr set_3d_metasprite_pos    
         ; now for continued fanciness: fade back in to full brightness, using the stun timer
@@ -1065,21 +1114,18 @@ MetaSpriteIndex := R0
         jsr set_3d_metasprite_pos
 
         ; we'll use the stun timer to time the various throes of death
-        lda #30
+        lda #45
         sta PlayerStunTimer
 
-        ; play an appropriate death sound effect
-        ; TODO: have a death sound! and maybe a music cue!
-        ; for now, play the standard hurt SFX
-        st16 R0, sfx_weak_hit_pulse
-        jsr play_sfx_pulse2
-        st16 R0, sfx_weak_hit_tri
-        jsr play_sfx_triangle
-        st16 R0, sfx_weak_hit_noise
-        jsr play_sfx_noise
+        lda #3
+        sta Brightness
 
-        ; TODO: maybe a *big* hit stun on the whole engine here, to punctuate the event?
-        ; this is a pretty major thing
+        st16 R0, sfx_death_spin_pulse
+        jsr play_sfx_pulse1
+        st16 R0, sfx_death_spin_pulse
+        jsr play_sfx_pulse2
+        st16 R0, sfx_death_spin_tri
+        jsr play_sfx_triangle
 
         set_update_func CurrentEntityIndex, boxgirl_death_play_anim
         rts
@@ -1095,6 +1141,9 @@ MetaSpriteIndex := R0
         metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_HIDDEN
 
         jsr spawn_death_particles
+
+        st16 R0, sfx_death_splat_noise
+        jsr play_sfx_noise
 
         set_update_func CurrentEntityIndex, boxgirl_death_wait_for_particles
         lda #60
