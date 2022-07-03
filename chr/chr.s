@@ -20,6 +20,11 @@ hud_graphics:
         .include "../build/patternsets/greybox.chr"        
 
         .segment "BG5"
+        .include "../build/fonts/finkheavy8x15.high.chr"
+
+        .segment "BG6"
+        .include "../build/fonts/finkheavy8x15.low.chr"
+
 
         .segment "OBJ0"
 boxgirl_graphics:

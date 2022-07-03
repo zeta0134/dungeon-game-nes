@@ -21,7 +21,7 @@ def bits_to_byte(bit_array):
   return byte
 
 def hardware_tile_to_bitplane(index_array):
-  # Note: expects an 8x8 array of tile indices. Returns a 16-byte array of raw NES data
+  # Note: expects an 8x8 array of palette indices. Returns a 16-byte array of raw NES data
   # which encodes this tile's data as a bitplane for the PPU hardware
   low_bits = [x & 0x1 for x in index_array]
   high_bits = [((x & 0x2) >> 1) for x in index_array]
@@ -122,15 +122,16 @@ def write_meta_tiles(metatiles, filename):
     pretty_print_table(compressed_bytes, output_file, 16)
     output_file.write("\n")
 
-if len(sys.argv) != 4:
-  print("Usage: convertchrset.py folder/with/tiles output.chr output.mt")
-  sys.exit(-1)
-input_folder = sys.argv[1]
-output_chr = sys.argv[2]
-output_mt = sys.argv[3]
+if __name__ == '__main__':
+  if len(sys.argv) != 4:
+    print("Usage: convertpatternset.py folder/with/tiles output.chr output.mt")
+    sys.exit(-1)
+  input_folder = sys.argv[1]
+  output_chr = sys.argv[2]
+  output_mt = sys.argv[3]
 
-tiles = read_tileset(input_folder)
+  tiles = read_tileset(input_folder)
 
-chr_tiles = generate_chr_tiles(tiles)
-write_chr_tiles(chr_tiles, output_chr)
-write_meta_tiles(tiles, output_mt)
+  chr_tiles = generate_chr_tiles(tiles)
+  write_chr_tiles(chr_tiles, output_chr)
+  write_meta_tiles(tiles, output_mt)

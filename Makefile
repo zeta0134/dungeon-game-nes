@@ -30,7 +30,10 @@ PATTERNSET_CHR_FILES := $(patsubst $(ARTDIR)/patternsets/%,$(BUILDDIR)/patternse
 TILESETS := $(wildcard $(ARTDIR)/tilesets/*.json)
 TILESET_FOLDERS := $(patsubst $(ARTDIR)/tilesets/%.json,$(ARTDIR)/tilesets/%,$(TILESETS))
 
-.PRECIOUS: $(BIN_FILES) $(RAW_CHR_FILES) $(TILESET_CHR_FILES)
+FONTS := $(wildcard $(ARTDIR)/fonts/*.png)
+FONT_CHR_FILES := $(patsubst $(ARTDIR)/fonts/%.png,$(BUILDDIR)/fonts/%.high.chr,$(FONTS))
+
+.PRECIOUS: $(BIN_FILES) $(RAW_CHR_FILES) $(TILESET_CHR_FILES) $(FONT_CHR_FILES)
 
 all: dir $(ROM_NAME)
 
@@ -38,6 +41,7 @@ dir:
 	@mkdir -p build/sprites
 	@mkdir -p build/patternsets
 	@mkdir -p build/maps
+	@mkdir -p build/fonts
 
 clean:
 	-@rm -rf build
@@ -62,7 +66,7 @@ $(ROM_NAME): $(SOURCEDIR)/mmc3.cfg $(O_FILES)
 $(BUILDDIR)/%.o: $(SOURCEDIR)/%.s $(PATTERNSET_CHR_FILES) $(BIN_FILES) $(BUILDDIR)/collision_tileset.incs
 	ca65 -g -o $@ $<
 
-$(BUILDDIR)/%.o: $(CHRDIR)/%.s $(RAW_CHR_FILES) $(PATTERNSET_CHR_FILES)
+$(BUILDDIR)/%.o: $(CHRDIR)/%.s $(RAW_CHR_FILES) $(PATTERNSET_CHR_FILES) $(FONT_CHR_FILES)
 	ca65 -g -o $@ $<
 
 $(BUILDDIR)/sprites/%.chr: $(ARTDIR)/sprites/%.png
@@ -80,5 +84,7 @@ $(BUILDDIR)/collision_tileset.incs: tools/generatecollisionset.py tools/convertm
 $(ARTDIR)/tilesets/%: $(ARTDIR)/tilesets/%.json
 	tools/generatetilesets.py $< $@
 
+$(BUILDDIR)/fonts/%.high.chr: $(ARTDIR)/fonts/%.png
+	tools/convertfont.py $< $@ $(basename $(basename $@)).low.chr
 
 
