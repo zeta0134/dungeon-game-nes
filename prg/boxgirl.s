@@ -1374,15 +1374,38 @@ no_match:
         add16 ExitTableAddr, #.sizeof(ExitTableEntry)
         dex
         jne loop
+
         ; we did NOT find a valid exit. This is fairly unusual and probably
         ; a bug; play a buzzer SFX to tell the QA tester that this should have
         ; worked.
 
-        ; TODO: this restarts every frame, which technically gets the job done, but is
-        ; awfully ugly. When we have safe tiles, can we compare with the last of those, and
-        ; only queue up the error buzz if we don't match?
+        ldx CurrentEntityIndex
+        lda entity_table + EntityState::PositionX+1, x
+        cmp PlayerSafeTileX
+        bne buzzer
+        lda entity_table + EntityState::PositionY+1, x
+        cmp PlayerSafeTileY
+        bne buzzer
+        lda entity_table + EntityState::GroundLevel, x
+        cmp PlayerSafeTileGroundLevel
+        bne buzzer
+
+        jmp no_buzzer
+buzzer:
         st16 R0, sfx_error_buzz
         jsr play_sfx_noise
+
+no_buzzer:
+        ; this is not a valid teleport, so we will instead flag it as a valid safe tile.
+        ; That won't break anything, and the above logic can use it to determine whether to
+        ; play the error sound
+        ldx CurrentEntityIndex
+        lda entity_table + EntityState::PositionX+1, x
+        sta PlayerSafeTileX
+        lda entity_table + EntityState::PositionY+1, x
+        sta PlayerSafeTileY
+        lda entity_table + EntityState::GroundLevel, x
+        sta PlayerSafeTileGroundLevel
 done:
         restore_previous_bank
         rts
