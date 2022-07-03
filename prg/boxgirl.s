@@ -471,6 +471,8 @@ RISING_HAZARD = 2
 GroundType := R0
 CollisionFlags := R1
 CollisionHeights := R2
+SensedTileX := R6
+SensedTileY := R8
         lda GroundType
         beq safe_tile
 
@@ -504,11 +506,11 @@ safe_tile:
         bne not_safe
 
         ; record this position as our last safe tile
-        ldx CurrentEntityIndex
-        lda entity_table + EntityState::PositionX+1, x
+        lda SensedTileX
         sta PlayerSafeTileX
-        lda entity_table + EntityState::PositionY+1, x
+        lda SensedTileY
         sta PlayerSafeTileY
+        ldx CurrentEntityIndex
         lda entity_table + EntityState::GroundLevel, x
         sta PlayerSafeTileGroundLevel
 
@@ -1380,10 +1382,10 @@ no_match:
         ; worked.
 
         ldx CurrentEntityIndex
-        lda entity_table + EntityState::PositionX+1, x
+        lda TestTileX
         cmp PlayerSafeTileX
         bne buzzer
-        lda entity_table + EntityState::PositionY+1, x
+        lda TestTileY
         cmp PlayerSafeTileY
         bne buzzer
         lda entity_table + EntityState::GroundLevel, x
@@ -1400,9 +1402,9 @@ no_buzzer:
         ; That won't break anything, and the above logic can use it to determine whether to
         ; play the error sound
         ldx CurrentEntityIndex
-        lda entity_table + EntityState::PositionX+1, x
+        lda TestTileX
         sta PlayerSafeTileX
-        lda entity_table + EntityState::PositionY+1, x
+        lda TestTileY
         sta PlayerSafeTileY
         lda entity_table + EntityState::GroundLevel, x
         sta PlayerSafeTileGroundLevel
