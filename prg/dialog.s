@@ -1,6 +1,7 @@
         .setcpu "6502"
         .include "dialog.inc"
         .include "input.inc"
+        .include "irq_table.inc"
         .include "kernel.inc"
         .include "nes.inc"
         .include "vram_buffer.inc"
@@ -21,6 +22,7 @@ D_LF =    $80
 D_WAIT =  $81
 D_EXIT =  $82
 D_CLEAR = $83
+D_PORTRAIT = $84
 
 ; useful defines
 BORDER_PPU =      $2380
@@ -32,10 +34,14 @@ DIALOG_LEFT_MARGIN = 9
 DIALOG_RIGHT_MARGIN = 3
 DIALOG_MAX_LINE_LENGTH = (32 - DIALOG_RIGHT_MARGIN - DIALOG_LEFT_MARGIN)
 
+DIALOG_PORTRAIT_X = 2
+DIALOG_PORTRAIT_WIDTH_TILES = 6
+
 test_message:
         ;    |01234567890123456789|
         ;    |     safe width     |
         ;    |--------------------|
+        .byte D_PORTRAIT, 16, 0
         .byte "Hello world!"
         .byte D_WAIT, D_CLEAR
         .byte "Several screens!"
@@ -53,6 +59,13 @@ test_message:
         ; debug: manually set a dialog message for testing
         ; later we should not do this, and allow the calling code to set the pointer instead
         st16 TextPtr, test_message
+        ; debug: manually set up a dialog portrait's bank numbers
+        ; later, this should be part of a command, I think, or maybe part
+        ; of the message header or something
+        lda #16
+        sta EvenChr1Bank
+        lda #18
+        sta OddChr1Bank
         rts
 .endproc
 
@@ -124,6 +137,7 @@ commands_table:
         .word wait_command
         .word exit_command
         .word clear_text_command
+        .word dialog_portrait_command
 
 .proc draw_one_character
         ; A still contains the character to draw, but it's in ASCII, and we need to
@@ -182,6 +196,9 @@ handle_last_line:
 .proc exit_command
         st16 DialogMode, dialog_state_inactive
         st16 GameMode, dialog_closing
+        lda #0 ; blank graphics
+        sta EvenChr1Bank
+        sta OddChr1Bank
         rts
 .endproc
 
@@ -229,3 +246,73 @@ third_line_loop:
         rts
 .endproc
 
+.proc dialog_portrait_command
+DialogBank := R0
+DialogTileIndex := R1
+        ; read the dialog portrait parameter
+        ; note: y is still zero out of process_command
+        lda (TextPtr), y
+        sta DialogBank
+        inc16 TextPtr
+        lda (TextPtr), y
+        sta DialogTileIndex
+        inc16 TextPtr
+
+        ; set up the banks to display this portrait
+        lda DialogBank
+        sta EvenChr1Bank
+        clc
+        adc #2
+        sta OddChr1Bank
+
+        ; queue up the portrait graphics, starting with our
+        ; index in the bank. First add 128 to it, because the
+        ; graphics will end up in CHR1
+        clc
+        lda #128
+        adc DialogTileIndex
+        sta DialogTileIndex
+
+        ; Now spit out a vram buffer update for each row of the portrait graphics
+        write_vram_header_imm (FIRST_LINE_PPU + DIALOG_PORTRAIT_X), #DIALOG_PORTRAIT_WIDTH_TILES, VRAM_INC_1
+        ldy #0
+first_line_loop:
+        ldx VRAM_TABLE_INDEX
+        tya
+        clc
+        adc DialogTileIndex
+        sta VRAM_TABLE_START, x
+        inc VRAM_TABLE_INDEX
+        iny
+        cpy #(DIALOG_PORTRAIT_WIDTH_TILES * 1)
+        bne first_line_loop
+        inc VRAM_TABLE_ENTRIES
+
+        write_vram_header_imm (SECOND_LINE_PPU + DIALOG_PORTRAIT_X), #DIALOG_PORTRAIT_WIDTH_TILES, VRAM_INC_1
+second_line_loop:
+        ldx VRAM_TABLE_INDEX
+        tya
+        clc
+        adc DialogTileIndex
+        sta VRAM_TABLE_START, x
+        inc VRAM_TABLE_INDEX
+        iny
+        cpy #(DIALOG_PORTRAIT_WIDTH_TILES * 2)
+        bne second_line_loop
+        inc VRAM_TABLE_ENTRIES
+
+        write_vram_header_imm (THIRD_LINE_PPU + DIALOG_PORTRAIT_X), #DIALOG_PORTRAIT_WIDTH_TILES, VRAM_INC_1
+third_line_loop:
+        ldx VRAM_TABLE_INDEX
+        tya
+        clc
+        adc DialogTileIndex
+        sta VRAM_TABLE_START, x
+        inc VRAM_TABLE_INDEX
+        iny
+        cpy #(DIALOG_PORTRAIT_WIDTH_TILES * 3)
+        bne third_line_loop
+        inc VRAM_TABLE_ENTRIES
+
+        rts
+.endproc

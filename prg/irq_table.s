@@ -32,6 +32,11 @@ irq_table_scroll_x: .res IRQ_TABLE_SIZE
 irq_table_ppumask: .res IRQ_TABLE_SIZE
 irq_table_chr0_bank: .res IRQ_TABLE_SIZE
 
+        .segment "RAM"
+
+EvenChr1Bank: .res 1
+OddChr1Bank: .res 1
+
         .segment "PRGFIXED_E000"
 
 ; tweak this until the branch asserts go away :P
@@ -337,6 +342,8 @@ safely_return_from_irq:
 
         .align 2 ; tweak to make branch asserts go away
 
+; === Pretty much everything that follows is specific to this project ===
+
 post_irq_vector:
 check_hud_palette:
         ; ppu dot range here: 41 - 61
@@ -346,7 +353,7 @@ check_hud_palette:
         jmp post_irq_hud_palette ; 3 (9)
 
         ; TODO: when we are ready for CHR1 switching, check for
-        ; #$FD here and perform the extra work.
+        ; #$FD here and perform the extra work.        
 
 no_match_found:
         ; unknown special value. Treat this as an IRQ stop command
@@ -392,17 +399,26 @@ post_irq_hud_palette:
 
         ; === Copy BG0 ===
 
-        ;delay_cycles 70
+        ; Since we have some time to kill here, go ahead and switch CHR1 to its even bank.
+        ; The HUD can place extra tiles here as needed, and the dialog portrait system will
+        ; use this as the first scanline of portrait graphics
+        lda #(MMC3_BANKING_MODE + 1) ; 2 (6)
+        sta MMC3_BANK_SELECT ; 4 (12)
+        lda EvenChr1Bank ; 4 (12)
+        sta MMC3_BANK_DATA ; 4 (12)
+        ; put it back when we're done
+        lda #(MMC3_BANKING_MODE + 0) ; 2 (6)
+        sta MMC3_BANK_SELECT ; 4 (12)
+
+        ; delay_cycles 56
         ; 48 cycles here (144)
         nop
         ldy #9
         dey
         bnenw *-1
-        ; another 22 here (66)
-        ldy #3
-        nop
-        dey
-        bnenw *-2
+        ; another 2 here (6)
+        nop ; 2 (6)
+
         ; ppu dot range here: 213 - 233
         lda HudPaletteBuffer + 0 ; 4 (12) BG0.0
         ldx HudPaletteBuffer + 1 ; 4 (12) BG0.1

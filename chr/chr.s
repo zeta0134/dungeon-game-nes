@@ -25,10 +25,10 @@ hud_graphics:
         .segment "BG6"
         .include "../build/fonts/finkheavy8x15.low.chr"
 
-        .segment "BG7"
+        .segment "BG8"
         .include "../build/dialog_portraits/test_graphic.even.chr"
 
-        .segment "BG8"
+        .segment "BG9"
         .include "../build/dialog_portraits/test_graphic.odd.chr"
 
         .segment "OBJ0"
