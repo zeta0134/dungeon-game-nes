@@ -395,6 +395,7 @@ dialog_transition_lut:
 .byte 160
 
 .proc dialog_init
+        jsr init_dialog_engine
         lda #(DIALOG_ANIM_LENGTH-1)
         sta AnimTimer
         st16 GameMode, dialog_opening
@@ -455,14 +456,8 @@ continue:
         jsr swap_irq_buffers
         jsr wait_for_next_vblank
 
-        ; DEBUG
-        ; exit the dialog system with a SELECT press
-        lda #KEY_SELECT
-        bit ButtonsDown
-        beq no_debug
-        ; activate the dialog system!
-        ; (until this is finished, this also freezes the game)
-        st16 GameMode, dialog_closing
+        ; refresh the animation timer (... repeatedly) so that it starts in the right spot
+        ; when we close the dialog
         lda #(DIALOG_ANIM_LENGTH-1)
         sta AnimTimer
 no_debug:

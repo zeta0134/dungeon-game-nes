@@ -11,3 +11,4 @@
 .global load_new_map
 .global blackout_to_new_map
 .global dialog_init
+.global dialog_closing

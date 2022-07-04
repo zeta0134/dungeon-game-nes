@@ -1,1 +1,2 @@
+.global init_dialog_engine
 .global update_dialog_engine
