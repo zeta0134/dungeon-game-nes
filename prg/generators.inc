@@ -1,3 +1,5 @@
 .global FAR_generate_basic_playfield
 .global FAR_generate_standard_hud
 .global FAR_generate_hud_palette_swap
+.global FAR_generate_dialog_hud
+.global FAR_generate_blank_hud

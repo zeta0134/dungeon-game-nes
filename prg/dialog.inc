@@ -1,0 +1,1 @@
+.global update_dialog_engine

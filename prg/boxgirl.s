@@ -842,17 +842,9 @@ no_damaging_entities_found:
         lda #KEY_SELECT
         bit ButtonsDown
         beq no_debug
-        ; die! (for testing)
-        set_update_func CurrentEntityIndex, boxgirl_death_init
-        ; this is a major event; big old hit stun
-        lda #30
-        sta HitstunTimer
-        st16 GameMode, hitstun_gameplay_loop
-        ; play the moral blow sfx
-        st16 R0, sfx_mortal_blow_noise
-        jsr play_sfx_noise
-        st16 R0, sfx_weak_hit_tri
-        jsr play_sfx_triangle
+        ; activate the dialog system!
+        ; (until this is finished, this also freezes the game)
+        st16 GameMode, dialog_active
 
 no_debug:
         rts

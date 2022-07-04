@@ -10,3 +10,4 @@
 .global hitstun_gameplay_loop
 .global load_new_map
 .global blackout_to_new_map
+.global dialog_active

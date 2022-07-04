@@ -4,6 +4,7 @@
         .include "boxgirl.inc"
         .include "camera.inc"
         .include "debug.inc"
+        .include "dialog.inc"
         .include "entity.inc"
         .include "far_call.inc"
         .include "generators.inc"
@@ -30,6 +31,7 @@ TargetMapBank: .res 1
 TargetMapEntrance: .res 1
 FadeTimer: .res 1
 HitstunTimer: .res 1
+AnimTimer: .res 1
 
 
         .segment "PRGFIXED_E000"
@@ -369,3 +371,27 @@ done:
         rts
 .endproc
 
+.proc dialog_active
+        ; TODO: YOU WERE HERE
+        jsr refresh_palettes_gameloop
+        jsr update_dialog_engine
+
+        ; starting IRQ index for the playfield
+        lda inactive_irq_index
+        sta R0
+        ; CHR bank to use for BG graphics
+        lda DynamicChrBank
+        sta R1
+        ; height of the playfield
+        lda #160
+        sta R5
+        far_call FAR_generate_basic_playfield
+        far_call FAR_generate_hud_palette_swap
+        lda #10 ; first font bank, maybe make this not magic later
+        sta R1
+        far_call FAR_generate_dialog_hud
+
+        jsr swap_irq_buffers
+        jsr wait_for_next_vblank
+        rts
+.endproc

@@ -177,7 +177,7 @@ IrqGenerationIndex := R0
         sta irq_table_nametable_high, x
         lda #HUD_BANK
         sta irq_table_chr0_bank, x
-        ; the HUD should not show sprites in the first 16px, which is the entire first segment
+        ; the HUD should not show sprites
         lda #(BG_ON)
         sta irq_table_ppumask, x
         lda #16
@@ -200,6 +200,197 @@ IrqGenerationIndex := R0
         inc IrqGenerationIndex
         inx
         ; Finally, generate a terminal segment with the CHR bank switched to blank tiles
+        lda #(BG_ON)
+        sta irq_table_ppumask, x
+        lda #$FF
+        sta irq_table_scanlines, x
+        lda #0
+        sta irq_table_scroll_x, x
+        lda #224
+        sta irq_table_scroll_y, x
+        lda #0
+        sta irq_table_nametable_high, x
+        sta irq_table_chr0_bank, x ; index 0 is blank
+        ; Also not strictly necessary, but we should conform to our own guidelines
+        inc IrqGenerationIndex 
+        rts
+.endproc
+
+.proc FAR_generate_dialog_hud
+IrqGenerationIndex := R0
+FontChrBase := R1
+; TODO: DialogChrBase
+        ldx IrqGenerationIndex
+        ; the dialog region consists of 8 splits in total, each spaced 8px apart, followed
+        ; by a forced blanking region to cap off the frame.
+
+        ; There are only 4 rows of tiles available, so we'll be drawing each one twice, with
+        ; different CHR banks loaded each time. The starting CHR banks are provided to this
+        ; function as arguments
+
+        ; The dialog region, like the HUD region, displays backgrounds but not sprites.
+
+        ; === Top Border Graphics ===
+        lda #0
+        sta irq_table_scroll_x, x
+        lda #224
+        sta irq_table_scroll_y, x
+        lda #LEFT_NAMETABLE
+        sta irq_table_nametable_high, x
+         ; top border graphics are also stored in the top font bank
+        lda FontChrBase
+        sta irq_table_chr0_bank, x
+        lda #(BG_ON)
+        sta irq_table_ppumask, x
+        lda #8
+        sta irq_table_scanlines, x
+        inc IrqGenerationIndex
+        inx
+
+        ; === First Dialog Line - Top Half ===
+        lda #0
+        sta irq_table_scroll_x, x
+        lda #232
+        sta irq_table_scroll_y, x
+        lda #LEFT_NAMETABLE
+        sta irq_table_nametable_high, x
+        lda FontChrBase
+        sta irq_table_chr0_bank, x
+        lda #(BG_ON)
+        sta irq_table_ppumask, x
+        lda #8
+        sta irq_table_scanlines, x
+        inc IrqGenerationIndex
+        inx
+
+        ; === First Dialog Line - Bottom Half ===
+        lda #0
+        sta irq_table_scroll_x, x
+        lda #232
+        sta irq_table_scroll_y, x
+        lda #LEFT_NAMETABLE
+        sta irq_table_nametable_high, x
+        lda FontChrBase
+        clc
+        adc #2
+        sta irq_table_chr0_bank, x
+        lda #(BG_ON)
+        sta irq_table_ppumask, x
+        lda #8
+        sta irq_table_scanlines, x
+        inc IrqGenerationIndex
+        inx
+
+        ; === Second Dialog Line - Top Half ===
+        lda #0
+        sta irq_table_scroll_x, x
+        lda #224
+        sta irq_table_scroll_y, x
+        lda #RIGHT_NAMETABLE
+        sta irq_table_nametable_high, x
+        lda FontChrBase
+        sta irq_table_chr0_bank, x
+        lda #(BG_ON)
+        sta irq_table_ppumask, x
+        lda #8
+        sta irq_table_scanlines, x
+        inc IrqGenerationIndex
+        inx
+
+        ; === Second Dialog Line - Bottom Half ===
+        lda #0
+        sta irq_table_scroll_x, x
+        lda #224
+        sta irq_table_scroll_y, x
+        lda #RIGHT_NAMETABLE
+        sta irq_table_nametable_high, x
+        lda FontChrBase
+        clc
+        adc #2
+        sta irq_table_chr0_bank, x
+        lda #(BG_ON)
+        sta irq_table_ppumask, x
+        lda #8
+        sta irq_table_scanlines, x
+        inc IrqGenerationIndex
+        inx
+
+        ; === Third Dialog Line - Top Half ===
+        lda #0
+        sta irq_table_scroll_x, x
+        lda #232
+        sta irq_table_scroll_y, x
+        lda #RIGHT_NAMETABLE
+        sta irq_table_nametable_high, x
+        lda FontChrBase
+        sta irq_table_chr0_bank, x
+        lda #(BG_ON)
+        sta irq_table_ppumask, x
+        lda #8
+        sta irq_table_scanlines, x
+        inc IrqGenerationIndex
+        inx
+
+        ; === Third Dialog Line - Bottom Half ===
+        lda #0
+        sta irq_table_scroll_x, x
+        lda #232
+        sta irq_table_scroll_y, x
+        lda #RIGHT_NAMETABLE
+        sta irq_table_nametable_high, x
+        lda FontChrBase
+        clc
+        adc #2
+        sta irq_table_chr0_bank, x
+        lda #(BG_ON)
+        sta irq_table_ppumask, x
+        lda #8
+        sta irq_table_scanlines, x
+        inc IrqGenerationIndex
+        inx
+
+        ; === Bottom Border Graphics ===
+        lda #0
+        sta irq_table_scroll_x, x
+        lda #224
+        sta irq_table_scroll_y, x
+        lda #LEFT_NAMETABLE
+        sta irq_table_nametable_high, x
+         ; bottom border graphics are stored in the bottom font bank
+        lda FontChrBase
+        clc
+        adc #2
+        sta irq_table_chr0_bank, x
+        lda #(BG_ON)
+        sta irq_table_ppumask, x
+        lda #8
+        sta irq_table_scanlines, x
+        inc IrqGenerationIndex
+        inx
+
+        ; Finally, generate a terminal segment with the CHR bank switched to blank tiles
+        lda #(BG_ON)
+        sta irq_table_ppumask, x
+        lda #$FF
+        sta irq_table_scanlines, x
+        lda #0
+        sta irq_table_scroll_x, x
+        lda #224
+        sta irq_table_scroll_y, x
+        lda #0
+        sta irq_table_nametable_high, x
+        sta irq_table_chr0_bank, x ; index 0 is blank
+        ; Also not strictly necessary, but we should conform to our own guidelines
+        inc IrqGenerationIndex 
+        rts
+.endproc
+
+.proc FAR_generate_blank_hud
+IrqGenerationIndex := R0
+        ; Generate a terminal segment with the CHR bank switched to blank tiles
+        ; (this is primarily useful when we are animating the palette swap border,
+        ; since we need one valid split to follow it. This is that valid row.)
+        ldx IrqGenerationIndex
         lda #(BG_ON)
         sta irq_table_ppumask, x
         lda #$FF
