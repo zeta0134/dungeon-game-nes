@@ -391,7 +391,7 @@ IrqGenerationIndex := R0
         ; (this is primarily useful when we are animating the palette swap border,
         ; since we need one valid split to follow it. This is that valid row.)
         ldx IrqGenerationIndex
-        lda #0
+        lda #(BG_ON)
         sta irq_table_ppumask, x
         lda #$FF
         sta irq_table_scanlines, x

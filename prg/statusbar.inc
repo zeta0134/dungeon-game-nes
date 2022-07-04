@@ -1,2 +1,4 @@
 .global init_statusbar
 .global update_statusbar
+.global write_blank_hud_palette
+.global write_active_hud_palette

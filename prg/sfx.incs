@@ -331,17 +331,17 @@ sfx_death_splat_noise:
 .macro dialog_formant_falling duty, pitch
         .byte 3 ; length of this sfx in rows
         ;                  pitch, duty, vol,                    sweep, length
-        pulse_init_sweep   pitch, duty,  $3, (S_PERIOD_0 | S_SHIFT_5),      0
+        pulse_init_sweep   pitch, duty,  $6, (S_PERIOD_0 | S_SHIFT_5),      0
+        pulse_cont_duty           duty,  $9,                                0
         pulse_cont_duty           duty,  $6,                                0
-        pulse_cont_duty           duty,  $3,                                0
 .endmacro
 
 .macro dialog_formant_rising duty, pitch
         .byte 3 ; length of this sfx in rows
-        ;                  pitch, duty, vol,                            sweep, length
-        pulse_init_sweep   (pitch + 50), duty,  $3, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      0
-        pulse_cont_duty           duty,  $6,                                        0
-        pulse_cont_duty           duty,  $3,                                        0
+        ;                  pitch,        duty, vol,                            sweep, length
+        pulse_init_sweep   (pitch + 50), duty,  $6, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      0
+        pulse_cont_duty                  duty,  $9,                                        0
+        pulse_cont_duty                  duty,  $6,                                        0
 .endmacro
 
 sfx_dialog_ae_low_variant_1: dialog_formant_falling $1, PITCH_B2

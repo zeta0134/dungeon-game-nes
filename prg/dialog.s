@@ -5,6 +5,7 @@
         .include "kernel.inc"
         .include "nes.inc"
         .include "prng.inc"
+        .include "statusbar.inc"
         .include "sound.inc"
         .include "vram_buffer.inc"
         .include "word_util.inc"
@@ -140,6 +141,7 @@ still_waiting:
         ; In skip mode, we might wish to process several commands at once, though
         ; we'll need to guard that against state changes
         jsr process_one_command
+        jsr write_active_hud_palette
         rts
 .endproc
 

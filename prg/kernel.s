@@ -404,6 +404,7 @@ dialog_transition_lut:
 
 .proc dialog_opening
         jsr refresh_palettes_gameloop
+        jsr write_blank_hud_palette
 
         ; starting IRQ index for the playfield
         lda inactive_irq_index
@@ -467,6 +468,7 @@ no_debug:
 
 .proc dialog_closing
         jsr refresh_palettes_gameloop
+        jsr write_blank_hud_palette
 
         ; starting IRQ index for the playfield
         lda inactive_irq_index
