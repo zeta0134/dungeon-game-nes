@@ -308,9 +308,9 @@ check_2px:
 
 check_postirq_vector:
         ; ppu dot range here: 20 - 40
-        cmp #$FE ; 2 (6)
-        bnenw delay_with_mmc3_irq ; 2 (6) (when not taken)
-        jmp post_irq_hud_palette ; 3 (9)
+        cmp #$FC ; 2 (6)
+        bccnw delay_with_mmc3_irq ; 2 (6) (when not taken)
+        jmp post_irq_vector ; 3 (9)
         ; in theory we could check for other special cases here, in order of "who needs more cycles at the start"
 delay_with_mmc3_irq:
         sec
@@ -319,6 +319,7 @@ delay_with_mmc3_irq:
         sta MMC3_IRQ_RELOAD
         sta MMC3_IRQ_ENABLE
 
+safely_return_from_irq:
         ; since we possibly clobbered the MMC3 bank select register, restore the shadow copy here
         ; (99% of the time this will have no effect, but if we interrupted a far call...)
         lda mmc3_bank_select_shadow
@@ -336,20 +337,33 @@ delay_with_mmc3_irq:
 
         .align 2 ; tweak to make branch asserts go away
 
-post_irq_hud_palette:
+post_irq_vector:
+check_hud_palette:
         ; ppu dot range here: 41 - 61
+        ; note: scanlines remaining is still in A
+        cmp #$FE ; 2 (6)
+        bnenw no_match_found ; 2 (6) not taken, 3 (9) (taken)
+        jmp post_irq_hud_palette ; 3 (9)
+
+        ; TODO: when we are ready for CHR1 switching, check for
+        ; #$FD here and perform the extra work.
+
+no_match_found:
+        ; unknown special value. Treat this as an IRQ stop command
+        sta MMC3_IRQ_DISABLE
+        jmp safely_return_from_irq
+
+post_irq_hud_palette:
+        ; ppu dot range here: 62 - 82
 
         ; ====== Post-IRQ Scanline =============
 
-        ;delay_cycles 55
+        ;delay_cycles 48
         ; 48 cycles here (144)
         nop
         ldy #9
         dey
         bnenw *-1
-        ; and another 7 here (21)
-        php ; 4 (12)
-        plp ; 3 (9)
         ; ppu dot range here: 206 - 226
 
         ; note: state of w flag is known since we just came out of IRQ routine,
