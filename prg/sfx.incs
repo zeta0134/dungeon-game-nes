@@ -327,3 +327,45 @@ sfx_death_splat_noise:
         noise_cont    0,    $F,  $3,      1
         noise_cont    0,    $F,  $2,      1
         noise_cont    0,    $F,  $1,      1
+
+.macro dialog_formant_falling duty, pitch
+        .byte 3 ; length of this sfx in rows
+        ;                  pitch, duty, vol,                    sweep, length
+        pulse_init_sweep   pitch, duty,  $3, (S_PERIOD_0 | S_SHIFT_5),      0
+        pulse_cont_duty           duty,  $6,                                0
+        pulse_cont_duty           duty,  $3,                                0
+.endmacro
+
+.macro dialog_formant_rising duty, pitch
+        .byte 3 ; length of this sfx in rows
+        ;                  pitch, duty, vol,                            sweep, length
+        pulse_init_sweep   (pitch + 50), duty,  $3, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      0
+        pulse_cont_duty           duty,  $6,                                        0
+        pulse_cont_duty           duty,  $3,                                        0
+.endmacro
+
+sfx_dialog_ae_low_variant_1: dialog_formant_falling $1, PITCH_B2
+sfx_dialog_ae_low_variant_2: dialog_formant_rising  $1, PITCH_B2
+sfx_dialog_ae_low_variant_3: dialog_formant_falling $1, PITCH_C3
+sfx_dialog_ae_low_variant_4: dialog_formant_rising  $1, PITCH_C3
+sfx_dialog_iy_low_variant_1: dialog_formant_falling $0, PITCH_B2
+sfx_dialog_iy_low_variant_2: dialog_formant_rising  $0, PITCH_B2
+sfx_dialog_iy_low_variant_3: dialog_formant_falling $0, PITCH_C3
+sfx_dialog_iy_low_variant_4: dialog_formant_rising  $0, PITCH_C3
+sfx_dialog_ou_low_variant_1: dialog_formant_falling $2, PITCH_B2
+sfx_dialog_ou_low_variant_2: dialog_formant_rising  $2, PITCH_B2
+sfx_dialog_ou_low_variant_3: dialog_formant_falling $2, PITCH_C3
+sfx_dialog_ou_low_variant_4: dialog_formant_rising  $2, PITCH_C3
+
+sfx_dialog_ae_mid_variant_1: dialog_formant_falling $1, PITCH_CS4
+sfx_dialog_ae_mid_variant_2: dialog_formant_rising  $1, PITCH_CS4
+sfx_dialog_ae_mid_variant_3: dialog_formant_falling $1, PITCH_D4
+sfx_dialog_ae_mid_variant_4: dialog_formant_rising  $1, PITCH_D4
+sfx_dialog_iy_mid_variant_1: dialog_formant_falling $0, PITCH_CS4
+sfx_dialog_iy_mid_variant_2: dialog_formant_rising  $0, PITCH_CS4
+sfx_dialog_iy_mid_variant_3: dialog_formant_falling $0, PITCH_D4
+sfx_dialog_iy_mid_variant_4: dialog_formant_rising  $0, PITCH_D4
+sfx_dialog_ou_mid_variant_1: dialog_formant_falling $2, PITCH_CS4
+sfx_dialog_ou_mid_variant_2: dialog_formant_rising  $2, PITCH_CS4
+sfx_dialog_ou_mid_variant_3: dialog_formant_falling $2, PITCH_D4
+sfx_dialog_ou_mid_variant_4: dialog_formant_rising  $2, PITCH_D4

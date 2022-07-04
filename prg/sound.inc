@@ -23,6 +23,31 @@
 .global sfx_death_spin_tri
 .global sfx_death_splat_noise
 
+.global sfx_dialog_ae_low_variant_1
+.global sfx_dialog_ae_low_variant_2
+.global sfx_dialog_ae_low_variant_3
+.global sfx_dialog_ae_low_variant_4
+.global sfx_dialog_iy_low_variant_1
+.global sfx_dialog_iy_low_variant_2
+.global sfx_dialog_iy_low_variant_3
+.global sfx_dialog_iy_low_variant_4
+.global sfx_dialog_ou_low_variant_1
+.global sfx_dialog_ou_low_variant_2
+.global sfx_dialog_ou_low_variant_3
+.global sfx_dialog_ou_low_variant_4
+
+.global sfx_dialog_ae_mid_variant_1
+.global sfx_dialog_ae_mid_variant_2
+.global sfx_dialog_ae_mid_variant_3
+.global sfx_dialog_ae_mid_variant_4
+.global sfx_dialog_iy_mid_variant_1
+.global sfx_dialog_iy_mid_variant_2
+.global sfx_dialog_iy_mid_variant_3
+.global sfx_dialog_iy_mid_variant_4
+.global sfx_dialog_ou_mid_variant_1
+.global sfx_dialog_ou_mid_variant_2
+.global sfx_dialog_ou_mid_variant_3
+.global sfx_dialog_ou_mid_variant_4
 
 
 .macro play_dpcm sample_addr, length

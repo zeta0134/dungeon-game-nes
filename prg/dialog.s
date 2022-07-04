@@ -4,6 +4,8 @@
         .include "irq_table.inc"
         .include "kernel.inc"
         .include "nes.inc"
+        .include "prng.inc"
+        .include "sound.inc"
         .include "vram_buffer.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
@@ -15,6 +17,7 @@ TextPtr: .res 2
 CurrentPpuAddr: .res 2
 StateCounter: .res 1 
 CurrentLine: .res 1
+CurrentTimbre: .res 1
         .segment "PRGFIXED_E000"
 
 ; commands
@@ -23,6 +26,7 @@ D_WAIT =  $81
 D_EXIT =  $82
 D_CLEAR = $83
 D_PORTRAIT = $84
+D_TIMBRE = $85
 
 ; useful defines
 BORDER_PPU =      $2380
@@ -31,17 +35,18 @@ SECOND_LINE_PPU = $2780
 THIRD_LINE_PPU =  $27A0
 
 DIALOG_LEFT_MARGIN = 9
-DIALOG_RIGHT_MARGIN = 3
+DIALOG_RIGHT_MARGIN = 1
 DIALOG_MAX_LINE_LENGTH = (32 - DIALOG_RIGHT_MARGIN - DIALOG_LEFT_MARGIN)
 
 DIALOG_PORTRAIT_X = 2
 DIALOG_PORTRAIT_WIDTH_TILES = 6
 
 test_message:
-        ;    |01234567890123456789|
-        ;    |     safe width     |
-        ;    |--------------------|
+        ;     |0123456789012345678901|
+        ;     |     safe width       |
+        ;     |----------------------|
         .byte D_PORTRAIT, 16, 0
+        .byte D_TIMBRE, $1
         .byte "Hello world!"
         .byte D_WAIT, D_CLEAR
         .byte "Several screens!"
@@ -51,6 +56,35 @@ test_message:
         .byte "line breaks."
         .byte D_WAIT, D_EXIT
 
+lorem_ipsum:
+        .byte D_PORTRAIT, 16, 0
+        .byte D_TIMBRE, $0
+        ;     |----------------------|
+        .byte "Lorem ipsum dolor sit", D_LF
+        .byte "amet, consectetur", D_LF
+        .byte "adipiscing elit, sed"
+        .byte D_WAIT, D_CLEAR
+        ;     |----------------------|
+        .byte "do eiusmod tempor", D_LF
+        .byte "incididunt ut labore", D_LF
+        .byte "et dolore magna"
+        .byte D_WAIT, D_CLEAR
+        ;     |----------------------|
+        .byte "aliqua."
+        .byte D_WAIT, D_CLEAR
+
+        .byte D_PORTRAIT, 16, 18
+        .byte D_TIMBRE, $1
+        ;     |----------------------|
+        .byte "Ut enim ad minim", D_LF
+        .byte "veniam, quis nostrud", D_LF
+        .byte "exercitation ullamco"
+        .byte D_WAIT, D_CLEAR
+        ;     |----------------------|
+        .byte "laboris nisi ut", D_LF
+        .byte "aliquip ex ea commodo", D_LF
+        .byte "consequat."
+        .byte D_WAIT, D_EXIT
 
 ; === External Functions ===
 
@@ -58,7 +92,7 @@ test_message:
         st16 DialogMode, dialog_state_init
         ; debug: manually set a dialog message for testing
         ; later we should not do this, and allow the calling code to set the pointer instead
-        st16 TextPtr, test_message
+        st16 TextPtr, lorem_ipsum
         ; debug: manually set up a dialog portrait's bank numbers
         ; later, this should be part of a command, I think, or maybe part
         ; of the message header or something
@@ -66,6 +100,9 @@ test_message:
         sta EvenChr1Bank
         lda #18
         sta OddChr1Bank
+
+        lda #4
+        sta CurrentTimbre
         rts
 .endproc
 
@@ -138,9 +175,13 @@ commands_table:
         .word exit_command
         .word clear_text_command
         .word dialog_portrait_command
+        .word timbre_command
 
 .proc draw_one_character
-        ; A still contains the character to draw, but it's in ASCII, and we need to
+CharacterIndex := R0
+        ; A still contains the character to draw
+        sta CharacterIndex
+        ; it's in ASCII, and we need to
         ; subtract 32 here to get it lined up with our tile indices
         sec
         sbc #32
@@ -155,11 +196,146 @@ commands_table:
 
         inc16 CurrentPpuAddr
 
+        jsr play_chirp
+
         ; That should be it. We don't check for or handle running off the edge
         ; of the dialog window, right now that is assumed to not be a property
         ; of the message data.
         ; (Later we might want to care slightly)
 
+        rts
+.endproc
+
+.proc play_chirp
+CharacterIndex := R0
+        lda CharacterIndex
+check_a:
+        ; if that was one of our vowel sounds, play an appropriate chirp sfx
+        cmp #'a'
+        bne check_A
+        jmp chirp_ae
+check_A:
+        cmp #'A'
+        bne check_e
+        jmp chirp_ae
+check_e:
+        cmp #'e'
+        bne check_E
+        jmp chirp_ae
+check_E:
+        cmp #'E'
+        bne check_i
+        jmp chirp_ae
+check_i:
+        cmp #'i'
+        bne check_I
+        jmp chirp_iy
+check_I:
+        cmp #'i'
+        bne check_o
+        jmp chirp_iy
+check_o:
+        cmp #'o'
+        bne check_O
+        jmp chirp_ou
+check_O:
+        cmp #'O'
+        bne check_u
+        jmp chirp_ou
+check_u:
+        cmp #'u'
+        bne check_U
+        jmp chirp_ou
+check_U:
+        cmp #'U'
+        bne check_y
+        jmp chirp_ou
+check_y:
+        cmp #'y'
+        bne check_Y
+        jmp chirp_iy
+check_Y:
+        cmp #'y'
+        bne no_chirp
+        jmp chirp_iy
+
+no_chirp:
+        rts
+.endproc
+
+chirp_lut_ae:
+        .word sfx_dialog_ae_low_variant_1
+        .word sfx_dialog_ae_low_variant_2
+        .word sfx_dialog_ae_low_variant_3
+        .word sfx_dialog_ae_low_variant_4
+        .word sfx_dialog_ae_mid_variant_1
+        .word sfx_dialog_ae_mid_variant_2
+        .word sfx_dialog_ae_mid_variant_3
+        .word sfx_dialog_ae_mid_variant_4
+chirp_lut_iy:
+        .word sfx_dialog_iy_low_variant_1
+        .word sfx_dialog_iy_low_variant_2
+        .word sfx_dialog_iy_low_variant_3
+        .word sfx_dialog_iy_low_variant_4
+        .word sfx_dialog_iy_mid_variant_1
+        .word sfx_dialog_iy_mid_variant_2
+        .word sfx_dialog_iy_mid_variant_3
+        .word sfx_dialog_iy_mid_variant_4
+chirp_lut_ou:
+        .word sfx_dialog_ou_low_variant_1
+        .word sfx_dialog_ou_low_variant_2
+        .word sfx_dialog_ou_low_variant_3
+        .word sfx_dialog_ou_low_variant_4
+        .word sfx_dialog_ou_mid_variant_1
+        .word sfx_dialog_ou_mid_variant_2
+        .word sfx_dialog_ou_mid_variant_3
+        .word sfx_dialog_ou_mid_variant_4
+
+.proc chirp_ae
+SfxPtr := R0
+        jsr next_rand
+        and #%00000011
+        asl
+        clc
+        adc CurrentTimbre
+        tax
+        lda chirp_lut_ae, x
+        sta SfxPtr
+        lda chirp_lut_ae+1, x
+        sta SfxPtr+1
+        jsr play_sfx_pulse2
+        rts
+.endproc
+
+.proc chirp_iy
+SfxPtr := R0
+        jsr next_rand
+        and #%00000011
+        asl
+        clc
+        adc CurrentTimbre
+        tax
+        lda chirp_lut_iy, x
+        sta SfxPtr
+        lda chirp_lut_iy+1, x
+        sta SfxPtr+1
+        jsr play_sfx_pulse2
+        rts
+.endproc
+
+.proc chirp_ou
+SfxPtr := R0
+        jsr next_rand
+        and #%00000011
+        asl
+        clc
+        adc CurrentTimbre
+        tax
+        lda chirp_lut_ou, x
+        sta SfxPtr
+        lda chirp_lut_ou+1, x
+        sta SfxPtr+1
+        jsr play_sfx_pulse2
         rts
 .endproc
 
@@ -196,9 +372,6 @@ handle_last_line:
 .proc exit_command
         st16 DialogMode, dialog_state_inactive
         st16 GameMode, dialog_closing
-        lda #0 ; blank graphics
-        sta EvenChr1Bank
-        sta OddChr1Bank
         rts
 .endproc
 
@@ -314,5 +487,20 @@ third_line_loop:
         bne third_line_loop
         inc VRAM_TABLE_ENTRIES
 
+        rts
+.endproc
+
+.proc timbre_command
+TimbreParam := R0
+        lda (TextPtr), y
+        sta TimbreParam
+        inc16 TextPtr
+
+        lda TimbreParam
+        asl
+        asl
+        asl
+        sta CurrentTimbre
+        
         rts
 .endproc

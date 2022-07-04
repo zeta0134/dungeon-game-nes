@@ -27,9 +27,11 @@ hud_graphics:
 
         .segment "BG8"
         .include "../build/dialog_portraits/zero.even.chr"
+        .include "../build/dialog_portraits/ciel.even.chr"
 
         .segment "BG9"
         .include "../build/dialog_portraits/zero.odd.chr"
+        .include "../build/dialog_portraits/ciel.odd.chr"
 
         .segment "OBJ0"
 boxgirl_graphics:
