@@ -199,8 +199,8 @@ IrqGenerationIndex := R0
         sta irq_table_scanlines, x
         inc IrqGenerationIndex
         inx
-        ; Finally, generate a terminal segment with the CHR bank switched to blank tiles
-        lda #(BG_ON)
+        ; Finally, generate a terminal segment with rendering disabled
+        lda #0
         sta irq_table_ppumask, x
         lda #$FF
         sta irq_table_scanlines, x
@@ -368,8 +368,8 @@ FontChrBase := R1
         inc IrqGenerationIndex
         inx
 
-        ; Finally, generate a terminal segment with the CHR bank switched to blank tiles
-        lda #(BG_ON)
+        ; Finally, generate a terminal segment with rendering disabled
+        lda #0
         sta irq_table_ppumask, x
         lda #$FF
         sta irq_table_scanlines, x
@@ -387,11 +387,11 @@ FontChrBase := R1
 
 .proc FAR_generate_blank_hud
 IrqGenerationIndex := R0
-        ; Generate a terminal segment with the CHR bank switched to blank tiles
+        ; Generate a terminal segment with rendering disabled
         ; (this is primarily useful when we are animating the palette swap border,
         ; since we need one valid split to follow it. This is that valid row.)
         ldx IrqGenerationIndex
-        lda #(BG_ON)
+        lda #0
         sta irq_table_ppumask, x
         lda #$FF
         sta irq_table_scanlines, x

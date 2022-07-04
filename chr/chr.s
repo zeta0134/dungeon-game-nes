@@ -26,10 +26,10 @@ hud_graphics:
         .include "../build/fonts/finkheavy8x15.low.chr"
 
         .segment "BG8"
-        .include "../build/dialog_portraits/test_graphic.even.chr"
+        .include "../build/dialog_portraits/zero.even.chr"
 
         .segment "BG9"
-        .include "../build/dialog_portraits/test_graphic.odd.chr"
+        .include "../build/dialog_portraits/zero.odd.chr"
 
         .segment "OBJ0"
 boxgirl_graphics:

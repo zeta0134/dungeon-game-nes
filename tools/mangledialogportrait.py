@@ -24,6 +24,18 @@ def read_image(filename):
 
   return even_tiles, odd_tiles
 
+def swap_first_row(tile_a, tile_b):
+  byte_0_temp = tile_a[0]
+  byte_8_temp = tile_a[8]
+  tile_a[0] = tile_b[0]
+  tile_a[8] = tile_b[8]
+  tile_b[0] = byte_0_temp
+  tile_b[8] = byte_8_temp
+
+def mangle_tiles(even_tiles, odd_tiles):
+  for i in range(0, len(even_tiles)):
+    swap_first_row(even_tiles[i], odd_tiles[i])
+
 def write_chr_tiles(chr_tiles, filename):
   chr_bytes = []
   for tile in chr_tiles:
@@ -46,5 +58,7 @@ if __name__ == '__main__':
     output_low_filename = sys.argv[3]
 
     even_tiles, odd_tiles = read_image(input_filename)
-    write_chr_tiles(even_tiles, output_high_filename)
-    write_chr_tiles(odd_tiles, output_low_filename)
+    mangle_tiles(even_tiles, odd_tiles)
+    # and also swap the entire tile, because I can't math
+    write_chr_tiles(odd_tiles, output_high_filename)
+    write_chr_tiles(even_tiles, output_low_filename)
