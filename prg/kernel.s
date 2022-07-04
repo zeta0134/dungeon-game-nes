@@ -490,6 +490,7 @@ no_debug:
         dec AnimTimer
         bne continue
         st16 GameMode, standard_gameplay_loop
+        jsr init_statusbar
 continue:
         rts
 .endproc
