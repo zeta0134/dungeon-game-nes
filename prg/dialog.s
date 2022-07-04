@@ -13,6 +13,7 @@ TextPtr: .res 2
         .segment "RAM"
 CurrentPpuAddr: .res 2
 StateCounter: .res 1 
+CurrentLine: .res 1
         .segment "PRGFIXED_E000"
 
 ; commands
@@ -32,8 +33,18 @@ DIALOG_RIGHT_MARGIN = 3
 DIALOG_MAX_LINE_LENGTH = (32 - DIALOG_RIGHT_MARGIN - DIALOG_LEFT_MARGIN)
 
 test_message:
-        .byte "Hello world!", D_WAIT
-        .byte D_CLEAR, "Several screens!", D_WAIT, D_EXIT
+        ;    |01234567890123456789|
+        ;    |     safe width     |
+        ;    |--------------------|
+        .byte "Hello world!"
+        .byte D_WAIT, D_CLEAR
+        .byte "Several screens!"
+        .byte D_WAIT, D_CLEAR
+        .byte "Several lines of", D_LF
+        .byte "text, separated by", D_LF
+        .byte "line breaks."
+        .byte D_WAIT, D_EXIT
+
 
 ; === External Functions ===
 
@@ -139,7 +150,27 @@ commands_table:
 .endproc
 
 .proc line_feed_command
-        ; TODO!
+check_first_line:
+        lda CurrentLine
+        cmp #0
+        bne check_second_line
+        st16 CurrentPpuAddr, (SECOND_LINE_PPU + DIALOG_LEFT_MARGIN)
+        inc CurrentLine
+        rts
+check_second_line:
+        lda CurrentLine
+        cmp #1
+        bne handle_last_line
+        st16 CurrentPpuAddr, (THIRD_LINE_PPU + DIALOG_LEFT_MARGIN)
+        inc CurrentLine
+        rts
+handle_last_line:
+        ; uhh... clear the screen, sure?
+        jsr clear_text_command
+        ; TODO: we *could* implement a fancy "scroll the text up by one line"
+        ; behavior here, but doing so requires us to buffer drawn text in RAM
+        ; somewhere, so we can re-draw it on the upper rows. For now let's not
+        ; do anything that crazy.
         rts
 .endproc
 
@@ -193,6 +224,8 @@ third_line_loop:
 
         ; finally, reset the text pointer to the start of the first line
         st16 CurrentPpuAddr, (FIRST_LINE_PPU + DIALOG_LEFT_MARGIN)
+        lda #0
+        sta CurrentLine
         rts
 .endproc
 
