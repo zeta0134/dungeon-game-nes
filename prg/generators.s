@@ -258,7 +258,7 @@ FontChrBase := R1
         sta irq_table_chr0_bank, x
         lda #(BG_ON)
         sta irq_table_ppumask, x
-        lda #8
+        lda #$FD
         sta irq_table_scanlines, x
         inc IrqGenerationIndex
         inx
@@ -276,7 +276,7 @@ FontChrBase := R1
         sta irq_table_chr0_bank, x
         lda #(BG_ON)
         sta irq_table_ppumask, x
-        lda #8
+        lda #$FD
         sta irq_table_scanlines, x
         inc IrqGenerationIndex
         inx
@@ -292,7 +292,7 @@ FontChrBase := R1
         sta irq_table_chr0_bank, x
         lda #(BG_ON)
         sta irq_table_ppumask, x
-        lda #8
+        lda #$FD
         sta irq_table_scanlines, x
         inc IrqGenerationIndex
         inx
@@ -310,7 +310,7 @@ FontChrBase := R1
         sta irq_table_chr0_bank, x
         lda #(BG_ON)
         sta irq_table_ppumask, x
-        lda #8
+        lda #$FD
         sta irq_table_scanlines, x
         inc IrqGenerationIndex
         inx
@@ -326,7 +326,7 @@ FontChrBase := R1
         sta irq_table_chr0_bank, x
         lda #(BG_ON)
         sta irq_table_ppumask, x
-        lda #8
+        lda #$FD
         sta irq_table_scanlines, x
         inc IrqGenerationIndex
         inx
@@ -344,7 +344,7 @@ FontChrBase := R1
         sta irq_table_chr0_bank, x
         lda #(BG_ON)
         sta irq_table_ppumask, x
-        lda #8
+        lda #$FD
         sta irq_table_scanlines, x
         inc IrqGenerationIndex
         inx

@@ -340,7 +340,9 @@ safely_return_from_irq:
         ; all done
         rti
 
-        .align 2 ; tweak to make branch asserts go away
+        .repeat 4
+        .byte $00
+        .endrep
 
 ; === Pretty much everything that follows is specific to this project ===
 
@@ -349,11 +351,15 @@ check_hud_palette:
         ; ppu dot range here: 41 - 61
         ; note: scanlines remaining is still in A
         cmp #$FE ; 2 (6)
-        bnenw no_match_found ; 2 (6) not taken, 3 (9) (taken)
+        bnenw check_chr1_cheat ; 2 (6) not taken, 3 (9) (taken)
         jmp post_irq_hud_palette ; 3 (9)
 
+check_chr1_cheat:
         ; TODO: when we are ready for CHR1 switching, check for
-        ; #$FD here and perform the extra work.        
+        ; #$FD here and perform the extra work.
+        cmp #$FD ; 2 (6)
+        bnenw no_match_found ; 2 (6) not taken
+        jmp dialog_portrait_chr1_cheat ; 3 (9)
 
 no_match_found:
         ; unknown special value. Treat this as an IRQ stop command
@@ -543,10 +549,43 @@ post_irq_hud_palette:
         jmp split_xy_begin ; 3 (9)
         ; we want to end up on dot 49 - 69 here
 
-
-
-
-        ; for now, do nothing!
         rti
 
+dialog_portrait_chr1_cheat:
+        ; ppu dot range here: 77 - 97
+        ; setup for the CHR1 switch
+        lda #(MMC3_BANKING_MODE + 1) ; 2 (6)
+        sta MMC3_BANK_SELECT ; 4 (12)
+
+        ; Swap the even/odd CHR banks
+        lda EvenChr1Bank ; 4 (12)
+        ldx OddChr1Bank  ; 4 (12)
+        sta OddChr1Bank  ; 4 (12)
+        stx EvenChr1Bank ; 4 (12)
+
+        ; spinwait until we are safely in hblank
+        ; delay 35 cycles (105)
+        ldy #136 ; hides 'DEY'
+        dey
+        dey
+        bminw *-3
+
+        ; ppu dot range here: 248 - 268
+        ; Perform the CHR1 swap
+        lda EvenChr1Bank ; 4 (12)
+        sta MMC3_BANK_DATA ; 4 (12)
+        ; end timing sensitive code
+
+        ; Now, as a special case, we need to set up an MMC3 IRQ for 6 scanlines from now,
+        ; ignoring the value in the table. (#$FD, in addition to this CHR1 swap functionality,
+        ; also unconditionally encodes an 8px sized split. We simply don't need to make this general
+        ; for this project.)
+
+        lda #5
+        sta MMC3_IRQ_LATCH
+        sta MMC3_IRQ_RELOAD
+        sta MMC3_IRQ_ENABLE
+
+        ; finally, we can safely exit the IRQ routine as normal
+        jmp safely_return_from_irq
 .endproc
