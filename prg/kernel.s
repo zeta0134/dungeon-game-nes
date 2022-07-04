@@ -8,6 +8,7 @@
         .include "entity.inc"
         .include "far_call.inc"
         .include "generators.inc"
+        .include "input.inc"
         .include "irq_table.inc"
         .include "kernel.inc"
         .include "levels.inc"
@@ -371,8 +372,68 @@ done:
         rts
 .endproc
 
+DIALOG_ANIM_LENGTH = 17
+
+; note: this is probably *way* too lengthy
+dialog_transition_lut:
+.byte 192
+.byte 192
+.byte 191
+.byte 190
+.byte 188
+.byte 185
+.byte 183
+.byte 179
+.byte 176
+.byte 173
+.byte 169
+.byte 167
+.byte 164
+.byte 162
+.byte 161
+.byte 160
+.byte 160
+
+.proc dialog_init
+        lda #(DIALOG_ANIM_LENGTH-1)
+        sta AnimTimer
+        st16 GameMode, dialog_opening
+        rts   
+.endproc
+
+.proc dialog_opening
+        jsr refresh_palettes_gameloop
+
+        ; starting IRQ index for the playfield
+        lda inactive_irq_index
+        sta R0
+        ; CHR bank to use for BG graphics
+        lda DynamicChrBank
+        sta R1
+        ; compute temporary height of the playfield
+        lda #(DIALOG_ANIM_LENGTH-1)
+        sec
+        sbc AnimTimer
+        tax
+        lda dialog_transition_lut, x
+        sta R5
+        far_call FAR_generate_basic_playfield
+        far_call FAR_generate_hud_palette_swap
+        lda #10 ; first font bank, maybe make this not magic later
+        sta R1
+        far_call FAR_generate_blank_hud
+
+        jsr swap_irq_buffers
+        jsr wait_for_next_vblank
+
+        dec AnimTimer
+        bne continue
+        st16 GameMode, dialog_active
+continue:
+        rts
+.endproc
+
 .proc dialog_active
-        ; TODO: YOU WERE HERE
         jsr refresh_palettes_gameloop
         jsr update_dialog_engine
 
@@ -393,5 +454,47 @@ done:
 
         jsr swap_irq_buffers
         jsr wait_for_next_vblank
+
+        ; DEBUG
+        ; exit the dialog system with a SELECT press
+        lda #KEY_SELECT
+        bit ButtonsDown
+        beq no_debug
+        ; activate the dialog system!
+        ; (until this is finished, this also freezes the game)
+        st16 GameMode, dialog_closing
+        lda #(DIALOG_ANIM_LENGTH-1)
+        sta AnimTimer
+no_debug:
+
+        rts
+.endproc
+
+.proc dialog_closing
+        jsr refresh_palettes_gameloop
+
+        ; starting IRQ index for the playfield
+        lda inactive_irq_index
+        sta R0
+        ; CHR bank to use for BG graphics
+        lda DynamicChrBank
+        sta R1
+        ; compute temporary height of the playfield
+        ldx AnimTimer
+        lda dialog_transition_lut, x
+        sta R5
+        far_call FAR_generate_basic_playfield
+        far_call FAR_generate_hud_palette_swap
+        lda #10 ; first font bank, maybe make this not magic later
+        sta R1
+        far_call FAR_generate_blank_hud
+
+        jsr swap_irq_buffers
+        jsr wait_for_next_vblank
+
+        dec AnimTimer
+        bne continue
+        st16 GameMode, standard_gameplay_loop
+continue:
         rts
 .endproc

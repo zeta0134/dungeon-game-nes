@@ -844,7 +844,7 @@ no_damaging_entities_found:
         beq no_debug
         ; activate the dialog system!
         ; (until this is finished, this also freezes the game)
-        st16 GameMode, dialog_active
+        st16 GameMode, dialog_init
 
 no_debug:
         rts
