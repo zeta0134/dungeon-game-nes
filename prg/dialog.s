@@ -16,9 +16,10 @@ StateCounter: .res 1
         .segment "PRGFIXED_E000"
 
 ; commands
-D_LF =   $80
-D_WAIT = $81
-D_EXIT = $82
+D_LF =    $80
+D_WAIT =  $81
+D_EXIT =  $82
+D_CLEAR = $83
 
 ; useful defines
 BORDER_PPU =      $2380
@@ -31,7 +32,8 @@ DIALOG_RIGHT_MARGIN = 3
 DIALOG_MAX_LINE_LENGTH = (32 - DIALOG_RIGHT_MARGIN - DIALOG_LEFT_MARGIN)
 
 test_message:
-        .byte "Hello world!", D_WAIT, D_EXIT
+        .byte "Hello world!", D_WAIT
+        .byte D_CLEAR, "Several screens!", D_WAIT, D_EXIT
 
 ; === External Functions ===
 
@@ -51,68 +53,10 @@ test_message:
 ; === High level Dialog State functions ===
 
 .proc dialog_state_init
-        ; initialize the text drawing pointer to the start of the first line
-        lda #<(FIRST_LINE_PPU + DIALOG_LEFT_MARGIN)
-        sta CurrentPpuAddr
-        lda #>(FIRST_LINE_PPU + DIALOG_LEFT_MARGIN)
-        sta CurrentPpuAddr+1
+        ; clear the dialog window, and initialize the text to the first line, all in one fell swoop
+        jsr clear_text_command
         ; we *should* do a bunch of other stuff here, but we're still bootstrapping.
-        ; For now, merely transition into a screen clear state
-        st16 DialogMode, dialog_state_clear_text
-        lda #0
-        sta StateCounter
-        rts
-.endproc
-
-.proc dialog_state_clear_text
-check_first_line:
-        lda StateCounter
-        cmp #1
-        bne check_second_line
-
-        ; queue up a VRAM transfer to fill the first line with space characters (tile 0)
-        write_vram_header_imm (FIRST_LINE_PPU + DIALOG_LEFT_MARGIN), #DIALOG_MAX_LINE_LENGTH, VRAM_INC_1
-        ldy #DIALOG_MAX_LINE_LENGTH
-first_line_loop:
-        ldx VRAM_TABLE_INDEX
-        lda #0
-        sta VRAM_TABLE_START, x
-        inc VRAM_TABLE_INDEX
-        dey
-        bne first_line_loop
-        inc VRAM_TABLE_ENTRIES
-        rts
-
-check_second_line:
-        lda StateCounter
-        cmp #2
-        bne process_third_line
-
-        ; queue up a VRAM transfer to fill the second line with space characters (tile 0)
-        write_vram_header_imm (SECOND_LINE_PPU + DIALOG_LEFT_MARGIN), #DIALOG_MAX_LINE_LENGTH, VRAM_INC_1
-        ldy #DIALOG_MAX_LINE_LENGTH
-second_line_loop:
-        ldx VRAM_TABLE_INDEX
-        lda #0
-        sta VRAM_TABLE_START, x
-        inc VRAM_TABLE_INDEX
-        dey
-        bne second_line_loop
-        inc VRAM_TABLE_ENTRIES
-        rts
-
-process_third_line:
-        ; queue up a VRAM transfer to fill the first line with space characters (tile 0)
-        write_vram_header_imm (THIRD_LINE_PPU + DIALOG_LEFT_MARGIN), #DIALOG_MAX_LINE_LENGTH, VRAM_INC_1
-        ldy #DIALOG_MAX_LINE_LENGTH
-third_line_loop:
-        ldx VRAM_TABLE_INDEX
-        lda #0
-        sta VRAM_TABLE_START, x
-        inc VRAM_TABLE_INDEX
-        dey
-        bne third_line_loop
-        inc VRAM_TABLE_ENTRIES        
+        ; For now, merely transition into text commands
         st16 DialogMode, dialog_state_process_commands
         rts
 .endproc
@@ -168,6 +112,7 @@ commands_table:
         .word line_feed_command
         .word wait_command
         .word exit_command
+        .word clear_text_command
 
 .proc draw_one_character
         ; A still contains the character to draw, but it's in ASCII, and we need to
@@ -208,3 +153,46 @@ commands_table:
         st16 GameMode, dialog_closing
         rts
 .endproc
+
+.proc clear_text_command
+        ; queue up a VRAM transfer to fill the first line with space characters (tile 0)
+        write_vram_header_imm (FIRST_LINE_PPU + DIALOG_LEFT_MARGIN), #DIALOG_MAX_LINE_LENGTH, VRAM_INC_1
+        ldy #DIALOG_MAX_LINE_LENGTH
+first_line_loop:
+        ldx VRAM_TABLE_INDEX
+        lda #0
+        sta VRAM_TABLE_START, x
+        inc VRAM_TABLE_INDEX
+        dey
+        bne first_line_loop
+        inc VRAM_TABLE_ENTRIES
+
+        ; queue up a VRAM transfer to fill the second line with space characters (tile 0)
+        write_vram_header_imm (SECOND_LINE_PPU + DIALOG_LEFT_MARGIN), #DIALOG_MAX_LINE_LENGTH, VRAM_INC_1
+        ldy #DIALOG_MAX_LINE_LENGTH
+second_line_loop:
+        ldx VRAM_TABLE_INDEX
+        lda #0
+        sta VRAM_TABLE_START, x
+        inc VRAM_TABLE_INDEX
+        dey
+        bne second_line_loop
+        inc VRAM_TABLE_ENTRIES
+
+        ; queue up a VRAM transfer to fill the first line with space characters (tile 0)
+        write_vram_header_imm (THIRD_LINE_PPU + DIALOG_LEFT_MARGIN), #DIALOG_MAX_LINE_LENGTH, VRAM_INC_1
+        ldy #DIALOG_MAX_LINE_LENGTH
+third_line_loop:
+        ldx VRAM_TABLE_INDEX
+        lda #0
+        sta VRAM_TABLE_START, x
+        inc VRAM_TABLE_INDEX
+        dey
+        bne third_line_loop
+        inc VRAM_TABLE_ENTRIES
+
+        ; finally, reset the text pointer to the start of the first line
+        st16 CurrentPpuAddr, (FIRST_LINE_PPU + DIALOG_LEFT_MARGIN)
+        rts
+.endproc
+
