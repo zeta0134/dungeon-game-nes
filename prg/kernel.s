@@ -449,9 +449,14 @@ continue:
         sta R5
         far_call FAR_generate_basic_playfield
         far_call FAR_generate_hud_palette_swap
-        lda #10 ; first font bank, maybe make this not magic later
-        sta R1
-        far_call FAR_generate_dialog_hud
+        
+        ; DEBUG: test sprite corruption in this setup
+        ; (This will hide dialog rendering, but otherwise not affect behavior)
+        far_call FAR_generate_blank_hud
+        
+        ;lda #10 ; first font bank, maybe make this not magic later
+        ;sta R1
+        ;far_call FAR_generate_dialog_hud
 
         jsr swap_irq_buffers
         jsr wait_for_next_vblank
