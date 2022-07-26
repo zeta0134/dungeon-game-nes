@@ -27,8 +27,9 @@ NoiseSfxPtr: .res 2
 
 .export bhop_music_data
 bhop_music_data:
-        .include "../art/music/calm.asm"
+        ;.include "../art/music/calm.asm"
         ;.include "../art/music/heat.asm"
+        .include "../art/music/depths.asm"
 
         .segment "PRGFIXED_8000"
 

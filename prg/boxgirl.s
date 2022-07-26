@@ -283,7 +283,7 @@ facing_left:
         ; Play a landing sound, to signal
         ; that landing-based abilities are now recharged
         st16 R0, sfx_landing
-        jsr play_sfx_pulse2
+        jsr play_sfx_pulse1
         ldx CurrentEntityIndex ; clobbered by play_sfx
 no_landing:
         ; reset coyote time as well
@@ -317,7 +317,7 @@ done:
         entity_set_flag_x FLAG_JUMP, 0
         ; play a jump sfx
         st16 R0, sfx_jump
-        jsr play_sfx_pulse2
+        jsr play_sfx_pulse1
         ; and done
         rts
 check_double_jump:
@@ -331,7 +331,7 @@ check_double_jump:
         entity_set_flag_x FLAG_DOUBLE_JUMP, 0
         ; play a jump sfx
         st16 R0, sfx_double_jump
-        jsr play_sfx_pulse2
+        jsr play_sfx_pulse1
         ; and done
 jump_not_pressed:
         rts
@@ -419,7 +419,7 @@ converge:
 
         ; play the dash SFX
         st16 R0, sfx_dash_pulse
-        jsr play_sfx_pulse2
+        jsr play_sfx_pulse1
         st16 R0, sfx_dash_noise
         jsr play_sfx_noise
 
@@ -531,7 +531,7 @@ TargetEntity := R0
         ; play a jump sfx
         ; TODO: make this a bounce-specific sfx
         st16 R0, sfx_bounce
-        jsr play_sfx_pulse2
+        jsr play_sfx_pulse1
         rts
 .endproc
 
@@ -667,7 +667,7 @@ weak_hit:
 
         ; this SFX is so meaty it has multiple components
         st16 R0, sfx_weak_hit_pulse
-        jsr play_sfx_pulse2
+        jsr play_sfx_pulse1
         st16 R0, sfx_weak_hit_tri
         jsr play_sfx_triangle
         st16 R0, sfx_weak_hit_noise
@@ -936,7 +936,7 @@ no_store:
 
         ; play a standard hurt sfx for now
         st16 R0, sfx_weak_hit_pulse
-        jsr play_sfx_pulse2
+        jsr play_sfx_pulse1
         st16 R0, sfx_weak_hit_tri
         jsr play_sfx_triangle
         st16 R0, sfx_weak_hit_noise
@@ -1117,7 +1117,7 @@ MetaSpriteIndex := R0
         st16 R0, sfx_death_spin_pulse
         jsr play_sfx_pulse1
         st16 R0, sfx_death_spin_pulse
-        jsr play_sfx_pulse2
+        jsr play_sfx_pulse1
         st16 R0, sfx_death_spin_tri
         jsr play_sfx_triangle
 
@@ -1345,7 +1345,7 @@ loop:
 
         ; play a nifty "whoosh" sfx
         st16 R0, sfx_teleport
-        jsr play_sfx_pulse2
+        jsr play_sfx_pulse1
 
         ; now that we are done with the map, we need to be in our own
         ; bank to manipulate animations, so do that
