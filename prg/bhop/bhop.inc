@@ -4,3 +4,6 @@
 
 .import bhop_init, bhop_play
 .import bhop_mute_channel, bhop_unmute_channel
+
+; dungeon-game specific variables
+.importzp current_music_variant, target_music_variant

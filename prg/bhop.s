@@ -211,6 +211,11 @@ effect_init_loop:
         lda #%00001111
         sta $4015
 
+        ; dungeon-game specific init here
+        lda #0
+        sta current_music_variant
+        sta target_music_variant
+
         rts
 .endproc
 
