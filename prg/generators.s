@@ -36,7 +36,7 @@ PlayfieldHeight := R5
 ; In theory we could allow making this a parameter as well, so the basic generator
 ; gains access to screen tinting abilities affecting the whole playfield. Might be
 ; useful for magic effects.
-PpuMaskSetting = $1E
+PpuMaskSetting = R6
         ldx IrqGenerationIndex
         ; First, set the nametable based on the 6th bit of the X tile position
         lda #%00100000
@@ -82,7 +82,7 @@ done_with_nametables:
         sta ScratchWord
 
         ; This is a normal playfield, so use standard PPUMASK
-        lda #PpuMaskSetting
+        lda PpuMaskSetting
         sta irq_table_ppumask, x
         lda ChrBank
         sta irq_table_chr0_bank, x
@@ -129,7 +129,7 @@ hud_split:
         lda #0
         sta irq_table_scroll_y, x
         ; ppumask and chr are the same as before
-        lda #PpuMaskSetting
+        lda PpuMaskSetting
         sta irq_table_ppumask, x
         lda ChrBank
         sta irq_table_chr0_bank, x

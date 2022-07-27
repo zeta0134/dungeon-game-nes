@@ -33,7 +33,7 @@ TargetMapEntrance: .res 1
 FadeTimer: .res 1
 HitstunTimer: .res 1
 AnimTimer: .res 1
-
+PlayfieldPpuMask: .res 1
 
         .segment "PRGFIXED_E000"
 
@@ -149,6 +149,8 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         lda #1
         sta HudPaletteActive
         jsr init_hud_palette
+        lda #$1E
+        sta PlayfieldPpuMask
 
         st16 TargetMapAddr, (debug_hub)
         lda #<.bank(debug_hub)
@@ -282,6 +284,8 @@ time_waste_loop:
         ; height of the playfield
         lda #192
         sta R5
+        lda PlayfieldPpuMask
+        sta R6
         far_call FAR_generate_basic_playfield
         far_call FAR_generate_hud_palette_swap
         far_call FAR_generate_standard_hud
@@ -309,6 +313,8 @@ still_in_hitstun:
         ; CHR bank to use for BG graphics
         lda DynamicChrBank
         sta R1
+        lda PlayfieldPpuMask
+        sta R6
         far_call FAR_generate_basic_playfield
         far_call FAR_generate_hud_palette_swap
         far_call FAR_generate_standard_hud
@@ -419,6 +425,8 @@ dialog_transition_lut:
         tax
         lda dialog_transition_lut, x
         sta R5
+        lda PlayfieldPpuMask
+        sta R6
         far_call FAR_generate_basic_playfield
         far_call FAR_generate_hud_palette_swap
         lda #10 ; first font bank, maybe make this not magic later
@@ -448,6 +456,8 @@ continue:
         ; height of the playfield
         lda #160
         sta R5
+        lda PlayfieldPpuMask
+        sta R6
         far_call FAR_generate_basic_playfield
         far_call FAR_generate_hud_palette_swap
         lda #10 ; first font bank, maybe make this not magic later
@@ -480,6 +490,8 @@ no_debug:
         ldx AnimTimer
         lda dialog_transition_lut, x
         sta R5
+        lda PlayfieldPpuMask
+        sta R6
         far_call FAR_generate_basic_playfield
         far_call FAR_generate_hud_palette_swap
         lda #10 ; first font bank, maybe make this not magic later

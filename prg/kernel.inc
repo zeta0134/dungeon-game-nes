@@ -1,5 +1,5 @@
 .globalzp GameMode
-.global TargetMapAddr, TargetMapBank, TargetMapEntrance
+.global TargetMapAddr, TargetMapBank, TargetMapEntrance, PlayfieldPpuMask
 .global HitstunTimer
 
 .global wait_for_next_vblank

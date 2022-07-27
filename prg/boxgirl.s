@@ -1,4 +1,5 @@
         .setcpu "6502"
+        .include "bhop/bhop.inc"
         .include "boxgirl.inc"
         .include "branch_util.inc"
         .include "camera.inc"
@@ -842,10 +843,26 @@ no_damaging_entities_found:
         lda #KEY_SELECT
         bit ButtonsDown
         beq no_debug
-        ; activate the dialog system!
-        ; (until this is finished, this also freezes the game)
-        st16 GameMode, dialog_init
 
+        ; activate the dialog system!
+        ;st16 GameMode, dialog_init
+
+        ; send us to fake underwater, to test a global PPU setting and also
+        ; a sound engine thing
+        lda target_music_variant
+        cmp #0
+        beq set_underwater
+set_normal:
+        lda #0
+        sta target_music_variant
+        lda #(BG_ON | OBJ_ON)
+        sta PlayfieldPpuMask
+        jmp no_debug
+set_underwater:
+        lda #12
+        sta target_music_variant
+        lda #(BG_ON | OBJ_ON | TINT_B)
+        sta PlayfieldPpuMask
 no_debug:
         rts
 .endproc
