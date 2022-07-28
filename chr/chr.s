@@ -3,26 +3,32 @@
         .segment "BG0"
 blank_index_0:
         .repeat $800
-        .byte $FF
+        .byte $00
         .endrepeat
 
         .segment "BG1"
+blank_index_3:
+        .repeat $800
+        .byte $FF
+        .endrepeat
+
+        .segment "BG2"
 hud_graphics:
         .incbin "../art/raw_chr/hud.chr"
 
-        .segment "BG2"
+        .segment "BG3"
         .include "../build/patternsets/grassy_fields_v3.chr"
 
-        .segment "BG3"
+        .segment "BG4"
         .include "../build/patternsets/test_tiles_3d.chr"
 
-        .segment "BG4"
+        .segment "BG5"
         .include "../build/patternsets/greybox.chr"        
 
-        .segment "BG5"
+        .segment "BG6"
         .include "../build/fonts/finkheavy8x15.high.chr"
 
-        .segment "BG6"
+        .segment "BG7"
         .include "../build/fonts/finkheavy8x15.low.chr"
 
         .segment "BG8"

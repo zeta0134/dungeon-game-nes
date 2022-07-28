@@ -8,6 +8,7 @@
         .include "zeropage.inc"
 
         .zeropage
+NmiPalAddr: .res 2
 
         .segment "RAM"
 BgPaletteDirty: .res 1
@@ -268,4 +269,30 @@ done:
         sta BgPaletteDirty
         sta ObjPaletteDirty
         rts
+.endproc
+
+.proc refresh_palettes_lag_frame
+        set_ppuaddr #$3F00
+        ; quickly copy the BG palette *directly* into PPU memory, bypassing
+        ; the vram buffer entirely. This is meant to be called from NMI during
+        ; lag frames
+        lda Brightness
+        asl
+        tax
+        lda brightness_table, x
+        sta NmiPalAddr
+        lda brightness_table+1, x
+        sta NmiPalAddr+1
+
+        ldx #0
+bg_loop:
+        ; for the first entry, always use the global BG color
+        ldy BgPaletteBuffer, x ; Grab a palette color
+        lda (NmiPalAddr), y       ; And use it to index the brightness table we picked
+        sta PPUDATA
+        inx
+        cpx #16
+        bne bg_loop
+
+        rts        
 .endproc

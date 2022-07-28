@@ -75,8 +75,15 @@ nmi:
         ; This signals to the gameloop that it may continue
         lda GameloopCounter
         sta LastNmi
+        jmp all_frames
 
 lag_frame:
+        ; refresh the BG palette directly into palette memory
+        ; (otherwise we draw the playfield with the HUD palette, which is
+        ; certainly wrong and generates ugly flicker)
+        jsr refresh_palettes_lag_frame
+
+all_frames:
         ; ===========================================================
         ; Tasks which MUST be performed every frame
         ;   - Mostly IRQ setup here, if we miss doing this the render

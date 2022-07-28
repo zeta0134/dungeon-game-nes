@@ -17,7 +17,7 @@
 SCROLL_SEAM = 224 ; in pixels from the top of the nametable
 LEFT_NAMETABLE = %0000
 RIGHT_NAMETABLE = %0100
-HUD_BANK = 2
+HUD_BANK = 4
 
 ; Side note: the initial blank 8px region is configured globally for the project. 
 ; Each generator here is concerned with the very first *visible* split.
@@ -152,7 +152,8 @@ IrqGenerationIndex := R0
         sta irq_table_scroll_y, x
         lda #0
         sta irq_table_nametable_high, x
-        sta irq_table_chr0_bank, x ; index 0 is blank
+        lda #2
+        sta irq_table_chr0_bank, x ; index 2 is "blank" for this purpose
         inc IrqGenerationIndex 
         ; Note that this MUST now be followed with some other split, as the
         ; palette swap terminates by applying that split.
@@ -195,8 +196,9 @@ IrqGenerationIndex := R0
         sta irq_table_scanlines, x
         inc IrqGenerationIndex
         inx
-        ; Finally, generate a terminal segment with rendering disabled
-        lda #0
+        ; Finally, generate a terminal segment with a "blank" background, this time using
+        ; the index filled with $00 bytes
+        lda #(BG_ON)
         sta irq_table_ppumask, x
         lda #$FF
         sta irq_table_scanlines, x

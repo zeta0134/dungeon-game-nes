@@ -129,7 +129,7 @@ loop:
 
         ; Switch the blank bank in instead of the HUD graphics, guaranteeing that the
         ; top 8px will draw the background color and nothing else:
-        mmc3_select_bank $0, #$00
+        mmc3_select_bank $0, #$02
 
         ; Now scroll to the HUD region for this first segment
         lda #$00

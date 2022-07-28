@@ -11,3 +11,4 @@
 
 .global set_brightness
 .global init_hud_palette
+.global refresh_palettes_lag_frame

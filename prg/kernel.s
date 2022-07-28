@@ -437,8 +437,6 @@ dialog_transition_lut:
         ;far_call FAR_generate_basic_playfield
         far_call FAR_generate_underwater_distortion
         far_call FAR_generate_hud_palette_swap
-        lda #10 ; first font bank, maybe make this not magic later
-        sta R1
         far_call FAR_generate_blank_hud
 
         jsr swap_irq_buffers
@@ -470,7 +468,7 @@ continue:
         ;far_call FAR_generate_basic_playfield
         far_call FAR_generate_underwater_distortion
         far_call FAR_generate_hud_palette_swap
-        lda #10 ; first font bank, maybe make this not magic later
+        lda #12 ; first font bank, maybe make this not magic later
         sta R1
         far_call FAR_generate_dialog_hud
 
@@ -506,8 +504,6 @@ no_debug:
         ;far_call FAR_generate_basic_playfield
         far_call FAR_generate_underwater_distortion
         far_call FAR_generate_hud_palette_swap
-        lda #10 ; first font bank, maybe make this not magic later
-        sta R1
         far_call FAR_generate_blank_hud
 
         jsr swap_irq_buffers
