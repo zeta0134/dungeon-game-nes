@@ -100,7 +100,7 @@ MetaSpriteIndex := R0
         ; player init stuff
         ; TODO: if we don't want health maxed when loading into a new
         ; room, we need to not do that here
-        lda #5
+        lda #10
         sta PlayerHealth
         lda #0
         sta PlayerInvulnerability
