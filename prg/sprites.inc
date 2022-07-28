@@ -18,6 +18,8 @@ _SPRITES_INC := 1
 .globalzp OAMTableLength, OAMEntryIndex, OAMTableAddr, MetaspritePosX, MetaspritePosY, ScratchSpritePtr
 .globalzp CameraScrollPixelsX, CameraScrollPixelsY
 
+MAX_METASPRITES = 16
+
 SHADOW_OAM = $0200
 ; offsets
 OAM_Y_POS = 0
@@ -32,6 +34,7 @@ VISIBILITY_HIDDEN    = %00000001
 FLAG_FLICKERING      = %00000010
 FLICKER_INACTIVE     = %00000000
 FLICKER_ACTIVE       = %00000010
+
 
 .struct AnimationHeader
         FrameTableAddr .word

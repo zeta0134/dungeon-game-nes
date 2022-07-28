@@ -18,16 +18,16 @@ CameraScrollPixelsX: .word $0000
 CameraScrollPixelsY: .word $0000
         .segment "RAM"
 metasprite_table:
-        .repeat 16
+        .repeat MAX_METASPRITES
         .tag MetaSpriteState
         .endrepeat
 
 sorted_entity_table:
-        .res 16
+        .res MAX_METASPRITES
 high_priority_table:
-        .res 16
+        .res MAX_METASPRITES
 low_priority_table:
-        .res 16
+        .res MAX_METASPRITES
 
 HighPriorityCount: .res 1
 LowPriorityCount: .res 1
@@ -69,7 +69,8 @@ loop:
         lda #.sizeof(MetaSpriteState)
         clc
         adc MetaSpriteIndex
-        bcs table_is_full
+        cmp #(.sizeof(MetaSpriteState) * MAX_METASPRITES)
+        beq table_is_full
         sta MetaSpriteIndex
         jmp loop
 table_is_full:
@@ -154,7 +155,7 @@ done:
 .proc FAR_update_animations
 MetaSpriteCount := R0
 MetaSpriteIndex := R1
-        lda #16
+        lda #MAX_METASPRITES
         sta MetaSpriteCount
         lda #0
         sta MetaSpriteIndex
@@ -379,7 +380,7 @@ shift_loop:
         sta high_priority_table, x
         inx
         iny
-        cpy #16
+        cpy #MAX_METASPRITES
         beq done_shifting
         jmp shift_loop
 done_shifting:
@@ -442,7 +443,7 @@ shift_loop:
         sta low_priority_table, x
         inx
         iny
-        cpy #16
+        cpy #MAX_METASPRITES
         beq done_shifting
         jmp shift_loop
 done_shifting:
@@ -505,7 +506,7 @@ shift_loop:
         sta sorted_entity_table, x
         inx
         iny
-        cpy #16
+        cpy #MAX_METASPRITES
         beq done_shifting
         jmp shift_loop
 done_shifting:
@@ -649,7 +650,7 @@ MetaSpriteCount := R0
 MetaSpriteIndex := R1
         lda #0
         sta MetaSpriteIndex
-        lda #16
+        lda #MAX_METASPRITES
         sta MetaSpriteCount
 loop:
         ldx MetaSpriteIndex
@@ -675,7 +676,7 @@ done:
 object_despawn_loop:
         sta sorted_entity_table, x
         inx
-        cpx #16
+        cpx #MAX_METASPRITES
         bne object_despawn_loop
 
         rts
