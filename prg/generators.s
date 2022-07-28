@@ -437,25 +437,20 @@ no_wrap:
         
 .endproc
 
-; because apparently there is no way to give ca65 a signed byte normally
-.macro sbyte value
-        .byte (value & $FF)
-.endmacro
-
 underwater_pattern:
-  sbyte 0
-  sbyte 1
-  sbyte 2
-  sbyte 3
-  sbyte 2
-  sbyte 1
-  sbyte 0
-  sbyte -1
-  sbyte -2
-  sbyte -3
-  sbyte -2
-  sbyte -1
-  sbyte 0
+  .lobytes 0
+  .lobytes 1
+  .lobytes 2
+  .lobytes 3
+  .lobytes 2
+  .lobytes 1
+  .lobytes 0
+  .lobytes -1
+  .lobytes -2
+  .lobytes -3
+  .lobytes -2
+  .lobytes -1
+  .lobytes 0
   
 underwater_scanlines:
   .byte 5
@@ -636,12 +631,57 @@ base_y_is_fine:
         ; to any entries beyond the first
         lda #0
         sta initial_pixel_offset
-        
+
+        ; If we have just generated a split which will cross the scroll seam, we must
+        ; fix this by turning it into two splits, one of which wraps us back around to
+        ; Y=0. Do that here
+        clc
+        lda TempY
+        adc irq_table_scanlines, x
+        ; if this exceeds #224, we have a problem
+        cmp #(224+1)
+        bcc split_does_not_cross_scroll_seam
+        sbc #224 ; A now contains the amount we have overflowed into the scroll seam
+        sta ScratchByte
+        lda irq_table_scanlines, x
+        sec
+        sbc ScratchByte
+        sta irq_table_scanlines, x
+
+        ; accumulate this smaller scanline against our running total
+        lda irq_table_scanlines, x
+        clc
+        adc PixelsGenerated
+        sta PixelsGenerated
+        ; are we through generating pixels? If so, cleanup is in order
+        cmp PlayfieldHeight
+        bcs cleanup
+
+        ; now generate an entirely new entry with Y=0
+        inc IrqGenerationIndex
+        ldx IrqGenerationIndex
+
+        lda TempNametable
+        sta irq_table_nametable_high, x
+        lda TempX
+        sta irq_table_scroll_x, x
+        lda #0 ; top of the nametable for the second split
+        sta irq_table_scroll_y, x
+        lda PpuMaskSetting
+        sta irq_table_ppumask, x
+        lda ChrBank
+        sta irq_table_chr0_bank, x
+        ; for the scanline count, use that overflow value
+        lda ScratchByte
+        sta irq_table_scanlines, x
+split_does_not_cross_scroll_seam:
+
         ; accumulate this against our running total
         lda irq_table_scanlines, x
         clc
         adc PixelsGenerated
         sta PixelsGenerated
+
         ; are we through generating pixels? If so, cleanup is in order
         cmp PlayfieldHeight
         bcs cleanup
