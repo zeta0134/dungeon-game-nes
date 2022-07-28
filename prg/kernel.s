@@ -286,7 +286,11 @@ time_waste_loop:
         sta R5
         lda PlayfieldPpuMask
         sta R6
-        far_call FAR_generate_basic_playfield
+        
+        ; DEBUG TIEM!
+        ;far_call FAR_generate_basic_playfield
+        far_call FAR_generate_underwater_distortion
+
         far_call FAR_generate_hud_palette_swap
         far_call FAR_generate_standard_hud
         jsr swap_irq_buffers

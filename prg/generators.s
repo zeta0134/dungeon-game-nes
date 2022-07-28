@@ -3,6 +3,7 @@
 
         .setcpu "6502"
 
+        .include "far_call.inc"
         .include "generators.inc"
         .include "nes.inc"
         .include "irq_table.inc"
@@ -40,18 +41,13 @@ PpuMaskSetting = R6
         ldx IrqGenerationIndex
         ; First, set the nametable based on the 6th bit of the X tile position
         lda #%00100000
-        ;bit CameraXTileTarget
         bit PpuXTileTarget
         beq left_nametable
 right_nametable:
-        ;lda #(VBLANK_NMI | OBJ_1000 | BG_0000 | NT_2400)
-        ;sta PPUCTRL
         lda #RIGHT_NAMETABLE
         sta irq_table_nametable_high, x
         jmp done_with_nametables
 left_nametable:
-        ;lda #(VBLANK_NMI | OBJ_1000 | BG_0000 | NT_2000)
-        ;sta PPUCTRL
         lda #LEFT_NAMETABLE
         sta irq_table_nametable_high, x
 done_with_nametables:
@@ -404,5 +400,281 @@ IrqGenerationIndex := R0
         sta irq_table_chr0_bank, x ; index 0 is blank
         ; Also not strictly necessary, but we should conform to our own guidelines
         inc IrqGenerationIndex 
+        rts
+.endproc
+
+; Variables for distortion generators only
+        .zeropage
+fx_scanline_table_ptr: .res 2
+fx_pattern_table_ptr: .res 2
+        .segment "RAM"
+fx_table_size: .res 1
+fx_offset: .res 1
+initial_pixel_offset: .res 1
+
+        .segment "SCROLLING_A000"
+
+UNDERWATER_HEIGHT = 160
+UNDERWATER_ENTRIES = 13
+
+.proc FAR_generate_underwater_distortion
+        st16 fx_scanline_table_ptr, underwater_scanlines
+        st16 fx_pattern_table_ptr, underwater_pattern
+        lda #UNDERWATER_ENTRIES
+        sta fx_table_size
+        lda fx_offset
+        sta initial_pixel_offset
+
+        near_call FAR_generate_y_distortion
+        inc fx_offset
+        lda fx_offset
+        cmp #UNDERWATER_HEIGHT
+        bne no_wrap
+        lda #0
+        sta fx_offset
+no_wrap:
+        rts
+        
+.endproc
+
+; because apparently there is no way to give ca65 a signed byte normally
+.macro sbyte value
+        .byte (value & $FF)
+.endmacro
+
+underwater_pattern:
+  sbyte 0
+  sbyte 1
+  sbyte 2
+  sbyte 3
+  sbyte 2
+  sbyte 1
+  sbyte 0
+  sbyte -1
+  sbyte -2
+  sbyte -3
+  sbyte -2
+  sbyte -1
+  sbyte 0
+  
+underwater_scanlines:
+  .byte 5
+  .byte 9
+  .byte 12
+  .byte 29
+  .byte 12
+  .byte 9
+  .byte 9
+  .byte 9
+  .byte 12
+  .byte 29
+  .byte 12
+  .byte 9
+  .byte 4
+
+.proc FAR_generate_y_distortion
+IrqGenerationIndex := R0
+ChrBank := R1
+ScratchByte := R2
+ScratchWord := R3
+; DEBUG: lock the playfield height here to 192. Eventually to support the dialog
+; system, we'll want this to be a parameter instead of an immediate.
+PlayfieldHeight := R5
+; In theory we could allow making this a parameter as well, so the basic generator
+; gains access to screen tinting abilities affecting the whole playfield. Might be
+; useful for magic effects.
+PpuMaskSetting := R6
+
+PixelsGenerated := R9
+TempOffset := R10
+TempX := R11
+TempNametable := R12
+BaseY := R13
+TempY := R14
+TempYOverflow := R15
+
+        ; Our X position stays static, so set this up the same way we do
+        ; for the basic playfield, but store the values in a temp; we'll need
+        ; them a bunch of times later
+        lda #%00100000
+        bit PpuXTileTarget
+        beq left_nametable
+right_nametable:
+        lda #RIGHT_NAMETABLE
+        sta TempNametable
+        jmp done_with_nametables
+left_nametable:
+        lda #LEFT_NAMETABLE
+        sta TempNametable
+done_with_nametables:
+        lda CameraXScrollTarget
+        sta ScratchByte
+        lda PpuXTileTarget
+        .repeat 3
+        rol ScratchByte
+        rol a
+        .endrep
+        ; a now contains low 5 bits of scroll tile, and upper 3 bits of sub-tile scroll
+        ; (lower 5 bits of that are sub-pixels, and discarted)
+        sta TempX
+        
+        ; Set our *initial* Y position based on the camera
+        lda CameraYScrollTarget
+        sta ScratchByte
+        lda PpuYTileTarget
+        .repeat 3
+        rol ScratchByte
+        rol a
+        .endrep
+        sta BaseY
+
+        lda #$0
+        sta PixelsGenerated
+        ldy #$0
+
+        ; to apply the pixel offset, skip over any initial entries that are
+        ; smaller than the offset
+        lda initial_pixel_offset
+pixel_offset_loop:
+        sec
+        sbc (fx_scanline_table_ptr), y
+        bcc done_skipping_entries
+        sta initial_pixel_offset
+        iny
+        cpy fx_table_size
+        bne no_wraparound
+        ldy #$0
+no_wraparound:
+        jmp pixel_offset_loop
+done_skipping_entries:
+        ; initial_pixel_offset has been reduced to the remainder, the number of pixels
+        ; we should skip in the *current* entry, which y points to
+
+        ; for each entry in the table (16 entries):
+        ; - compute the new scroll coordinates and nametable bit
+        ; - use these values to generate one entry in the IRQ table
+        ; note: later we'll want to be able to specify the number of entries to generate,
+        ; and wrap the table around its end with a mask
+
+loop:
+        ; reset the temp Y coordinate
+        lda BaseY
+        sta TempY
+        lda #0
+        sta TempYOverflow
+
+        ; calculate the new y offset
+        lda (fx_pattern_table_ptr), y
+        ; TODO: can TempOffset instead use ScratchByte?
+        sta TempOffset
+        sadd16 TempY, TempOffset
+
+
+        ; if the Y offset is between 224-255 we'll have a glitch, so wrap this around
+        lda TempYOverflow
+        bmi fix_negative_temp_y
+        cmp #1
+        beq fix_positive_temp_y
+
+        lda TempY
+        cmp #224
+        bcc temp_y_is_fine
+
+fix_temp_y:
+        lda TempOffset
+        bmi fix_negative_temp_y
+fix_positive_temp_y:
+        lda TempY
+        clc
+        adc #32
+        jmp temp_y_is_fine
+fix_negative_temp_y:
+        lda TempY
+        sec
+        sbc #32
+temp_y_is_fine:
+        sta TempY
+
+
+        ; generate a new entry in the table
+        ldx IrqGenerationIndex
+
+        ; mask the low bit of the nametable, and shift it into position
+        lda TempNametable
+        sta irq_table_nametable_high, x
+
+        ; the two scroll coordinates can be used directly
+        lda TempX
+        sta irq_table_scroll_x, x
+        lda TempY
+        sta irq_table_scroll_y, x
+
+        ; these distortions don't modify chr or ppumask, so we'll always use the base value here
+        lda PpuMaskSetting
+        sta irq_table_ppumask, x
+        lda ChrBank
+        sta irq_table_chr0_bank, x
+
+        ; finally the scanline count
+        lda (fx_scanline_table_ptr), y
+        ; if there is an initial pixel offset, subtract it here
+        sec
+        sbc initial_pixel_offset
+        sta irq_table_scanlines, x
+        
+        ; add this to base_y for the next section
+        clc
+        adc BaseY
+        ; if the Y offset is between 224-255 we'll have a glitch, so wrap this around
+        cmp #224
+        bcc base_y_is_fine
+        sbc #224
+base_y_is_fine:
+        sta BaseY
+
+        ; now clear the pixel offset (if any) so that it does not apply
+        ; to any entries beyond the first
+        lda #0
+        sta initial_pixel_offset
+        
+        ; accumulate this against our running total
+        lda irq_table_scanlines, x
+        clc
+        adc PixelsGenerated
+        sta PixelsGenerated
+        ; are we through generating pixels? If so, cleanup is in order
+        cmp PlayfieldHeight
+        bcs cleanup
+
+        ; advance to the next irq table entry:
+        inc IrqGenerationIndex
+
+        ; advance to the next offset entry; if we reach the end of the table,
+        ; wrap around to the beginning
+        iny 
+        cpy fx_table_size
+        bne no_table_wrap
+        ldy #$0
+        no_table_wrap:
+
+        ; this entry is complete, advance to the next entry
+        jmp loop
+cleanup:
+        ; a holds our total generated pixels; we need to fix the scanline count for the last
+        ; entry so that it doesn't overrun the requested size
+        sec
+        sbc PlayfieldHeight
+        ; now a holds the "extra" pixels that the current scanline encodes for
+        sta TempOffset
+        lda irq_table_scanlines, x ; still points to the last scanline entry
+        sec
+        sbc TempOffset
+        sta irq_table_scanlines, x ; should now contain the correct final value
+
+        ; incremenet the generation index here, so that any future generators called after this one start
+        ; in the right place and don't clobber our last entry
+        inc IrqGenerationIndex
+
+        ; ... and we're done?
         rts
 .endproc
