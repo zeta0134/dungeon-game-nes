@@ -287,9 +287,11 @@ time_waste_loop:
         lda PlayfieldPpuMask
         sta R6
         
+        debug_color TINT_R | TINT_B
         ; DEBUG TIEM!
         ;far_call FAR_generate_basic_playfield
         far_call FAR_generate_underwater_distortion
+        debug_color 0 ; disable debug colors
 
         far_call FAR_generate_hud_palette_swap
         far_call FAR_generate_standard_hud
