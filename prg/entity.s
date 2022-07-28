@@ -32,12 +32,21 @@ CurrentEntityFuncPtr: .word $0000
 .proc FAR_despawn_all_entities
         ldy #0
 loop:
+        ; Deactivate the update function, this stops any entity logic
+        ; from running, and also acts as the marker, indicating that
+        ; the slot is free for future use
         lda #0
         sta entity_table + EntityState::UpdateFunc+1, y
+        ; Clear out collision data; for speed reasons, most collision checks
+        ; don't verify that the entity is active, so we explicitly disable
+        ; it here
+        sta entity_table + EntityState::CollisionMask, y
+        sta entity_table + EntityState::CollisionResponse, y
         clc
         tya
         adc #.sizeof(EntityState)
-        bcs done
+        cmp #(.sizeof(EntityState) * MAX_ENTITIES)
+        beq done
         tay
         jmp loop
 done:
