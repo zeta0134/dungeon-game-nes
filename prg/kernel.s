@@ -319,7 +319,9 @@ still_in_hitstun:
         sta R1
         lda PlayfieldPpuMask
         sta R6
-        far_call FAR_generate_basic_playfield
+        ; DEBUG TIEM!
+        ;far_call FAR_generate_basic_playfield
+        far_call FAR_generate_underwater_distortion
         far_call FAR_generate_hud_palette_swap
         far_call FAR_generate_standard_hud
         jsr swap_irq_buffers
@@ -431,7 +433,9 @@ dialog_transition_lut:
         sta R5
         lda PlayfieldPpuMask
         sta R6
-        far_call FAR_generate_basic_playfield
+        ; DEBUG TIEM!
+        ;far_call FAR_generate_basic_playfield
+        far_call FAR_generate_underwater_distortion
         far_call FAR_generate_hud_palette_swap
         lda #10 ; first font bank, maybe make this not magic later
         sta R1
@@ -462,7 +466,9 @@ continue:
         sta R5
         lda PlayfieldPpuMask
         sta R6
-        far_call FAR_generate_basic_playfield
+        ; DEBUG TIEM!
+        ;far_call FAR_generate_basic_playfield
+        far_call FAR_generate_underwater_distortion
         far_call FAR_generate_hud_palette_swap
         lda #10 ; first font bank, maybe make this not magic later
         sta R1
@@ -496,7 +502,9 @@ no_debug:
         sta R5
         lda PlayfieldPpuMask
         sta R6
-        far_call FAR_generate_basic_playfield
+        ; DEBUG TIEM!
+        ;far_call FAR_generate_basic_playfield
+        far_call FAR_generate_underwater_distortion
         far_call FAR_generate_hud_palette_swap
         lda #10 ; first font bank, maybe make this not magic later
         sta R1
