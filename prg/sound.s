@@ -17,6 +17,9 @@ TriangleDelayCounter: .res 1
 NoiseDelayCounter: .res 1
 DpcmDelayCounter: .res 1
 
+MusicCurrentTrack: .res 1
+MusicCurrentBank: .res 1
+
         .zeropage
 Pulse1SfxPtr: .res 2
 Pulse2SfxPtr: .res 2
@@ -26,36 +29,71 @@ NoiseSfxPtr: .res 2
         .segment "MUSIC_0_A000"
 
 .export bhop_music_data
-bhop_music_data:
-        ;.include "../art/music/calm.asm"
-        ;.include "../art/music/heat.asm"
+bhop_music_data: ; TODO: deprecated label, remove later
+
+module_depths:
+        .scope
         .include "../art/music/depths.asm"
+        .endscope
+
+        .segment "MUSIC_1_A000"
+module_calm:
+        .scope
+        .include "../art/music/calm.asm"
+        .endscope
 
         .segment "PRGFIXED_8000"
 
+track_table_bank:
+        .lobytes .bank(module_calm), .bank(module_calm)
+        .lobytes .bank(module_depths)
+        
+track_table_song:
+        .byte 0, 1 ; calm
+        .byte 0    ; depths
+
+track_table_num_variants:
+        .byte 1, 1 ; calm
+        .byte 2    ; depths
+
+.proc init_audio
+        ; Always initialize the music engine with track 0 of the first module. This will
+        ; be the first song that begins playing immediately; ideally fill it with silence.
+        lda #0
+        sta MusicCurrentTrack
+
+        ldx MusicCurrentTrack
+        lda track_table_bank, x
+        sta MusicCurrentBank
+
+        access_data_bank MusicCurrentBank
+        lda track_table_song, x
+        jsr bhop_init
+        restore_previous_bank
+        rts
+.endproc
+
 .proc update_audio
-        access_data_bank #<.bank(bhop_music_data)
+        access_data_bank MusicCurrentBank
         jsr bhop_play
         jsr update_sfx
         restore_previous_bank
         rts
 .endproc
 
-.proc init_audio
-        access_data_bank #<.bank(bhop_music_data)
-        lda #0
-        jsr bhop_init
-        restore_previous_bank
-        rts
-.endproc
-
 ; inputs: track number in A
 .proc play_track
-        pha
-        access_data_bank #<.bank(bhop_music_data)
-        pla
+        cmp MusicCurrentTrack
+        beq no_change
+        sta MusicCurrentTrack
+        tax
+        lda track_table_bank, x
+        sta MusicCurrentBank
+        access_data_bank MusicCurrentBank
+        lda track_table_song, x
         jsr bhop_init
         restore_previous_bank
+no_change:
         rts
 .endproc
 

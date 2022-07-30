@@ -845,8 +845,11 @@ no_damaging_entities_found:
         beq no_debug
 
         ; activate the dialog system!
-        st16 GameMode, dialog_init
-        ; skip this other stuff
+        ;st16 GameMode, dialog_init
+
+        ; Switch music tracks
+        lda #1
+        jsr play_track
 
         ; send us to fake underwater, to test a global PPU setting and also
         ; a sound engine thing
