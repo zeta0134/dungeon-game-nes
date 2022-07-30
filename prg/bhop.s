@@ -78,6 +78,11 @@ effect_note_delay: .res BHOP::NUM_CHANNELS
 effect_cut_delay: .res BHOP::NUM_CHANNELS
 effect_skip_target: .byte $00
 
+; dungeon-game specific
+global_attenuation: .byte $00
+TRIANGLE_ATTENUATION_THRESHOLD = 4
+DPCM_ATTENUATION_THRESHOLD = 4
+.export global_attenuation
 
         .segment BHOP_PLAYER_SEGMENT
         ; global
@@ -1466,8 +1471,20 @@ tick_pulse1:
         asl
         asl
         ora channel_instrument_volume + PULSE_1_INDEX
+
         tax
         lda volume_table, x
+
+        ; dungeon-game specific: apply global fade here
+        beq pulse1_nofix
+        sec
+        sbc global_attenuation
+        bmi pulse1_fix
+        beq pulse1_fix
+        jmp pulse1_nofix
+pulse1_fix:
+        lda #1
+pulse1_nofix:
 
         ; add in the duty
         ora channel_instrument_duty + PULSE_1_INDEX
@@ -1518,8 +1535,20 @@ tick_pulse2:
         asl
         asl
         ora channel_instrument_volume + PULSE_2_INDEX
+
         tax
         lda volume_table, x
+
+        ; dungeon-game specific: apply global fade here
+        beq pulse2_nofix
+        sec
+        sbc global_attenuation
+        bmi pulse2_fix
+        beq pulse2_fix
+        jmp pulse2_nofix
+pulse2_fix:
+        lda #1
+pulse2_nofix:
 
         ; add in the duty
         ora channel_instrument_duty + PULSE_2_INDEX
@@ -1570,6 +1599,13 @@ tick_triangle:
         ldx channel_instrument_volume + TRIANGLE_INDEX
         beq triangle_muted
 
+        ; dungeon-game specific
+        ; mute the triangle above a global attenuation of 4ish
+        lda global_attenuation
+        cmp #TRIANGLE_ATTENUATION_THRESHOLD
+        bcs triangle_muted
+
+
         lda #$FF
         sta $4008 ; timers to max
 
@@ -1599,8 +1635,20 @@ tick_noise:
         asl
         asl
         ora channel_instrument_volume + NOISE_INDEX
+
         tax
         lda volume_table, x
+
+        ; dungeon-game specific: apply global fade here
+        beq noise_nofix
+        sec
+        sbc global_attenuation
+        bmi noise_fix
+        beq noise_fix
+        jmp noise_nofix
+noise_fix:
+        lda #1
+noise_nofix:
 
         ora #%00110000 ; disable length counter and envelope
         sta $400C
@@ -1670,6 +1718,11 @@ cleanup:
         lda channel_status + DPCM_INDEX
         and #(CHANNEL_MUTED | CHANNEL_RELEASED)
         bne dpcm_muted
+
+        ; dungeon-game specific
+        lda global_attenuation
+        cmp #DPCM_ATTENUATION_THRESHOLD
+        bcs dpcm_muted
 
         lda channel_status + DPCM_INDEX
         and #CHANNEL_TRIGGERED

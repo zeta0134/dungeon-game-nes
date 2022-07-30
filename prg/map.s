@@ -123,7 +123,7 @@ TilesetChrBank := R9
         lda (MapAddr), y
         cmp #$FF
         beq no_music_track
-        jsr play_track
+        jsr fade_to_track
 no_music_track:
 
         ; ditto for a music variant

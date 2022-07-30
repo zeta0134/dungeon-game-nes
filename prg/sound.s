@@ -19,12 +19,16 @@ DpcmDelayCounter: .res 1
 
 MusicCurrentTrack: .res 1
 MusicCurrentBank: .res 1
+MusicTargetTrack: .res 1
+FadeCounter: .res 1
 
         .zeropage
 Pulse1SfxPtr: .res 2
 Pulse2SfxPtr: .res 2
 TriangleSfxPtr: .res 2
 NoiseSfxPtr: .res 2
+
+FADE_SPEED = 8
 
         .segment "MUSIC_0_A000"
 
@@ -65,6 +69,7 @@ track_table_variant_length:
         ; be the first song that begins playing immediately; ideally fill it with silence.
         lda #0
         sta MusicCurrentTrack
+        sta MusicTargetTrack
 
         ldx MusicCurrentTrack
         lda track_table_bank, x
@@ -78,15 +83,55 @@ track_table_variant_length:
         ; init some custom bhop features here as well
         lda #0
         sta target_music_variant
+        lda #0
+        sta global_attenuation
 
         rts
 .endproc
 
 .proc update_audio
+        jsr update_fade
         access_data_bank MusicCurrentBank
         jsr bhop_play
         jsr update_sfx
         restore_previous_bank
+        rts
+.endproc
+
+.proc update_fade
+        ; If there is no track to switch to, don't bother fading to it
+        lda MusicTargetTrack
+        cmp MusicCurrentTrack
+        beq done_with_fade
+        ; Handle fade speed
+        dec FadeCounter
+        bne done_with_fade
+        lda #FADE_SPEED
+        sta FadeCounter
+        ; Each tick, increase global attenuation by one
+        inc global_attenuation
+        lda global_attenuation
+        ; If we aren't fully attenuated yet, we're done
+        cmp #8
+        bne done_with_fade
+        ; Otherwise, switch to the target track
+        lda MusicTargetTrack
+        jsr play_track
+done_with_fade:
+        rts
+.endproc
+
+; inputs: track number in A
+.proc fade_to_track
+        sta MusicTargetTrack
+        lda #FADE_SPEED
+        sta FadeCounter
+        ; special case: is our current track 0, silence? If so, start playback immediately
+        lda MusicCurrentTrack
+        bne done
+        lda MusicTargetTrack
+        jsr play_track
+done:
         rts
 .endproc
 
@@ -95,6 +140,7 @@ track_table_variant_length:
         cmp MusicCurrentTrack
         beq no_change
         sta MusicCurrentTrack
+        sta MusicTargetTrack
         tax
         lda track_table_bank, x
         sta MusicCurrentBank
@@ -107,6 +153,8 @@ track_table_variant_length:
         ; doesn't, we still need to clear the state from the previous track)
         lda #0
         sta target_music_variant
+        lda #0
+        sta global_attenuation
 no_change:
         rts
 .endproc
