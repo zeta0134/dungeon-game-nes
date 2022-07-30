@@ -397,8 +397,8 @@ FontChrBase := R1
         inc IrqGenerationIndex
         inx
 
-        ; Finally, generate a terminal segment with rendering disabled
-        lda #0
+        ; Finally, generate a terminal segment with a blank background
+        lda #(BG_ON)
         sta irq_table_ppumask, x
         lda #$FF
         sta irq_table_scanlines, x
