@@ -23,7 +23,7 @@ Pulse2SfxPtr: .res 2
 TriangleSfxPtr: .res 2
 NoiseSfxPtr: .res 2
 
-        .segment "MUSIC_A000"
+        .segment "MUSIC_0_A000"
 
 .export bhop_music_data
 bhop_music_data:
