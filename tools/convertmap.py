@@ -64,6 +64,7 @@ class CombinedMap:
     global_palette: [int]
     music_track: int
     music_variant: int
+    distortion_index: int
 
 def read_boolean_properties(tile_element):
     boolean_properties = {}
@@ -293,6 +294,7 @@ def read_map(map_filename):
     map_properties = read_integer_properties(map_element)
     music_track = map_properties.get("music_track", 0xFF)
     music_variant = map_properties.get("music_variant", 0xFF)
+    distortion_index = map_properties.get("distortion_index", 0)
 
     # finally let's make the name something useful
     (_, plain_filename) = os.path.split(map_filename)
@@ -301,7 +303,8 @@ def read_map(map_filename):
 
     return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles, 
         entrances=entrances, exits=exits, entities=entities, chr0_label=chr0_label, chr1_label=chr1_label, 
-        global_palette=global_palette, music_track=music_track, music_variant=music_variant)
+        global_palette=global_palette, music_track=music_track, music_variant=music_variant,
+        distortion_index=distortion_index)
 
 def write_map_header(tilemap, output_file):
     output_file.write(ca65_label(tilemap.name) + "\n")
@@ -318,6 +321,7 @@ def write_map_header(tilemap, output_file):
     output_file.write("  .word %s_attributes\n" % tilemap.name)
     output_file.write("  .byte %s ; music track\n" % ca65_byte_literal(tilemap.music_track))
     output_file.write("  .byte %s ; music variant\n" % ca65_byte_literal(tilemap.music_variant))
+    output_file.write("  .byte %s ; distortion index\n" % ca65_byte_literal(tilemap.distortion_index))
     output_file.write("\n")
 
 def write_palette_data(tilemap, output_file):

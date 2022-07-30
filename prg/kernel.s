@@ -186,6 +186,7 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         
         far_call FAR_init_map
         far_call FAR_init_camera
+        far_call FAR_initialize_playfield_fx
 
         ; clear all entities and metasprites
         far_call FAR_despawn_all_entities
@@ -288,9 +289,7 @@ time_waste_loop:
         sta R6
         
         debug_color TINT_R | TINT_B
-        ; DEBUG TIEM!
-        ;far_call FAR_generate_basic_playfield
-        far_call FAR_generate_underwater_distortion
+        far_call FAR_generate_playfield
         debug_color 0 ; disable debug colors
 
         far_call FAR_generate_hud_palette_swap
@@ -321,9 +320,9 @@ still_in_hitstun:
         sta R1
         lda PlayfieldPpuMask
         sta R6
-        ; DEBUG TIEM!
-        ;far_call FAR_generate_basic_playfield
-        far_call FAR_generate_underwater_distortion
+        debug_color TINT_R | TINT_B
+        far_call FAR_generate_playfield
+        debug_color 0 ; disable debug colors
         far_call FAR_generate_hud_palette_swap
         far_call FAR_generate_standard_hud
         jsr swap_irq_buffers
@@ -435,9 +434,9 @@ dialog_transition_lut:
         sta R5
         lda PlayfieldPpuMask
         sta R6
-        ; DEBUG TIEM!
-        ;far_call FAR_generate_basic_playfield
-        far_call FAR_generate_underwater_distortion
+        debug_color TINT_R | TINT_B
+        far_call FAR_generate_playfield
+        debug_color 0 ; disable debug colors
         far_call FAR_generate_hud_palette_swap
         far_call FAR_generate_blank_hud
 
@@ -466,9 +465,9 @@ continue:
         sta R5
         lda PlayfieldPpuMask
         sta R6
-        ; DEBUG TIEM!
-        ;far_call FAR_generate_basic_playfield
-        far_call FAR_generate_underwater_distortion
+        debug_color TINT_R | TINT_B
+        far_call FAR_generate_playfield
+        debug_color 0 ; disable debug colors
         far_call FAR_generate_hud_palette_swap
         lda #12 ; first font bank, maybe make this not magic later
         sta R1
@@ -502,9 +501,9 @@ no_debug:
         sta R5
         lda PlayfieldPpuMask
         sta R6
-        ; DEBUG TIEM!
-        ;far_call FAR_generate_basic_playfield
-        far_call FAR_generate_underwater_distortion
+        debug_color TINT_R | TINT_B
+        far_call FAR_generate_playfield
+        debug_color 0 ; disable debug colors
         far_call FAR_generate_hud_palette_swap
         far_call FAR_generate_blank_hud
 

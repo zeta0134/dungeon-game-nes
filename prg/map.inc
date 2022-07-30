@@ -14,6 +14,7 @@
         attributes_ptr .word
         music_track .byte
         music_variant .byte
+        distortion_index .byte
 .endstruct
 
 .struct ExitTableEntry

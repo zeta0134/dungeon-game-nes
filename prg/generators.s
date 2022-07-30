@@ -11,6 +11,16 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
+        .zeropage
+fx_scanline_table_ptr: .res 2
+fx_pattern_table_ptr: .res 2
+        .segment "RAM"
+fx_table_size: .res 1
+fx_offset: .res 1
+initial_pixel_offset: .res 1
+
+CurrentDistortion: .res 1
+
         .segment "SCROLLING_A000"
 
 ; various useful constants
@@ -26,17 +36,38 @@ HUD_BANK = 4
 ; to be used in the same frame without conflict.
 ; ALL generators leave R0 pointing at the next valid entry in the table.
 
+.proc FAR_generate_playfield
+IrqGenerationIndex := R0
+ChrBank := R1
+ScratchByte := R2
+ScratchWord := R3
+PlayfieldHeight := R5
+PpuMaskSetting = R6
+        ; Dispatch function; if there is a special effect active, generate that. Otherwise
+        ; generate a basic playfield instead.
+        lda CurrentDistortion
+        cmp #DISTORTION_UNDERWATER
+        bne basic
+        near_call FAR_generate_underwater_distortion
+        rts
+basic:
+        near_call FAR_generate_basic_playfield
+        rts
+.endproc
+
+.proc FAR_initialize_playfield_fx
+        lda #0
+        sta initial_pixel_offset
+        sta fx_offset
+        rts
+.endproc
+
 .proc FAR_generate_basic_playfield
 IrqGenerationIndex := R0
 ChrBank := R1
 ScratchByte := R2
 ScratchWord := R3
-; DEBUG: lock the playfield height here to 192. Eventually to support the dialog
-; system, we'll want this to be a parameter instead of an immediate.
 PlayfieldHeight := R5
-; In theory we could allow making this a parameter as well, so the basic generator
-; gains access to screen tinting abilities affecting the whole playfield. Might be
-; useful for magic effects.
 PpuMaskSetting = R6
         ldx IrqGenerationIndex
         ; First, set the nametable based on the 6th bit of the X tile position
@@ -404,17 +435,6 @@ IrqGenerationIndex := R0
         inc IrqGenerationIndex 
         rts
 .endproc
-
-; Variables for distortion generators only
-        .zeropage
-fx_scanline_table_ptr: .res 2
-fx_pattern_table_ptr: .res 2
-        .segment "RAM"
-fx_table_size: .res 1
-fx_offset: .res 1
-initial_pixel_offset: .res 1
-
-        .segment "SCROLLING_A000"
 
 UNDERWATER_HEIGHT = 160
 UNDERWATER_ENTRIES = 13

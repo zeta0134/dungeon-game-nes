@@ -3,6 +3,7 @@
         .include "compression.inc"
         .include "entity.inc"
         .include "far_call.inc"
+        .include "generators.inc"
         .include "map.inc"
         .include "palette.inc"
         .include "scrolling.inc"
@@ -133,6 +134,10 @@ no_music_track:
         beq no_music_variant
         jsr play_variant
 no_music_variant:
+
+        ldy #MapHeader::distortion_index
+        lda (MapAddr), y
+        sta CurrentDistortion
 
         ; For now that is all.
         rts
