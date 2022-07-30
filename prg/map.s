@@ -6,6 +6,7 @@
         .include "map.inc"
         .include "palette.inc"
         .include "scrolling.inc"
+        .include "sound.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
 
@@ -117,7 +118,23 @@ TilesetChrBank := R9
         st16 DestAddr, (AttributeData)
         jsr decompress
 
-        ; For now that is all, we need to make sure that worked.
+        ; if this map specifies a music track, cue that up
+        ldy #MapHeader::music_track
+        lda (MapAddr), y
+        cmp #$FF
+        beq no_music_track
+        jsr play_track
+no_music_track:
+
+        ; ditto for a music variant
+        ldy #MapHeader::music_variant
+        lda (MapAddr), y
+        cmp #$FF
+        beq no_music_variant
+        jsr play_variant
+no_music_variant:
+
+        ; For now that is all.
         rts
 .endproc
 

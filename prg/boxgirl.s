@@ -847,10 +847,6 @@ no_damaging_entities_found:
         ; activate the dialog system!
         ;st16 GameMode, dialog_init
 
-        ; Switch music tracks
-        lda #1
-        jsr play_track
-
         ; send us to fake underwater, to test a global PPU setting and also
         ; a sound engine thing
         lda target_music_variant
@@ -858,13 +854,13 @@ no_damaging_entities_found:
         beq set_underwater
 set_normal:
         lda #0
-        sta target_music_variant
+        jsr play_variant
         lda #(BG_ON | OBJ_ON)
         sta PlayfieldPpuMask
         jmp no_debug
 set_underwater:
-        lda #12
-        sta target_music_variant
+        lda #1
+        jsr play_variant
         lda #(BG_ON | OBJ_ON | TINT_B)
         sta PlayfieldPpuMask
 no_debug:

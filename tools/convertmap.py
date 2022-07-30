@@ -62,6 +62,8 @@ class CombinedMap:
     chr0_label: str
     chr1_label: str
     global_palette: [int]
+    music_track: int
+    music_variant: int
 
 def read_boolean_properties(tile_element):
     boolean_properties = {}
@@ -72,18 +74,18 @@ def read_boolean_properties(tile_element):
                 boolean_properties[prop.get("name")] = (prop.get("value") == "true")
     return boolean_properties
 
-def read_integer_properties(tile_element):
+def read_integer_properties(parent_element):
     integer_properties = {}
-    properties_element = tile_element.find("properties")
+    properties_element = parent_element.find("properties")
     if properties_element:
         for prop in properties_element.findall("property"):
             if prop.get("type") == "int":
                 integer_properties[prop.get("name")] = int(prop.get("value"))
     return integer_properties
 
-def read_string_properties(tile_element):
+def read_string_properties(parent_element):
     string_properties = {}
-    properties_element = tile_element.find("properties")
+    properties_element = parent_element.find("properties")
     if properties_element:
         for prop in properties_element.findall("property"):
             if prop.get("type") == None or prop.get("type") == "string":
@@ -288,12 +290,18 @@ def read_map(map_filename):
     chr1_label = common_tileset_properties.get("chr1_tileset", chr0_label)
     global_palette = read_global_palette(common_tileset_properties["global_palette"])
 
+    map_properties = read_integer_properties(map_element)
+    music_track = map_properties.get("music_track", 0xFF)
+    music_variant = map_properties.get("music_variant", 0xFF)
+
     # finally let's make the name something useful
     (_, plain_filename) = os.path.split(map_filename)
     (base_filename, _) = os.path.splitext(plain_filename)
     safe_label = re.sub(r'[^A-Za-z0-9\-\_]', '_', base_filename)
 
-    return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles, entrances=entrances, exits=exits, entities=entities, chr0_label=chr0_label, chr1_label=chr1_label, global_palette=global_palette)
+    return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles, 
+        entrances=entrances, exits=exits, entities=entities, chr0_label=chr0_label, chr1_label=chr1_label, 
+        global_palette=global_palette, music_track=music_track, music_variant=music_variant)
 
 def write_map_header(tilemap, output_file):
     output_file.write(ca65_label(tilemap.name) + "\n")
@@ -308,6 +316,8 @@ def write_map_header(tilemap, output_file):
     output_file.write("  .word %s ; second tileset \n" % tilemap.chr1_label)
     output_file.write("  .word %s_palette\n" % tilemap.name)
     output_file.write("  .word %s_attributes\n" % tilemap.name)
+    output_file.write("  .byte %s ; music track\n" % ca65_byte_literal(tilemap.music_track))
+    output_file.write("  .byte %s ; music variant\n" % ca65_byte_literal(tilemap.music_variant))
     output_file.write("\n")
 
 def write_palette_data(tilemap, output_file):

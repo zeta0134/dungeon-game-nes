@@ -12,6 +12,8 @@
         second_tileset .word
         palette_ptr .word
         attributes_ptr .word
+        music_track .byte
+        music_variant .byte
 .endstruct
 
 .struct ExitTableEntry

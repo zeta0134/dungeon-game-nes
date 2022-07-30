@@ -56,6 +56,10 @@ track_table_num_variants:
         .byte 1, 1 ; calm
         .byte 2    ; depths
 
+track_table_variant_length:
+        .byte 0, 0 ; calm
+        .byte 12   ; depths
+
 .proc init_audio
         ; Always initialize the music engine with track 0 of the first module. This will
         ; be the first song that begins playing immediately; ideally fill it with silence.
@@ -70,6 +74,11 @@ track_table_num_variants:
         lda track_table_song, x
         jsr bhop_init
         restore_previous_bank
+
+        ; init some custom bhop features here as well
+        lda #0
+        sta target_music_variant
+
         rts
 .endproc
 
@@ -93,7 +102,33 @@ track_table_num_variants:
         lda track_table_song, x
         jsr bhop_init
         restore_previous_bank
+        ; all new tracks should start with variant 0
+        ; (the map load routine might override this immediately, but if it
+        ; doesn't, we still need to clear the state from the previous track)
+        lda #0
+        sta target_music_variant
 no_change:
+        rts
+.endproc
+
+; inputs: variant number in A
+.proc play_variant
+        ldx MusicCurrentTrack
+        cmp track_table_num_variants, x
+        bcs invalid_variant
+                
+        ; use the variant index as a loop counter
+        tay
+        lda #0
+loop:
+        clc
+        adc track_table_variant_length, x
+        dey
+        bne loop
+        sta target_music_variant
+
+invalid_variant:
+        ; ignore this variant and do nothing
         rts
 .endproc
 

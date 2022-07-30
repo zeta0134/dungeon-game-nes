@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.9" tiledversion="1.9.0" orientation="orthogonal" renderorder="right-down" width="64" height="24" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="8">
+ <properties>
+  <property name="music_track" type="int" value="1"/>
+ </properties>
  <tileset firstgid="1" source="../tilesets/green_green_testings/chr0_grassy_fields_v3_bg0.tsx"/>
  <tileset firstgid="84" source="../tilesets/green_green_testings/chr0_grassy_fields_v3_bg1.tsx"/>
  <tileset firstgid="167" source="../tilesets/green_green_testings/chr1_test_tiles_3d_bg1.tsx"/>
