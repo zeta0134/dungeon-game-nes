@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.9" tiledversion="1.9.0" orientation="orthogonal" renderorder="right-down" width="32" height="28" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="7">
  <properties>
+  <property name="color_emphasis" type="int" value="6"/>
   <property name="distortion_index" type="int" value="1"/>
   <property name="music_variant" type="int" value="1"/>
  </properties>

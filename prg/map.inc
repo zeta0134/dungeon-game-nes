@@ -15,6 +15,7 @@
         music_track .byte
         music_variant .byte
         distortion_index .byte
+        color_emphasis .byte
 .endstruct
 
 .struct ExitTableEntry

@@ -846,30 +846,8 @@ no_damaging_entities_found:
         beq no_debug
 
         ; activate the dialog system!
-        ;st16 GameMode, dialog_init
+        st16 GameMode, dialog_init
 
-
-
-        ; send us to fake underwater, to test a global PPU setting and also
-        ; a sound engine thing
-        lda target_music_variant
-        cmp #0
-        beq set_underwater
-set_normal:
-        lda #0
-        jsr play_variant
-        lda #(BG_ON | OBJ_ON)
-        sta PlayfieldPpuMask
-        lda #DISTORTION_NONE
-        sta CurrentDistortion
-        jmp no_debug
-set_underwater:
-        lda #1
-        jsr play_variant
-        lda #(BG_ON | OBJ_ON | TINT_B)
-        sta PlayfieldPpuMask
-        lda #DISTORTION_UNDERWATER
-        sta CurrentDistortion
 no_debug:
         rts
 .endproc

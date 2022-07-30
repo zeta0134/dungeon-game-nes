@@ -4,6 +4,7 @@
         .include "entity.inc"
         .include "far_call.inc"
         .include "generators.inc"
+        .include "kernel.inc"
         .include "map.inc"
         .include "palette.inc"
         .include "scrolling.inc"
@@ -138,6 +139,18 @@ no_music_variant:
         ldy #MapHeader::distortion_index
         lda (MapAddr), y
         sta CurrentDistortion
+
+        ldy #MapHeader::color_emphasis
+        lda (MapAddr), y
+        ; emphasis is stored as an unshifted value in map data, so we need to shift it into place
+        asl
+        asl
+        asl
+        asl
+        asl
+        ; then combine it with a standard ppumask for the playfield
+        ora #$1E
+        sta PlayfieldPpuMask
 
         ; For now that is all.
         rts
