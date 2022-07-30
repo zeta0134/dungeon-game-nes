@@ -62,7 +62,7 @@ track_table_num_variants:
 
 track_table_variant_length:
         .byte 0, 0 ; calm
-        .byte 12   ; depths
+        .byte 24   ; depths
 
 .proc init_audio
         ; Always initialize the music engine with track 0 of the first module. This will
