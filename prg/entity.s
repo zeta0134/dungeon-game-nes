@@ -233,7 +233,7 @@ CollisionHeights := R2
         sta entity_table + EntityState::ShadowSpriteIndex, y
         ; basic init for the shadow sprite
         set_metasprite_animation MetaSpriteIndex, shadow_flicker
-        set_metasprite_tile_offset MetaSpriteIndex, #$18 ; note: probably move this to its own bank later
+        set_metasprite_tile_offset MetaSpriteIndex, #$40 ; note: probably move this to its own bank later
         set_metasprite_palette_offset MetaSpriteIndex, #0
         ldx MetaSpriteIndex
         metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED

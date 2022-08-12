@@ -32,7 +32,7 @@ MetaSpriteIndex := R0
         lda entity_table + EntityState::MetaSpriteIndex, y 
         sta MetaSpriteIndex
         set_metasprite_animation MetaSpriteIndex, blobby_anim_idle
-        set_metasprite_tile_offset MetaSpriteIndex, #64 ;  blobby's data is in the 2nd bank
+        set_metasprite_tile_offset MetaSpriteIndex, #128 ;  blobby's data is in the 3rd bank
 
         ; Blobby is a bounce target for jumping, and also a weak touch of death target for bumping
         ldx CurrentEntityIndex

@@ -1258,7 +1258,7 @@ RandomY := R1
 
         ldx CurrentEntityIndex
         ;                       xoff  yoff   xspeed   yspeed tile             behavior  attribute animspeed lifetime
-        spawn_advanced_particle  $80,  $40, RandomX, RandomY, #39, #PARTICLE_TILE_ANIM,        #2,       #4,     #16
+        spawn_advanced_particle  $80,  $40, RandomX, RandomY, #69, #PARTICLE_TILE_ANIM,        #2,       #4,     #16
 done:
         rts
 .endproc
@@ -1266,14 +1266,14 @@ done:
 .proc spawn_death_particles
         ldx CurrentEntityIndex
         ;                    xoff  yoff   xspeed   yspeed tile             behavior      attribute, animspeed, lifetime
-        spawn_advanced_particle  $40, $180,    #$20,    #$00, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
-        spawn_advanced_particle  $40, $180,    #$DF,    #$00, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
-        spawn_advanced_particle  $40, $180,    #$00,    #$20, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
-        spawn_advanced_particle  $40, $180,    #$00,    #$DF, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
-        spawn_advanced_particle  $40, $180,    #$20,    #$DF, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
-        spawn_advanced_particle  $40, $180,    #$20,    #$20, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
-        spawn_advanced_particle  $40, $180,    #$DF,    #$20, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
-        spawn_advanced_particle  $40, $180,    #$DF,    #$DF, #37,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$20,    #$00, #67,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$DF,    #$00, #67,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$00,    #$20, #67,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$00,    #$DF, #67,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$20,    #$DF, #67,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$20,    #$20, #67,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$DF,    #$20, #67,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        spawn_advanced_particle  $40, $180,    #$DF,    #$DF, #67,   #PARTICLE_STANDARD,        #1,        #0,      #30
         rts
 .endproc
 

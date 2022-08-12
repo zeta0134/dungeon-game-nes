@@ -42,9 +42,13 @@ hud_graphics:
         .segment "OBJ0"
 boxgirl_graphics:
         .incbin "build/sprites/greybox.chr"
-        .incbin "build/sprites/shadow.chr"
-        .incbin "build/sprites/particles.chr"
 
         .segment "OBJ1"
+shadow_graphics:
+        .incbin "build/sprites/shadow.chr"
+particle_graphics:
+        .incbin "build/sprites/particles.chr"
+
+        .segment "OBJ2"
 blobby_graphics:
         .incbin "build/sprites/blobby.chr"
