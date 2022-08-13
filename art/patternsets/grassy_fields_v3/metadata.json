@@ -9,5 +9,11 @@
     "080_spikes_right_top.png",
     "081_spikes_left.png",
     "081_spikes_right.png"
+  ],
+  "SHALLOW_WATER": [
+    "082_placeholder_water.png"
+  ],
+  "DEEP_WATER": [
+    "083_placeholder_water_deep.png"
   ]
 }

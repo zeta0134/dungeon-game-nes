@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<tileset version="1.8" tiledversion="1.8.2" name="grassy_fields_v3_bg2" tilewidth="16" tileheight="16" tilecount="83" columns="0">
+<tileset version="1.8" tiledversion="1.8.2" name="grassy_fields_v3_bg2" tilewidth="16" tileheight="16" tilecount="85" columns="0">
   <grid orientation="orthagonal" width="1" height="1" />
   <properties>
     <property name="chr0_tileset" type="string" value="grassy_fields_v3_tileset" />
@@ -585,5 +585,19 @@
       <property name="attribute_index" type="int" value="2" />
     </properties>
     <image width="16" height="16" source="chr0_bg2_081_spikes_right.png" />
+  </tile>
+  <tile id="83">
+    <properties>
+      <property name="metatile_index" type="int" value="83" />
+      <property name="attribute_index" type="int" value="2" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg2_082_placeholder_water.png" />
+  </tile>
+  <tile id="84">
+    <properties>
+      <property name="metatile_index" type="int" value="84" />
+      <property name="attribute_index" type="int" value="2" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg2_083_placeholder_water_deep.png" />
   </tile>
 </tileset>
