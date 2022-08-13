@@ -638,7 +638,9 @@ check_shallow_water:
         ; force an animation state update
         lda #0
         sta PlayerPrimaryDirection
-        ; TODO: splash particles and SFX
+        st16 R0, sfx_splash
+        jsr play_sfx_noise
+        jsr spawn_splash_particles
 
         rts
 check_deep_water:
@@ -648,7 +650,9 @@ check_deep_water:
         ; force an animation state update
         lda #0
         sta PlayerPrimaryDirection
-        ; TODO: splash particles and SFX
+        st16 R0, sfx_splash
+        jsr play_sfx_noise
+        jsr spawn_splash_particles
 
         rts
 safe_tile:
@@ -691,7 +695,9 @@ check_still_submerged:
         ; force an animation state update
         lda #0
         sta PlayerPrimaryDirection
-        ; TODO: splash particles and SFX
+        st16 R0, sfx_splash
+        jsr play_sfx_noise
+        jsr spawn_splash_particles
         ; TODO: should boxgirl jump a little bit here?
         rts
 still_in_water:
@@ -1474,7 +1480,7 @@ done:
 
 .proc spawn_death_particles
         ldx CurrentEntityIndex
-        ;                    xoff  yoff   xspeed   yspeed tile             behavior      attribute, animspeed, lifetime
+        ;                       xoff  yoff   xspeed   yspeed tile              behavior  attribute, animspeed, lifetime
         spawn_advanced_particle  $40, $180,    #$20,    #$00, #67,   #PARTICLE_STANDARD,        #1,        #0,      #30
         spawn_advanced_particle  $40, $180,    #$DF,    #$00, #67,   #PARTICLE_STANDARD,        #1,        #0,      #30
         spawn_advanced_particle  $40, $180,    #$00,    #$20, #67,   #PARTICLE_STANDARD,        #1,        #0,      #30
@@ -1483,6 +1489,17 @@ done:
         spawn_advanced_particle  $40, $180,    #$20,    #$20, #67,   #PARTICLE_STANDARD,        #1,        #0,      #30
         spawn_advanced_particle  $40, $180,    #$DF,    #$20, #67,   #PARTICLE_STANDARD,        #1,        #0,      #30
         spawn_advanced_particle  $40, $180,    #$DF,    #$DF, #67,   #PARTICLE_STANDARD,        #1,        #0,      #30
+        rts
+.endproc
+
+.proc spawn_splash_particles
+        ldx CurrentEntityIndex
+        ; TODO: use water particles, not death particles
+        ;                       xoff            yoff   xspeed          yspeed       tile              behavior  attribute, animspeed, lifetime
+        spawn_advanced_particle $C0,            $80,    #$10,           #($100-$20), #81,    #PARTICLE_GRAVITY,      #$40,        #0,      #16
+        spawn_advanced_particle $C0,            $80,    #$08,           #($100-$24), #81,    #PARTICLE_GRAVITY,      #$40,        #0,      #20
+        spawn_advanced_particle ($FFFF - $40),  $80,    #($100-$10),    #($100-$20), #81,    #PARTICLE_GRAVITY,      #$00,        #0,      #16
+        spawn_advanced_particle ($FFFF - $40),  $80,    #($100-$08),    #($100-$24), #81,    #PARTICLE_GRAVITY,      #$00,        #0,      #20
         rts
 .endproc
 

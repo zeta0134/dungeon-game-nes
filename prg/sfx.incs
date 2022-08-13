@@ -369,3 +369,36 @@ sfx_dialog_ou_mid_variant_1: dialog_formant_falling $2, PITCH_CS4
 sfx_dialog_ou_mid_variant_2: dialog_formant_rising  $2, PITCH_CS4
 sfx_dialog_ou_mid_variant_3: dialog_formant_falling $2, PITCH_D4
 sfx_dialog_ou_mid_variant_4: dialog_formant_rising  $2, PITCH_D4
+
+
+sfx_splash:
+                ; Length in rows
+        .byte 22
+        ;          Mode Period  Vol  Length
+        noise_init    0,    $4,  $8,      1
+        noise_cont    0,    $0,  $8,      1
+        noise_cont    0,    $5,  $A,      1
+        noise_cont    0,    $9,  $D,      1
+
+        noise_cont    0,    $B,  $C,      1
+        noise_cont    0,    $9,  $9,      1
+        noise_cont    0,    $B,  $8,      1
+        noise_cont    0,    $9,  $7,      1
+
+        noise_cont    0,    $B,  $6,      1
+        noise_cont    0,    $9,  $5,      1
+        noise_cont    0,    $B,  $4,      1
+        noise_cont    0,    $9,  $4,      1
+
+        noise_cont    0,    $B,  $3,      1
+        noise_cont    0,    $9,  $3,      1
+        noise_cont    0,    $B,  $3,      1
+        noise_cont    0,    $9,  $2,      1
+
+        noise_cont    0,    $B,  $2,      1
+        noise_cont    0,    $9,  $2,      1
+        noise_cont    0,    $B,  $2,      1
+        noise_cont    0,    $9,  $1,      1
+
+        noise_cont    0,    $B,  $1,      1
+        noise_cont    0,    $9,  $1,      1

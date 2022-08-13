@@ -51,6 +51,7 @@
 .global sfx_dialog_ou_mid_variant_3
 .global sfx_dialog_ou_mid_variant_4
 
+.global sfx_splash
 
 .macro play_dpcm sample_addr, length
 .scope
