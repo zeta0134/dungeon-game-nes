@@ -4,4 +4,5 @@
 
 .import boxgirl_anim_idle_right, boxgirl_anim_idle_left
 .import boxgirl_anim_move_right, boxgirl_anim_move_left, boxgirl_anim_move_down, boxgirl_anim_move_up
+.import boxgirl_anim_swim_right, boxgirl_anim_swim_left, boxgirl_anim_swim_down, boxgirl_anim_swim_up
 .import boxgirl_anim_teleport

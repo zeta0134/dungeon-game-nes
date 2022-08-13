@@ -41,6 +41,7 @@ ParticleCooldown: .res 1
         .segment "ENTITIES_A000" ; will eventually move to an AI page
         .include "animations/boxgirl/idle.inc"
         .include "animations/boxgirl/move.inc"
+        .include "animations/boxgirl/swim.inc"
         .include "animations/boxgirl/teleport.inc"
         .include "animations/shadow/flicker.inc"
 
