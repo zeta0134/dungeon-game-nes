@@ -25,8 +25,8 @@ boxgirl_frames_swim_left:
 
 boxgirl_oam_swim_left_1:
         ;     Y-offset  Tile  Attr   X-offset
-        .byte ($ff-31), 29,    $40,   0
-        .byte ($ff-31), 31,    $40,   8
+        .byte ($ff-31), 31,    $40,   0
+        .byte ($ff-31), 29,    $40,   8
         .byte ($ff-15), 25,    $00,   0
         .byte ($ff-15), 27,    $00,   8
 

@@ -35,6 +35,7 @@ CoyoteTime: .res 1
 PlayerSafeTileX: .res 1
 PlayerSafeTileY: .res 1
 PlayerSafeTileGroundLevel: .res 1
+PlayerLastGroundTile: .res 1
 
 ParticleCooldown: .res 1
 
@@ -48,6 +49,10 @@ ParticleCooldown: .res 1
 WALKING_SPEED = 16
 WALKING_ACCEL = 3
 SLIPPERINESS = 3
+
+SWIMMING_SPEED = 12
+SWIMMING_ACCEL = 2
+SWIMMING_DRAG = 2
 
 JUMP_SPEED = 48
 DOUBLE_JUMP_SPEED = 48
@@ -195,6 +200,54 @@ done:
         rts
 .endproc
 
+.proc swimming_acceleration
+        ldx CurrentEntityIndex
+check_right:
+        lda #KEY_RIGHT
+        bit ButtonsHeld
+        beq right_not_held
+        ; right is held, so accelerate to the +X
+        accelerate entity_table + EntityState::SpeedX, #SWIMMING_ACCEL
+        max_speed entity_table + EntityState::SpeedX, #SWIMMING_SPEED
+        ; note: we explicitly skip checking for left, to work around
+        ; worn controllers and broken emulators; right wins
+        jmp check_up
+right_not_held:
+check_left:
+        lda #KEY_LEFT
+        bit ButtonsHeld
+        beq left_not_held
+        ; left is held, so accelerate to the -X
+        accelerate entity_table + EntityState::SpeedX, #(256-SWIMMING_ACCEL)
+        min_speed entity_table + EntityState::SpeedX, #(256-SWIMMING_SPEED)
+        jmp check_up
+left_not_held:
+        apply_friction entity_table + EntityState::SpeedX, ::SWIMMING_DRAG
+check_up:
+        lda #KEY_UP
+        bit ButtonsHeld
+        beq up_not_held
+        ; up is held, so accelerate to the -Y
+        accelerate entity_table + EntityState::SpeedY, #(256-SWIMMING_ACCEL)
+        min_speed entity_table + EntityState::SpeedY, #(256-SWIMMING_SPEED)
+        ; note: we explicitly skip checking for down, to work around
+        ; worn controllers and broken emulators; up wins
+        jmp done
+up_not_held:
+check_down:
+        lda #KEY_DOWN
+        bit ButtonsHeld
+        beq down_not_held
+        ; down is held, so accelerate to the +Y
+        accelerate entity_table + EntityState::SpeedY, #SWIMMING_ACCEL
+        max_speed entity_table + EntityState::SpeedY, #SWIMMING_SPEED
+        jmp done
+down_not_held:
+        apply_friction entity_table + EntityState::SpeedY, ::SWIMMING_DRAG
+done:
+        rts
+.endproc
+
 .proc pick_walk_animation
 MetaSpriteIndex := R0
         lda PlayerPrimaryDirection
@@ -266,6 +319,80 @@ facing_right:
         rts
 facing_left:
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_idle_left
+        rts
+.endproc
+
+.proc pick_swim_animation
+MetaSpriteIndex := R0
+        lda PlayerPrimaryDirection
+        bit ButtonsHeld
+        beq old_direction_no_longer_held
+        ; keep our current animation, it's fine
+        rts
+old_direction_no_longer_held:
+        ldy CurrentEntityIndex
+        lda entity_table + EntityState::MetaSpriteIndex, y
+        sta MetaSpriteIndex
+
+        lda #KEY_RIGHT
+        bit ButtonsHeld
+        beq right_not_held
+        ; switch to the walk right animation and state
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_swim_right
+        lda #KEY_RIGHT
+        sta PlayerPrimaryDirection
+        sta PlayerLastFacing
+        ldy CurrentEntityIndex
+        entity_set_flag_y FLAG_IDLE_FACING, FACING_RIGHT
+        rts
+right_not_held:       
+        lda #KEY_LEFT
+        bit ButtonsHeld
+        beq left_not_held
+        ; switch to the walk right animation and state
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_swim_left
+        lda #KEY_LEFT
+        sta PlayerPrimaryDirection
+        sta PlayerLastFacing
+        ldy CurrentEntityIndex
+        entity_set_flag_y FLAG_IDLE_FACING, FACING_LEFT
+        rts
+left_not_held:
+        lda #KEY_UP
+        bit ButtonsHeld
+        beq up_not_held
+        ; switch to the walk right animation and state
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_swim_up
+        lda #KEY_UP
+        sta PlayerPrimaryDirection
+        sta PlayerLastFacing
+        rts
+up_not_held:
+        lda #KEY_DOWN
+        bit ButtonsHeld
+        beq down_not_held
+        ; switch to the walk right animation and state
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_swim_down
+        lda #KEY_DOWN
+        sta PlayerPrimaryDirection
+        sta PlayerLastFacing
+        rts
+down_not_held:
+        lda #0 ; for idle, sure
+        sta PlayerPrimaryDirection
+        ;  note: do NOT clear PlayerLastFacing
+
+        ; pick an idle animation based on our most recent walking direction
+        ; (TODO: have an idle animation for all 4 cardinal directions, so we
+        ; don't have to cheat like this)
+        ldy CurrentEntityIndex
+        entity_check_flag_y FLAG_IDLE_FACING
+        bne facing_left
+facing_right:
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_swim_right
+        rts
+facing_left:
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_swim_left
         rts
 .endproc
 
@@ -469,6 +596,8 @@ dash_not_pressed:
 
 SURFACE_EXIT = 1
 RISING_HAZARD = 2
+SHALLOW_WATER = 3
+DEEP_WATER = 4
 
 .proc handle_ground_tile
 GroundType := R0
@@ -477,10 +606,11 @@ CollisionHeights := R2
 SensedTileX := R6
 SensedTileY := R8
         lda GroundType
+        sta PlayerLastGroundTile
         beq safe_tile
 
 check_exit:
-        cmp #(SURFACE_EXIT << 2) ; MAGIC NUMBER == SURFACE_EXIT
+        cmp #(SURFACE_EXIT << 2)
         bne check_rising_hazard
         ; surface exits only trigger when we walk on top of them
         ; we need to ignore a match when are not at ground level
@@ -496,9 +626,29 @@ check_exit:
         jsr handle_teleport
         rts
 check_rising_hazard:
-        cmp #(RISING_HAZARD << 2) ; MAGIC NUMBER == SURFACE_EXIT
-        bne safe_tile
+        cmp #(RISING_HAZARD << 2)
+        bne check_shallow_water
         set_update_func CurrentEntityIndex, boxgirl_rising_hazard_init
+
+        rts
+check_shallow_water:
+        cmp #(SHALLOW_WATER << 2)
+        bne check_deep_water
+        set_update_func CurrentEntityIndex, boxgirl_swimming
+        ; force an animation state update
+        lda #0
+        sta PlayerPrimaryDirection
+        ; TODO: splash particles and SFX
+
+        rts
+check_deep_water:
+        cmp #(DEEP_WATER << 2)
+        bne safe_tile
+        set_update_func CurrentEntityIndex, boxgirl_swimming
+        ; force an animation state update
+        lda #0
+        sta PlayerPrimaryDirection
+        ; TODO: splash particles and SFX
 
         rts
 safe_tile:
@@ -518,6 +668,34 @@ safe_tile:
         sta PlayerSafeTileGroundLevel
 
 not_safe:
+        rts
+.endproc
+
+.proc handle_water_tile
+GroundType := R0
+CollisionFlags := R1
+CollisionHeights := R2
+SensedTileX := R6
+SensedTileY := R8
+        lda GroundType
+        sta PlayerLastGroundTile
+
+check_still_submerged:
+        cmp #(SHALLOW_WATER << 2)
+        beq still_in_water
+        cmp #(DEEP_WATER << 2)
+        beq still_in_water
+
+        ; we are no longer in water; emerge to dry ground
+        set_update_func CurrentEntityIndex, boxgirl_standard
+        ; force an animation state update
+        lda #0
+        sta PlayerPrimaryDirection
+        ; TODO: splash particles and SFX
+        ; TODO: should boxgirl jump a little bit here?
+        rts
+still_in_water:
+        ; just keep swimming...
         rts
 .endproc
 
@@ -850,6 +1028,36 @@ no_damaging_entities_found:
         st16 GameMode, dialog_init
 
 no_debug:
+        rts
+.endproc
+
+.proc boxgirl_swimming
+        ; swimming uses different acceleration curves for basic locomotion
+        jsr swimming_acceleration
+        ; apply physics normally
+        far_call FAR_standard_entity_vertical_acceleration
+        far_call FAR_apply_standard_entity_speed
+        jsr set_3d_metasprite_pos
+        jsr pick_swim_animation
+        ; check for special water tiles
+        far_call FAR_sense_ground
+        jsr handle_water_tile
+        ; enemies can still hurt us while we're swimming
+        debug_color TINT_R | TINT_B
+        jsr collide_with_entities
+        debug_color TINT_R | TINT_G
+        ; check for actions, and trigger behavior accordingly
+        ;jsr handle_swim_action
+        ;jsr handle_dive_action
+        jsr update_invulnerability
+
+        ; for now, that is all. Notably, swimming will not
+        ; activate debug features. Later, swimming actions cannot
+        ; be switched out; while swimming you are focused on this task.
+
+        ; (we *could* technically have swimming variations for all actions, but to
+        ; avoid scope creep I would like to keep this feature somewhat simple and static.)
+
         rts
 .endproc
 
