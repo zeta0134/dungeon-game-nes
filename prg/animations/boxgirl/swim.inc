@@ -10,10 +10,10 @@ boxgirl_frames_swim_right:
 
 boxgirl_oam_swim_right_1:
         ;     Y-offset  Tile  Attr   X-offset
-        .byte ($ff-31), 29,    $00,   0
-        .byte ($ff-31), 31,    $00,   8
-        .byte ($ff-15), 25,    $00,   0
-        .byte ($ff-15), 27,    $00,   8
+        .lobytes   -16,   29,  $00,   0
+        .lobytes   -16,   31,  $00,   8
+        .lobytes     0,   25,  $00,   0
+        .lobytes     0,   27,  $00,   8
 
 boxgirl_anim_swim_left:
         .word boxgirl_frames_swim_left
@@ -25,10 +25,10 @@ boxgirl_frames_swim_left:
 
 boxgirl_oam_swim_left_1:
         ;     Y-offset  Tile  Attr   X-offset
-        .byte ($ff-31), 31,    $40,   0
-        .byte ($ff-31), 29,    $40,   8
-        .byte ($ff-15), 25,    $00,   0
-        .byte ($ff-15), 27,    $00,   8
+        .lobytes   -16,   31,  $40,   0
+        .lobytes   -16,   29,  $40,   8
+        .lobytes     0,   25,  $00,   0
+        .lobytes     0,   27,  $00,   8
 
 boxgirl_anim_swim_down:
         .word boxgirl_frames_swim_down
@@ -40,10 +40,10 @@ boxgirl_frames_swim_down:
 
 boxgirl_oam_swim_down_1:
         ;     Y-offset  Tile  Attr   X-offset
-        .byte ($ff-31), 33,    $00,   0
-        .byte ($ff-31), 35,    $00,   8
-        .byte ($ff-15), 25,    $00,   0
-        .byte ($ff-15), 27,    $00,   8
+        .lobytes   -16,   33,    $00,   0
+        .lobytes   -16,   35,    $00,   8
+        .lobytes     0,   25,    $00,   0
+        .lobytes     0,   27,    $00,   8
 
 boxgirl_anim_swim_up:
         .word boxgirl_frames_swim_up
@@ -55,7 +55,7 @@ boxgirl_frames_swim_up:
 
 boxgirl_oam_swim_up_1:
         ;     Y-offset  Tile  Attr   X-offset
-        .byte ($ff-31), 37,    $00,   0
-        .byte ($ff-31), 39,    $00,   8
-        .byte ($ff-15), 25,    $00,   0
-        .byte ($ff-15), 27,    $00,   8
+        .lobytes   -16,   37,    $00,   0
+        .lobytes   -16,   39,    $00,   8
+        .lobytes     0,   25,    $00,   0
+        .lobytes     0,   27,    $00,   8
