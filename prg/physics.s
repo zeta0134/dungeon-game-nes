@@ -9,6 +9,10 @@
         .include "word_util.inc"
         .include "zeropage.inc"
 
+        .segment "RAM"
+GravityAccel: .res 1
+TerminalVelocity: .res 1
+
         .segment "PHYSICS_A000"
 
 .proc FAR_apply_standard_entity_speed
@@ -78,8 +82,8 @@ done:
         sta entity_table + EntityState::SpeedZ, x
 height_not_negative:
         ; Now apply acceleration due to gravity, and clamp it to the terminal velocity
-        accelerate entity_table + EntityState::SpeedZ, #GRAVITY_ACCEL
-        min_speed entity_table + EntityState::SpeedZ, #TERMINAL_VELOCITY
+        accelerate entity_table + EntityState::SpeedZ, GravityAccel
+        min_speed entity_table + EntityState::SpeedZ, TerminalVelocity
         ; and we should be done
         rts
 .endproc

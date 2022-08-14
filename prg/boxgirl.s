@@ -44,6 +44,7 @@ ParticleCooldown: .res 1
         .include "animations/boxgirl/idle.inc"
         .include "animations/boxgirl/move.inc"
         .include "animations/boxgirl/swim.inc"
+        .include "animations/boxgirl/underwater.inc"
         .include "animations/boxgirl/teleport.inc"
         .include "animations/shadow/flicker.inc"
 
@@ -135,10 +136,47 @@ MetaSpriteIndex := R0
         lda entity_table + EntityState::GroundLevel, y
         sta PlayerSafeTileGroundLevel
 
+        jsr init_world_physics
+
         ;finally, switch boxgirl to the idle routine
-        set_update_func CurrentEntityIndex, boxgirl_standard
+        jsr go_to_standard_locomotion
         
 failed_to_spawn:
+        rts
+.endproc
+
+.proc init_world_physics
+        lda CurrentDistortion
+        cmp #DISTORTION_UNDERWATER
+        beq underwater_physics
+
+standard_physics:
+        ; TODO: check for underwater mode and adjust accordingly
+        lda #STANDARD_GRAVITY_ACCEL
+        sta GravityAccel
+        lda #STANDARD_TERMINAL_VELOCITY
+        sta TerminalVelocity
+        rts
+
+underwater_physics:
+        lda #UNDERWATER_GRAVITY_ACCEL
+        sta GravityAccel
+        lda #UNDERWATER_TERMINAL_VELOCITY
+        sta TerminalVelocity
+
+        rts
+.endproc
+
+.proc go_to_standard_locomotion
+        lda CurrentDistortion
+        cmp #DISTORTION_UNDERWATER
+        beq underwater_physics
+standard_physics:
+        ; TODO: pick the locomotion type based on the map mode
+        set_update_func CurrentEntityIndex, boxgirl_standard
+        rts
+underwater_physics:
+        set_update_func CurrentEntityIndex, boxgirl_underwater
         rts
 .endproc
 
@@ -406,6 +444,80 @@ facing_right:
         rts
 facing_left:
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_swim_left
+        rts
+.endproc
+
+.proc pick_underwater_animation
+MetaSpriteIndex := R0
+        lda PlayerPrimaryDirection
+        bit ButtonsHeld
+        beq old_direction_no_longer_held
+        ; keep our current animation, it's fine
+        rts
+old_direction_no_longer_held:
+        ldy CurrentEntityIndex
+        lda entity_table + EntityState::MetaSpriteIndex, y
+        sta MetaSpriteIndex
+
+        lda #KEY_RIGHT
+        bit ButtonsHeld
+        beq right_not_held
+        ; switch to the walk right animation and state
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_underwater_right
+        lda #KEY_RIGHT
+        sta PlayerPrimaryDirection
+        sta PlayerLastFacing
+        ldy CurrentEntityIndex
+        entity_set_flag_y FLAG_IDLE_FACING, FACING_RIGHT
+        rts
+right_not_held:       
+        lda #KEY_LEFT
+        bit ButtonsHeld
+        beq left_not_held
+        ; switch to the walk right animation and state
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_underwater_left
+        lda #KEY_LEFT
+        sta PlayerPrimaryDirection
+        sta PlayerLastFacing
+        ldy CurrentEntityIndex
+        entity_set_flag_y FLAG_IDLE_FACING, FACING_LEFT
+        rts
+left_not_held:
+        lda #KEY_UP
+        bit ButtonsHeld
+        beq up_not_held
+        ; switch to the walk right animation and state
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_underwater_up
+        lda #KEY_UP
+        sta PlayerPrimaryDirection
+        sta PlayerLastFacing
+        rts
+up_not_held:
+        lda #KEY_DOWN
+        bit ButtonsHeld
+        beq down_not_held
+        ; switch to the walk right animation and state
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_underwater_down
+        lda #KEY_DOWN
+        sta PlayerPrimaryDirection
+        sta PlayerLastFacing
+        rts
+down_not_held:
+        lda #0 ; for idle, sure
+        sta PlayerPrimaryDirection
+        ;  note: do NOT clear PlayerLastFacing
+
+        ; pick an idle animation based on our most recent walking direction
+        ; (TODO: have an idle animation for all 4 cardinal directions, so we
+        ; don't have to cheat like this)
+        ldy CurrentEntityIndex
+        entity_check_flag_y FLAG_IDLE_FACING
+        bne facing_left
+facing_right:
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_underwater_right
+        rts
+facing_left:
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_underwater_left
         rts
 .endproc
 
@@ -716,7 +828,7 @@ check_still_submerged:
         beq still_in_water
 
         ; we are no longer in water; emerge to dry ground
-        set_update_func CurrentEntityIndex, boxgirl_standard
+        jsr go_to_standard_locomotion
         ; force an animation state update
         lda #0
         sta PlayerPrimaryDirection
@@ -1107,6 +1219,37 @@ no_debug:
         rts
 .endproc
 
+.proc boxgirl_underwater
+        jsr handle_ground_contact
+        jsr swimming_acceleration
+        ; apply physics normally
+        far_call FAR_standard_entity_vertical_acceleration
+        far_call FAR_apply_standard_entity_speed
+        jsr set_3d_metasprite_pos
+        jsr pick_underwater_animation
+        ; check for special ground tiles
+        far_call FAR_sense_ground
+        jsr handle_ground_tile
+        debug_color TINT_R | TINT_B
+        jsr collide_with_entities
+        debug_color TINT_R | TINT_G
+        ; check for actions, and trigger behavior accordingly
+        jsr handle_jump
+        jsr handle_dash
+        jsr update_invulnerability
+
+        ; DEBUG STUFF
+        lda #KEY_SELECT
+        bit ButtonsDown
+        beq no_debug
+
+        ; activate the dialog system!
+        st16 GameMode, dialog_init
+
+no_debug:
+        rts
+.endproc
+
 .proc boxgirl_swimming
         ; swimming uses different acceleration curves for basic locomotion
         jsr swimming_acceleration
@@ -1204,7 +1347,7 @@ done_being_stunned:
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
         ; Switch back to the standard locomotion state, so the player
         ; regains control on the next frame following this one
-        set_update_func CurrentEntityIndex, boxgirl_standard
+        jsr go_to_standard_locomotion
         lda #60
         sta PlayerInvulnerability
         ; now fall through to do standard update things
@@ -1383,7 +1526,7 @@ done_with_fadeout:
         lda #60
         sta PlayerInvulnerability
         ; by default, hand control back to the player
-        set_update_func CurrentEntityIndex, boxgirl_standard
+        jsr go_to_standard_locomotion
         ; but hazards deal damage, so apply that here. If the player dies from this hazard, then
         ; they will immediately enter their death throes as a result of this call
         lda #4 ; hazards deal two full hearts of damage (for testing)
@@ -1536,7 +1679,7 @@ done_dashing:
         sta metasprite_table + MetaSpriteState::PaletteOffset, y
         ; Switch back to the standard locomotion state, so the player
         ; regains control on the next frame following this one
-        set_update_func CurrentEntityIndex, boxgirl_standard
+        jsr go_to_standard_locomotion
         ; Clamp our horizontal velocity to sane walking values, to forbid
         ; keeping weird momentum
         jsr clamp_to_max_walking_speed

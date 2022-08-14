@@ -4,8 +4,13 @@
 .global FAR_sense_ground
 .global FAR_ground_nav_properties
 
-GRAVITY_ACCEL = ($FF - 3)
-TERMINAL_VELOCITY = ($FF - 60)
+STANDARD_GRAVITY_ACCEL = ($FF - 3)
+UNDERWATER_GRAVITY_ACCEL = ($FF - 1)
+
+STANDARD_TERMINAL_VELOCITY = ($FF - 59)
+UNDERWATER_TERMINAL_VELOCITY = ($FF - 29)
+
+.global GravityAccel, TerminalVelocity
 
 ; what could *possibly* go wrong?
 ; note: all of these are meant to operate on items in an

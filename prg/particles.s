@@ -41,8 +41,8 @@ constant_speed:
         cmp #PARTICLE_GRAVITY
         bne no_gravity
 
-        accelerate particle_table + ParticleState::SpeedY, #($FF-GRAVITY_ACCEL)
-        max_speed particle_table + ParticleState::SpeedY, #($FF-TERMINAL_VELOCITY)
+        accelerate particle_table + ParticleState::SpeedY, #($FF-STANDARD_GRAVITY_ACCEL)
+        max_speed particle_table + ParticleState::SpeedY, #($FF-STANDARD_TERMINAL_VELOCITY)
 no_gravity:
         lda particle_table + ParticleState::Behavior, x
         cmp #PARTICLE_TILE_ANIM
