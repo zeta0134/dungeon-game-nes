@@ -699,6 +699,14 @@ check_still_submerged:
         jsr play_sfx_noise
         jsr spawn_splash_particles
         ; TODO: should boxgirl jump a little bit here?
+
+        ; Give us just a tiny boost of speed, not quite a full jump, to sell the effect
+        ; of leaping out of the water
+        ldx CurrentEntityIndex
+        lda #(JUMP_SPEED >> 1)
+        sta entity_table + EntityState::SpeedZ, x
+
+
         rts
 still_in_water:
         ; just keep swimming...
