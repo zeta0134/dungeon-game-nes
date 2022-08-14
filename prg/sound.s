@@ -1,4 +1,5 @@
         .setcpu "6502"
+        .include "debug.inc"
         .include "bhop/bhop.inc"
         .include "far_call.inc"
         .include "mmc3.inc"
@@ -137,6 +138,10 @@ done:
 
 ; inputs: track number in A
 .proc play_track
+        .if ::DEBUG_DISABLE_MUSIC
+        ; ignore the requested track, and queue up the silent track instead
+        lda #0
+        .endif
         cmp MusicCurrentTrack
         beq no_change
         sta MusicCurrentTrack
