@@ -39,6 +39,9 @@ PlayerLastGroundTile: .res 1
 
 ParticleCooldown: .res 1
 
+PlayerDashInitialSpeed: .res 1
+PlayerDashDuration: .res 1
+
         .segment "SPRITES_A000" ; will eventually move to an animation page
 
         .include "animations/boxgirl/idle.inc"
@@ -66,6 +69,9 @@ DASH_DURATION = 10
 DASH_UPWARD_RISE = 4
 
 COYOTE_TIME = 3
+
+UNDERWATER_DASH_INITIAL_SPEED = 80
+UNDERWATER_DASH_DURATION = 20
 
 
 ; Reminder: Data only goes up to 5
@@ -156,6 +162,10 @@ standard_physics:
         sta GravityAccel
         lda #STANDARD_TERMINAL_VELOCITY
         sta TerminalVelocity
+        lda #DASH_INITIAL_SPEED
+        sta PlayerDashInitialSpeed
+        lda #DASH_DURATION
+        sta PlayerDashDuration
         rts
 
 underwater_physics:
@@ -163,7 +173,10 @@ underwater_physics:
         sta GravityAccel
         lda #UNDERWATER_TERMINAL_VELOCITY
         sta TerminalVelocity
-
+        lda #UNDERWATER_DASH_INITIAL_SPEED
+        sta PlayerDashInitialSpeed
+        lda #UNDERWATER_DASH_DURATION
+        sta PlayerDashDuration
         rts
 .endproc
 
@@ -601,7 +614,7 @@ check_right:
         bne check_left
 
         ; Dash to the right!
-        lda #DASH_INITIAL_SPEED
+        lda PlayerDashInitialSpeed
         sta entity_table + EntityState::SpeedX, x
         lda #0
         sta entity_table + EntityState::SpeedY, x
@@ -615,7 +628,9 @@ check_left:
         bne check_up
 
         ; Dash to the left!
-        lda #($FF - DASH_INITIAL_SPEED)
+        lda #$FF
+        sec
+        sbc PlayerDashInitialSpeed
         sta entity_table + EntityState::SpeedX, x
         lda #0
         sta entity_table + EntityState::SpeedY, x
@@ -631,7 +646,9 @@ check_up:
         ; Dash upwards!
         lda #0
         sta entity_table + EntityState::SpeedX, x
-        lda #($FF - DASH_INITIAL_SPEED)
+        lda #$FF
+        sec
+        sbc PlayerDashInitialSpeed
         sta entity_table + EntityState::SpeedY, x
         ; TODO: switch to an appropriate dashing animation
         ; (we don't have one at the moment)
@@ -645,7 +662,7 @@ check_down:
         ; Dash downwards!
         lda #0
         sta entity_table + EntityState::SpeedX, x
-        lda #DASH_INITIAL_SPEED
+        lda PlayerDashInitialSpeed
         sta entity_table + EntityState::SpeedY, x
         ; TODO: switch to an appropriate dashing animation
         ; (we don't have one at the moment)
@@ -667,7 +684,7 @@ converge:
         lda #DASH_UPWARD_RISE
         sta entity_table + EntityState::SpeedZ
 
-        lda #DASH_DURATION
+        lda PlayerDashDuration
         sta PlayerDashTimer
 
         set_update_func CurrentEntityIndex, boxgirl_dashing
@@ -1703,8 +1720,15 @@ update_ourselves:
         ; in this state. This is true (if brief) invulnerability
 
         ; eye candy
+        lda CurrentDistortion
+        cmp #DISTORTION_UNDERWATER
+        beq spawn_bubbles
+spawn_dust:
         jsr spawn_dash_particles
-
+        ; That's it!
+        rts
+spawn_bubbles:
+        jsr spawn_dash_bubbles
         ; That's it!
         rts
 .endproc
@@ -1732,6 +1756,45 @@ RandomY := R1
         ldx CurrentEntityIndex
         ;                       xoff  yoff   xspeed   yspeed tile             behavior  attribute animspeed lifetime
         spawn_advanced_particle  $80,  $40, RandomX, RandomY, #69, #PARTICLE_TILE_ANIM,        #2,       #4,     #16
+done:
+        rts
+.endproc
+
+.proc spawn_dash_bubbles
+RandomX := R0
+RandomY := R1
+Tile := R2
+        dec ParticleCooldown
+        jne done
+        lda #2
+        sta ParticleCooldown
+        ; random in any direction on the X axis
+        jsr next_rand
+        and #%00000111
+        sec
+        sbc #%00000100
+        sta RandomX
+        ; random "up" (negative) on the Y axis
+        jsr next_rand
+        pha ; preserve
+        and #%00000111
+        sec
+        sbc #%00000100
+        sta RandomY
+
+        ; un-preserve
+        pla
+        rol ; grab a bit we didn't use above
+        rol 
+        and #%00000010 ; mask out the useful part
+        clc
+        adc #77
+        sta Tile
+
+
+        ldx CurrentEntityIndex
+        ;                       xoff  yoff   xspeed   yspeed tile             behavior  attribute animspeed lifetime
+        spawn_advanced_particle  $80,  $40, RandomX, RandomY, Tile, #PARTICLE_STANDARD,        #0,       #0,     #16
 done:
         rts
 .endproc
