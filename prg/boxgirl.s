@@ -1054,8 +1054,9 @@ no_damaging_entities_found:
         jsr play_sfx_noise
         jsr spawn_splash_particles
 
+        ; TODO: vary this timer if we are over deep water, we probably want a shorter duration
         ; Set the dive (stun) timer to around 2 seconds, and transition us to the diving state
-        lda #120
+        lda #90
         sta PlayerStunTimer
         set_update_func CurrentEntityIndex, boxgirl_diving
 
@@ -1154,8 +1155,6 @@ finshed_spawning_bubbles:
         rts
 done_diving:
         ; If we found a valid destination, trigger the map fade now
-        ; TODO: this
-
         far_call FAR_sense_ground
         lda PlayerLastGroundTile
         cmp #(DEEP_WATER << 2)
@@ -1734,6 +1733,11 @@ no_buzzer:
         ; TODO: play a "bloop bloop" transition sound
         ; this should be fairly long, to hopefully mask
         ; a music cue that may need a full measure of wait time
+
+        st16 R0, sfx_dive_underwater_pulse
+        jsr play_sfx_pulse1
+        st16 R0, sfx_dive_underwater_noise
+        jsr play_sfx_noise
 
         ; Boxgirl's current animation state is just fine, so we'll reuse
         ; the nearly empty death state here to idle until the kernel is done

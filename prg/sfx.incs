@@ -402,3 +402,73 @@ sfx_splash:
 
         noise_cont    0,    $B,  $1,      1
         noise_cont    0,    $9,  $1,      1
+
+sfx_dive_underwater_pulse:
+        ; Length in rows
+        .byte 44
+        ;                 pitch,    duty,  volume,                            sweep, length
+        pulse_init_sweep  PITCH_F2,   $2,      $2, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      0
+        pulse_cont_duty               $2,      $3,                                        0
+        pulse_cont_duty               $2,      $4,                                        0
+        pulse_cont_duty               $2,      $5,                                        0
+        pulse_cont_duty               $2,      $4,                                        0
+        pulse_cont_duty               $2,      $3,                                        0
+        pulse_cont_duty               $2,      $2,                                        0
+        pulse_cont_duty               $2,      $1,                                        1
+        pulse_cont_duty               $2,      $0,                                        6
+
+        pulse_init_sweep  PITCH_G2,   $2,      $2, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      0
+        pulse_cont_duty               $2,      $3,                                        0
+        pulse_cont_duty               $2,      $4,                                        0
+        pulse_cont_duty               $2,      $5,                                        0
+        pulse_cont_duty               $2,      $4,                                        0
+        pulse_cont_duty               $2,      $3,                                        0
+        pulse_cont_duty               $2,      $2,                                        0
+        pulse_cont_duty               $2,      $1,                                        0
+        pulse_init_sweep  PITCH_F2,   $2,      $1, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      0
+        pulse_cont_duty               $2,      $2,                                        0
+        pulse_cont_duty               $2,      $1,                                        0
+        pulse_cont_duty               $2,      $0,                                        3
+
+        pulse_init_sweep  PITCH_A2,   $2,      $1, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      0
+        pulse_cont_duty               $2,      $2,                                        0
+        pulse_cont_duty               $2,      $3,                                        0
+        pulse_cont_duty               $2,      $4,                                        0
+        pulse_cont_duty               $2,      $3,                                        0
+        pulse_cont_duty               $2,      $2,                                        0
+        pulse_cont_duty               $2,      $1,                                        0
+        pulse_cont_duty               $2,      $0,                                        1
+        pulse_init_sweep  PITCH_G2,   $2,      $1, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      0
+        pulse_cont_duty               $2,      $2,                                        0
+        pulse_cont_duty               $2,      $1,                                        0
+        pulse_cont_duty               $2,      $0,                                        2
+
+        pulse_init_sweep  PITCH_B2,   $2,      $1, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      0
+        pulse_cont_duty               $2,      $2,                                        0
+        pulse_cont_duty               $2,      $3,                                        0
+        pulse_cont_duty               $2,      $4,                                        0
+        pulse_cont_duty               $2,      $3,                                        0
+        pulse_cont_duty               $2,      $2,                                        0
+        pulse_cont_duty               $2,      $1,                                        0
+        pulse_cont_duty               $2,      $0,                                        1
+        pulse_init_sweep  PITCH_A2,   $2,      $1, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      0
+        pulse_cont_duty               $2,      $2,                                        0
+        pulse_cont_duty               $2,      $1,                                        0
+
+sfx_dive_underwater_noise:
+        ; Length in rows
+        .byte 12
+        ;          Mode Period  Vol  Length
+        noise_init    0,    $F,  $1,      7
+        noise_cont    0,    $F,  $2,      7
+        noise_cont    0,    $E,  $2,      7
+        noise_cont    0,    $E,  $3,      7
+        noise_cont    0,    $D,  $3,      15
+        noise_cont    0,    $C,  $4,      15
+        noise_cont    0,    $B,  $3,      15
+        noise_cont    0,    $A,  $3,      7
+        noise_cont    0,    $A,  $2,      7
+        noise_cont    0,    $9,  $2,      7
+        noise_cont    0,    $9,  $1,      7
+        noise_cont    0,    $8,  $1,      7
+
