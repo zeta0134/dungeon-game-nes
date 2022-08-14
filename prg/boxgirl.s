@@ -1238,6 +1238,9 @@ no_debug:
         jsr handle_dash
         jsr update_invulnerability
 
+        ; juice: spawn bubbles occasionally
+        jsr spawn_underwater_bubble
+
         ; DEBUG STUFF
         lda #KEY_SELECT
         bit ButtonsDown
@@ -1757,7 +1760,7 @@ done:
         rts
 .endproc
 
-.proc spawn_surface_bubble
+.proc random_bubble_params
 XOff := R0
 Tile := R2
         ; Here we want to randomize both the bubble size and the X position somewhat
@@ -1777,6 +1780,13 @@ Tile := R2
         lda #77 ; 77 = small bubble, 79 = large bubble
         adc Tile
         sta Tile
+        rts
+.endproc
+
+.proc spawn_surface_bubble
+XOff := R0
+Tile := R2
+        jsr random_bubble_params
 
         ldx CurrentEntityIndex
         ;                       xoff   yoff   xspeed   yspeed tile               behavior  attribute, animspeed, lifetime
@@ -1792,6 +1802,41 @@ Tile := R2
         sta particle_table + ParticleState::PositionX+1, y
 
         ; all done. Fly, little bubble, fly!
+        rts
+.endproc
+
+.proc spawn_underwater_bubble
+XOff := R0
+Tile := R2
+        ; first, we kinda want to randomize if we spawn a bubble at all, otherwise it gets a little bit
+        ; too predictable. Are we on a valid bubble spawn frame?
+        lda GameloopCounter
+        ; Okay so on every 4th frame...
+        and #%00000011
+        jne finished
+
+        ; ... we'll have a 12.5% chance to spawn a bubble
+        jsr next_rand
+        and #%00000111
+        jne finished
+
+        ; we're spawning; randomize the parameters
+        jsr random_bubble_params
+
+        ; But unlike a surface bubble, start this one a bit higher up, with a much longer lifetime
+        ldx CurrentEntityIndex
+        ;                       xoff   yoff   xspeed   yspeed tile               behavior  attribute, animspeed, lifetime
+        spawn_advanced_particle  $40,  $180,    #$00,    #$EF, Tile,   #PARTICLE_STANDARD,        #0,        #0,      #120
+        ; we still want to randomize the offset, so do that here
+        clc
+        lda particle_table + ParticleState::PositionX, y
+        adc XOff
+        sta particle_table + ParticleState::PositionX, y
+        lda particle_table + ParticleState::PositionX+1, y
+        adc #0
+        sta particle_table + ParticleState::PositionX+1, y
+        ; all done. Float, little bubble, float!
+finished:
         rts
 .endproc
 
