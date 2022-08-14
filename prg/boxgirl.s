@@ -720,7 +720,6 @@ check_still_submerged:
         st16 R0, sfx_splash
         jsr play_sfx_noise
         jsr spawn_splash_particles
-        ; TODO: should boxgirl jump a little bit here?
 
         ; Give us just a tiny boost of speed, not quite a full jump, to sell the effect
         ; of leaping out of the water
@@ -1034,6 +1033,43 @@ no_damaging_entities_found:
         rts
 .endproc
 
+.proc handle_dive_action
+        ; have we pressed the dive button?
+        lda #KEY_B
+        bit ButtonsDown
+        beq dive_not_pressed
+        ; TODO: if diving is guarded by an upgrade, check for that upgrade here
+
+        ; Make boxgirl's sprite vanish 
+        ldy CurrentEntityIndex
+        lda entity_table + EntityState::MetaSpriteIndex, y
+        tax
+        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_HIDDEN
+
+        ; Splash us under the water's surface with appropriate juice
+        st16 R0, sfx_splash
+        jsr play_sfx_noise
+        jsr spawn_splash_particles
+
+        ; Set the dive (stun) timer to around 2 seconds, and transition us to the diving state
+        lda #120
+        sta PlayerStunTimer
+        set_update_func CurrentEntityIndex, boxgirl_diving
+
+        ; Set our speed to 0 on all axis
+        ldx CurrentEntityIndex
+        lda #0
+        sta entity_table + EntityState::SpeedX, x
+        sta entity_table + EntityState::SpeedY, x
+
+        ; TODO: check for a deep water tile here?
+        
+        ; and done
+        rts
+dive_not_pressed:
+        rts
+.endproc
+
 ; === States ===
 
 .proc boxgirl_standard
@@ -1084,7 +1120,7 @@ no_debug:
         debug_color TINT_R | TINT_G
         ; check for actions, and trigger behavior accordingly
         ;jsr handle_swim_action
-        ;jsr handle_dive_action
+        jsr handle_dive_action
         jsr update_invulnerability
 
         ; for now, that is all. Notably, swimming will not
@@ -1094,6 +1130,42 @@ no_debug:
         ; (we *could* technically have swimming variations for all actions, but to
         ; avoid scope creep I would like to keep this feature somewhat simple and static.)
 
+        rts
+.endproc
+
+.proc boxgirl_diving
+        ; since the player is invulnerable while diving, we'll re-use the stun timer to track duration
+        lda PlayerStunTimer
+        beq done_diving
+still_diving:
+        dec PlayerStunTimer
+
+        ; since we are invisible, spawn bubbles periodically to signal our position
+        ; We can use our stun timer to determine how often to spawn bubbles. Let's do one every
+        ; 8 frames for testing
+        lda PlayerStunTimer
+        and #%00000111
+        bne finshed_spawning_bubbles
+        jsr spawn_surface_bubble
+finshed_spawning_bubbles:
+        rts
+done_diving:
+        ; If we found a valid destination, trigger the map fade now
+        ; TODO: this
+
+        ; Otherwise, we must surface and transition back to the swimming state
+        ; Make boxgirl's sprite appear
+        ldy CurrentEntityIndex
+        lda entity_table + EntityState::MetaSpriteIndex, y
+        tax
+        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
+
+        lda #0
+        sta PlayerPrimaryDirection
+        st16 R0, sfx_splash
+        jsr play_sfx_noise
+        jsr spawn_splash_particles
+        set_update_func CurrentEntityIndex, boxgirl_swimming
         rts
 .endproc
 
@@ -1524,13 +1596,54 @@ done:
 
 .proc spawn_splash_particles
         ldx CurrentEntityIndex
-        ; TODO: use water particles, not death particles
         ;                       xoff            yoff   xspeed          yspeed       tile              behavior  attribute, animspeed, lifetime
         spawn_advanced_particle $C0,            $80,    #$10,           #($100-$20), #81,    #PARTICLE_GRAVITY,      #$40,        #0,      #16
         spawn_advanced_particle $C0,            $80,    #$08,           #($100-$24), #81,    #PARTICLE_GRAVITY,      #$40,        #0,      #20
         spawn_advanced_particle ($FFFF - $40),  $80,    #($100-$10),    #($100-$20), #81,    #PARTICLE_GRAVITY,      #$00,        #0,      #16
         spawn_advanced_particle ($FFFF - $40),  $80,    #($100-$08),    #($100-$24), #81,    #PARTICLE_GRAVITY,      #$00,        #0,      #20
         rts
+.endproc
+
+.proc spawn_surface_bubble
+XOff := R0
+Tile := R2
+        ; Here we want to randomize both the bubble size and the X position somewhat
+        lda #0
+        sta XOff
+        sta Tile
+
+        jsr next_rand
+        ; move 1 bit for the bubble size into carry
+        lsr a
+        ; the rest of these bits become the X offset
+        sta XOff
+        ; compute the actual tile number
+        rol Tile ; pull in the carry bit
+        asl Tile ; multiply that by two
+        clc
+        lda #77 ; 77 = small bubble, 79 = large bubble
+        adc Tile
+        sta Tile
+
+        ldx CurrentEntityIndex
+        ;                       xoff   yoff   xspeed   yspeed tile               behavior  attribute, animspeed, lifetime
+        spawn_advanced_particle  $40,   $80,    #$00,    #$EF, Tile,   #PARTICLE_STANDARD,        #0,        #0,      #30
+        ; particle spawning expects static base values for the x offset, so we must manually add our computed offset to it here
+        ; conveniently y still contains the index of the particle we just wrote to, so we can reuse it
+        clc
+        lda particle_table + ParticleState::PositionX, y
+        adc XOff
+        sta particle_table + ParticleState::PositionX, y
+        lda particle_table + ParticleState::PositionX+1, y
+        adc #0
+        sta particle_table + ParticleState::PositionX+1, y
+
+        ; all done. Fly, little bubble, fly!
+        rts
+.endproc
+
+.proc spawn_underwater_bubble
+
 .endproc
 
 ; === Weird stuff that needs to be fixed below === 
