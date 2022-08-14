@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.9" tiledversion="1.9.0" orientation="orthogonal" renderorder="right-down" width="32" height="28" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="15">
+<map version="1.9" tiledversion="1.9.0" orientation="orthogonal" renderorder="right-down" width="32" height="28" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="16">
  <properties>
   <property name="color_emphasis" type="int" value="0"/>
   <property name="distortion_index" type="int" value="0"/>
@@ -121,51 +121,52 @@
   <object id="7" gid="299" x="240" y="128" width="16" height="16">
    <properties>
     <property name="destination_doorway" type="int" value="0"/>
-    <property name="destination_map" value="debug_hub"/>
+    <property name="destination_map" value="underwater_test"/>
    </properties>
   </object>
   <object id="8" gid="299" x="256" y="128" width="16" height="16">
    <properties>
     <property name="destination_doorway" type="int" value="0"/>
-    <property name="destination_map" value="debug_hub"/>
+    <property name="destination_map" value="underwater_test"/>
    </properties>
   </object>
   <object id="9" gid="299" x="240" y="144" width="16" height="16">
    <properties>
     <property name="destination_doorway" type="int" value="0"/>
-    <property name="destination_map" value="debug_hub"/>
+    <property name="destination_map" value="underwater_test"/>
    </properties>
   </object>
   <object id="10" gid="299" x="256" y="144" width="16" height="16">
    <properties>
     <property name="destination_doorway" type="int" value="0"/>
-    <property name="destination_map" value="debug_hub"/>
+    <property name="destination_map" value="underwater_test"/>
    </properties>
   </object>
   <object id="11" gid="299" x="272" y="144" width="16" height="16">
    <properties>
     <property name="destination_doorway" type="int" value="0"/>
-    <property name="destination_map" value="debug_hub"/>
+    <property name="destination_map" value="underwater_test"/>
    </properties>
   </object>
   <object id="12" gid="299" x="272" y="128" width="16" height="16">
    <properties>
     <property name="destination_doorway" type="int" value="0"/>
-    <property name="destination_map" value="debug_hub"/>
+    <property name="destination_map" value="underwater_test"/>
    </properties>
   </object>
   <object id="13" gid="299" x="288" y="128" width="16" height="16">
    <properties>
     <property name="destination_doorway" type="int" value="0"/>
-    <property name="destination_map" value="debug_hub"/>
+    <property name="destination_map" value="underwater_test"/>
    </properties>
   </object>
   <object id="14" gid="299" x="288" y="144" width="16" height="16">
    <properties>
     <property name="destination_doorway" type="int" value="0"/>
-    <property name="destination_map" value="debug_hub"/>
+    <property name="destination_map" value="underwater_test"/>
    </properties>
   </object>
+  <object id="15" gid="300" x="256" y="144" width="16" height="16"/>
  </objectgroup>
  <objectgroup id="5" name="Entities">
   <object id="3" gid="306" x="400" y="256" width="16" height="16"/>

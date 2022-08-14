@@ -10,6 +10,7 @@
         .include "../build/maps/grassy_test_v3.incs"
         .include "../build/maps/horizontal_platforms.incs"
         .include "../build/maps/greybox_test.incs"
+        .include "../build/maps/underwater_test.incs"
 
         ; Tilesets
         .include "../build/patternsets/grassy_fields_v3.mt"
