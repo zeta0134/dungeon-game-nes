@@ -32,9 +32,8 @@ low_priority_table:
 HighPriorityCount: .res 1
 LowPriorityCount: .res 1
 SortedEntityCount: .res 1
-        .segment "ENTITIES_A000"
-        ;.org $e000
 
+        .segment "SPRITES_A000"
 
 .proc FAR_initialize_oam
         st16 R0, (SHADOW_OAM)
@@ -54,11 +53,44 @@ loop:
         rts
 .endproc
 
+; Inputs: MetaSpriteIndex in x
+; Clobbers: everything
+.proc FAR_initialize_animation
+        lda metasprite_table + MetaSpriteState::AnimationAddr, x
+        sta ScratchSpritePtr
+        lda metasprite_table + MetaSpriteState::AnimationAddr + 1, x
+        sta ScratchSpritePtr + 1
+
+        ; initialize the FrameCounter to the animation length; it counts
+        ; down and will reset the animation when it reaches zero
+        ldy #AnimationHeader::Length
+        lda (ScratchSpritePtr),y
+        sta metasprite_table + MetaSpriteState::FrameCounter, x
+        ; read the starting frame index to complete initialization
+        ldy #AnimationHeader::FrameTableAddr
+        lda (ScratchSpritePtr),y
+        pha ; stash
+        iny
+        lda (ScratchSpritePtr),y
+        ; a,stash now contains the high,low byte of the frame index
+        ; store this as the AnimationFrameAddr, and also write it to ScratchSpritePtr
+        sta metasprite_table + MetaSpriteState::AnimationFrameAddr + 1, x
+        sta ScratchSpritePtr+1
+        pla ; unstash
+        sta metasprite_table + MetaSpriteState::AnimationFrameAddr, x
+        sta ScratchSpritePtr
+        ; use the AnimationFrameAddr to initialize the delay counter
+        ldy #AnimationFrame::DelayFrames
+        lda (ScratchSpritePtr),y
+        sta metasprite_table + MetaSpriteState::DelayCounter, x
+        rts
+.endproc
+
 ; when called, R0 is updated with the first free
 ; metasprite slot. Upon failure (full table), R0
 ; will be set to $FF, so check for this condition in the calling
 ; code to handle the error.
-.proc find_unused_metasprite
+.proc FAR_find_unused_metasprite
 MetaSpriteIndex := R0
         lda #0
         sta MetaSpriteIndex
@@ -348,17 +380,19 @@ next_metasprite:
         rts
 .endproc
 
-; call this with the index to register in A
-.proc register_high_priority_metasprite
+; call this with the index to register in R0
+.proc FAR_register_high_priority_metasprite
+        lda R0
         ldx HighPriorityCount
         sta high_priority_table, x
         inc HighPriorityCount
         rts
 .endproc
 
-; call this with the index to register in A
+; call this with the index to register in R0
 ; please don't call this while the table is empty >_<
-.proc unregister_high_priority_metasprite
+.proc FAR_unregister_high_priority_metasprite
+        lda R0
         ; first find the entry to remove
         ldx #0
 loop:
@@ -411,17 +445,19 @@ all_done:
         rts
 .endproc
 
-; call this with the index to register in A
-.proc register_low_priority_metasprite
+; call this with the index to register in R0
+.proc FAR_register_low_priority_metasprite
+        lda R0
         ldx LowPriorityCount
         sta low_priority_table, x
         inc LowPriorityCount
         rts
 .endproc
 
-; call this with the index to register in A
+; call this with the index to register in R0
 ; please don't call this while the table is empty >_<
-.proc unregister_low_priority_metasprite
+.proc FAR_unregister_low_priority_metasprite
+        lda R0
         ; first find the entry to remove
         ldx #0
 loop:
@@ -474,17 +510,19 @@ all_done:
         rts
 .endproc
 
-; call this with the index to register in A
-.proc register_sorted_entity
+; call this with the index to register in R0
+.proc FAR_register_sorted_entity
+        lda R0
         ldx SortedEntityCount
         sta sorted_entity_table, x
         inc SortedEntityCount
         rts
 .endproc
 
-; call this with the index to register in A
+; call this with the index to register in R0
 ; please don't call this while the table is empty >_<
-.proc unregister_sorted_entity
+.proc FAR_unregister_sorted_entity
+        lda R0
         ; first find the entry to remove
         ldx #0
 loop:

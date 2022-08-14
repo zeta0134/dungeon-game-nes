@@ -39,7 +39,8 @@ PlayerLastGroundTile: .res 1
 
 ParticleCooldown: .res 1
 
-        .segment "ENTITIES_A000" ; will eventually move to an AI page
+        .segment "SPRITES_A000" ; will eventually move to an animation page
+
         .include "animations/boxgirl/idle.inc"
         .include "animations/boxgirl/move.inc"
         .include "animations/boxgirl/swim.inc"
@@ -80,6 +81,8 @@ FLAG_DOUBLE_DASH = %00010000
 
 FACING_LEFT =  %00000001
 FACING_RIGHT = %00000000
+
+.segment "ENTITIES_A000" ; will eventually move to an AI page
 
 ; mostly performs a whole bunch of one-time setup
 ; expects the entity position to have been set by whatever did the initial spawning
@@ -630,7 +633,7 @@ check_exit:
         lda CollisionHeights
         and #$0F
         cmp entity_table + EntityState::GroundLevel, x
-        bne safe_tile
+        jne safe_tile
         
         ; valid tile, valid height, WHOOSH
         jsr handle_teleport_tile
@@ -1612,93 +1615,41 @@ done:
         rts
 .endproc
 
-
-
-
-; === Weird stuff that needs to be fixed below === 
-; TODO: does all of this need to be in fixed? Surely there's a critical bit of it
-; and the rest can go in a banked handler
-
-        .segment "PRGFIXED_E000"
-
-; common map scanning code, used for all exit logic. Returns #0 if a valid
-; destination is found, and performs necessary setup. Returns nonzero otherwise.
-; Note: this needs to bank in the map header, so it lives in fixed memory
-.proc find_teleport
-MapAddr := R0
-TestPosX := R5
-TestTileX := R6
-TestPosY := R7
-TestTileY := R8
-ExitTableAddr := R9
-MetaSpriteIndex := R11
-        ; helpfully our scratch registers are still set from the physics function,
-        ; so we don't need to re-do the lookup here
-
-        ; The target registers are our currently loaded map. Use these to locate the
-        ; map header
-        access_data_bank TargetMapBank
-        lda TargetMapAddr
-        sta MapAddr
-        lda TargetMapAddr+1
-        sta MapAddr+1
-
-        ldy #MapHeader::exit_table_ptr
-        lda (MapAddr), y
-        sta ExitTableAddr
-        iny
-        lda (MapAddr), y
-        sta ExitTableAddr+1
-
-
-        ; loop through all the exits, stopping if we find a match for our current tile position
-        ldy #0
-        lda (ExitTableAddr), y ; length byte
-        inc16 ExitTableAddr
-        jeq no_valid_destination ; sanity check, can't leave a map with no exits defined
-        tax ; x is otherwise unused, so it is our counter
-loop:
-        ldy #ExitTableEntry::tile_x
-        lda (ExitTableAddr), y
-        cmp TestTileX
-        jne no_match
-        ldy #ExitTableEntry::tile_y
-        lda (ExitTableAddr), y
-        cmp TestTileY
-        jne no_match
-
-        ; MATCH FOUND (!!!)
-
-        ; Set these map details as our new target map
-        ldy #ExitTableEntry::target_map
-        lda (ExitTableAddr), y
-        sta TargetMapAddr
-        ldy #ExitTableEntry::target_map+1
-        lda (ExitTableAddr), y
-        sta TargetMapAddr+1
-        ldy #ExitTableEntry::target_bank
-        lda (ExitTableAddr), y
-        sta TargetMapBank
-        ldy #ExitTableEntry::target_entrance
-        lda (ExitTableAddr), y
-        sta TargetMapEntrance
-
-        restore_previous_bank
-
+.proc spawn_surface_bubble
+XOff := R0
+Tile := R2
+        ; Here we want to randomize both the bubble size and the X position somewhat
         lda #0
-        rts
+        sta XOff
+        sta Tile
 
-no_match:
+        jsr next_rand
+        ; move 1 bit for the bubble size into carry
+        lsr a
+        ; the rest of these bits become the X offset
+        sta XOff
+        ; compute the actual tile number
+        rol Tile ; pull in the carry bit
+        asl Tile ; multiply that by two
         clc
-        add16 ExitTableAddr, #.sizeof(ExitTableEntry)
-        dex
-        jne loop
+        lda #77 ; 77 = small bubble, 79 = large bubble
+        adc Tile
+        sta Tile
 
-no_valid_destination:
-        restore_previous_bank
+        ldx CurrentEntityIndex
+        ;                       xoff   yoff   xspeed   yspeed tile               behavior  attribute, animspeed, lifetime
+        spawn_advanced_particle  $40,   $80,    #$00,    #$EF, Tile,   #PARTICLE_STANDARD,        #0,        #0,      #30
+        ; particle spawning expects static base values for the x offset, so we must manually add our computed offset to it here
+        ; conveniently y still contains the index of the particle we just wrote to, so we can reuse it
+        clc
+        lda particle_table + ParticleState::PositionX, y
+        adc XOff
+        sta particle_table + ParticleState::PositionX, y
+        lda particle_table + ParticleState::PositionX+1, y
+        adc #0
+        sta particle_table + ParticleState::PositionX+1, y
 
-        ; we did NOT find a valid teleport. Signal the error
-        lda #$FF
+        ; all done. Fly, little bubble, fly!
         rts
 .endproc
 
@@ -1812,40 +1763,92 @@ teleport_invalid:
         rts
 .endproc
 
-.proc spawn_surface_bubble
-XOff := R0
-Tile := R2
-        ; Here we want to randomize both the bubble size and the X position somewhat
+; === Weird stuff that needs to be fixed below === 
+; TODO: does all of this need to be in fixed? Surely there's a critical bit of it
+; and the rest can go in a banked handler
+
+        .segment "PRGFIXED_8000"
+
+; common map scanning code, used for all exit logic. Returns #0 if a valid
+; destination is found, and performs necessary setup. Returns nonzero otherwise.
+; Note: this needs to bank in the map header, so it lives in fixed memory
+.proc find_teleport
+MapAddr := R0
+TestPosX := R5
+TestTileX := R6
+TestPosY := R7
+TestTileY := R8
+ExitTableAddr := R9
+MetaSpriteIndex := R11
+        ; helpfully our scratch registers are still set from the physics function,
+        ; so we don't need to re-do the lookup here
+
+        ; The target registers are our currently loaded map. Use these to locate the
+        ; map header
+        access_data_bank TargetMapBank
+        lda TargetMapAddr
+        sta MapAddr
+        lda TargetMapAddr+1
+        sta MapAddr+1
+
+        ldy #MapHeader::exit_table_ptr
+        lda (MapAddr), y
+        sta ExitTableAddr
+        iny
+        lda (MapAddr), y
+        sta ExitTableAddr+1
+
+
+        ; loop through all the exits, stopping if we find a match for our current tile position
+        ldy #0
+        lda (ExitTableAddr), y ; length byte
+        inc16 ExitTableAddr
+        jeq no_valid_destination ; sanity check, can't leave a map with no exits defined
+        tax ; x is otherwise unused, so it is our counter
+loop:
+        ldy #ExitTableEntry::tile_x
+        lda (ExitTableAddr), y
+        cmp TestTileX
+        jne no_match
+        ldy #ExitTableEntry::tile_y
+        lda (ExitTableAddr), y
+        cmp TestTileY
+        jne no_match
+
+        ; MATCH FOUND (!!!)
+
+        ; Set these map details as our new target map
+        ldy #ExitTableEntry::target_map
+        lda (ExitTableAddr), y
+        sta TargetMapAddr
+        ldy #ExitTableEntry::target_map+1
+        lda (ExitTableAddr), y
+        sta TargetMapAddr+1
+        ldy #ExitTableEntry::target_bank
+        lda (ExitTableAddr), y
+        sta TargetMapBank
+        ldy #ExitTableEntry::target_entrance
+        lda (ExitTableAddr), y
+        sta TargetMapEntrance
+
+        restore_previous_bank
+
         lda #0
-        sta XOff
-        sta Tile
+        rts
 
-        jsr next_rand
-        ; move 1 bit for the bubble size into carry
-        lsr a
-        ; the rest of these bits become the X offset
-        sta XOff
-        ; compute the actual tile number
-        rol Tile ; pull in the carry bit
-        asl Tile ; multiply that by two
+no_match:
         clc
-        lda #77 ; 77 = small bubble, 79 = large bubble
-        adc Tile
-        sta Tile
+        add16 ExitTableAddr, #.sizeof(ExitTableEntry)
+        dex
+        jne loop
 
-        ldx CurrentEntityIndex
-        ;                       xoff   yoff   xspeed   yspeed tile               behavior  attribute, animspeed, lifetime
-        spawn_advanced_particle  $40,   $80,    #$00,    #$EF, Tile,   #PARTICLE_STANDARD,        #0,        #0,      #30
-        ; particle spawning expects static base values for the x offset, so we must manually add our computed offset to it here
-        ; conveniently y still contains the index of the particle we just wrote to, so we can reuse it
-        clc
-        lda particle_table + ParticleState::PositionX, y
-        adc XOff
-        sta particle_table + ParticleState::PositionX, y
-        lda particle_table + ParticleState::PositionX+1, y
-        adc #0
-        sta particle_table + ParticleState::PositionX+1, y
+no_valid_destination:
+        restore_previous_bank
 
-        ; all done. Fly, little bubble, fly!
+        ; we did NOT find a valid teleport. Signal the error
+        lda #$FF
         rts
 .endproc
+
+
+

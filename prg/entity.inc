@@ -13,6 +13,7 @@
 
 .struct EntityState
         UpdateFunc .word
+        UpdateBank .byte
         PositionX .word ; Most entities will have a position, but if not needed, these can be repurposed
         PositionY .word
         PositionZ .word
@@ -24,7 +25,7 @@
         ShadowSpriteIndex .byte
         CollisionMask .byte ; Touch of death, man!
         CollisionResponse .byte ; for entities that need to know when they are bumped, squished, or set on fire
-        Data .byte 5 ; arbitrary bytes for any purpose really
+        Data .byte 4 ; arbitrary bytes for any purpose really
 .endstruct
 
 MAX_ENTITIES = 12
@@ -49,6 +50,8 @@ COLLISION_GROUP_DAMAGING =  %00000110
         sta entity_table + EntityState::UpdateFunc, y
         lda #>FunctionAddr
         sta entity_table + EntityState::UpdateFunc+1, y
+        lda #<.bank(FunctionAddr)
+        sta entity_table + EntityState::UpdateBank, y
 .endmacro
 
 ; note: assumes Y is already set to CurrentEntityIndex

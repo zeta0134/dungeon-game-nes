@@ -6,15 +6,17 @@ _SPRITES_INC := 1
 .global FAR_update_animations
 .global FAR_draw_metasprites
 .global FAR_despawn_all_metasprites
+.global FAR_find_unused_metasprite
+.global FAR_initialize_animation
 
-.global register_high_priority_metasprite
-.global unregister_high_priority_metasprite
-.global register_low_priority_metasprite
-.global unregister_low_priority_metasprite
-.global register_sorted_entity
-.global unregister_sorted_entity
+.global FAR_register_high_priority_metasprite
+.global FAR_unregister_high_priority_metasprite
+.global FAR_register_low_priority_metasprite
+.global FAR_unregister_low_priority_metasprite
+.global FAR_register_sorted_entity
+.global FAR_unregister_sorted_entity
 
-.global draw_metasprite, metasprite_table, find_unused_metasprite
+.global metasprite_table
 .globalzp OAMTableLength, OAMEntryIndex, OAMTableAddr, MetaspritePosX, MetaspritePosY, ScratchSpritePtr
 .globalzp CameraScrollPixelsX, CameraScrollPixelsY
 
@@ -104,35 +106,10 @@ FLICKER_ACTIVE       = %00000010
         ; and also write it to the metasprite state
         ldx MetaSpriteOffset
         lda #<AnimationHeaderAddr
-        sta ScratchSpritePtr
         sta metasprite_table + MetaSpriteState::AnimationAddr, x
         lda #>AnimationHeaderAddr
-        sta ScratchSpritePtr+1
         sta metasprite_table + MetaSpriteState::AnimationAddr + 1, x
-        ; initialize the FrameCounter to the animation length; it counts
-        ; down and will reset the animation when it reaches zero
-        ldy #AnimationHeader::Length
-        lda (ScratchSpritePtr),y
-        sta metasprite_table + MetaSpriteState::FrameCounter, x
-        ; read the starting frame index to complete initialization
-        ldy #AnimationHeader::FrameTableAddr
-        lda (ScratchSpritePtr),y
-        tax ; stash
-        iny
-        lda (ScratchSpritePtr),y
-        ; a,x now contains the high,low byte of the frame index
-        ; stash this as the AnimationFrameAddr, and also write it to ScratchSpritePtr
-        ldy MetaSpriteOffset
-        sta metasprite_table + MetaSpriteState::AnimationFrameAddr + 1, y
-        sta ScratchSpritePtr+1
-        txa
-        sta metasprite_table + MetaSpriteState::AnimationFrameAddr, y
-        sta ScratchSpritePtr
-        ; use the AnimationFrameAddr to initialize the delay counter
-        ldy #AnimationFrame::DelayFrames
-        lda (ScratchSpritePtr),y
-        ldy MetaSpriteOffset
-        sta metasprite_table + MetaSpriteState::DelayCounter, y
+        far_call FAR_initialize_animation
 .endmacro
 
 ; note: assumes X is already set to MetaSpriteOffset

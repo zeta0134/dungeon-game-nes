@@ -210,7 +210,7 @@ MetaSpriteIndex := R0
 CollisionFlags := R1
 CollisionHeights := R2
         ; allocate the main character sprite
-        jsr find_unused_metasprite
+        far_call FAR_find_unused_metasprite
         lda #$FF
         cmp MetaSpriteIndex
         jeq failed_to_spawn
@@ -224,7 +224,7 @@ CollisionHeights := R2
         ldx MetaSpriteIndex
         metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
         ; allocate a shadow sprite
-        jsr find_unused_metasprite
+        far_call FAR_find_unused_metasprite
         lda #$FF
         cmp MetaSpriteIndex
         jeq failed_to_spawn
@@ -261,7 +261,8 @@ CollisionHeights := R2
 
         ; register ourselves as a sorted entity, for proper back-to-front fake depth
         lda CurrentEntityIndex
-        jsr register_sorted_entity
+        sta R0
+        far_call FAR_register_sorted_entity
 
         ; Perform an initial draw with all of our updated properties
         jsr set_3d_metasprite_pos

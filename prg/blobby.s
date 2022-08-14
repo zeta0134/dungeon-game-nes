@@ -11,10 +11,12 @@
         .include "zeropage.inc"
 
 
-        .segment "ENTITIES_A000" ; will eventually move to an AI page
+        .segment "SPRITES_A000" ; will eventually move to an AI page
         .include "animations/blobby/idle.inc"
         .include "animations/blobby/squish.inc"
         .include "animations/shadow.inc"
+
+        .segment "ENTITIES_A000" ; will eventually move to an AI page
 
 .proc blobby_init
 MetaSpriteIndex := R0
