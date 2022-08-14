@@ -51,8 +51,8 @@ WALKING_ACCEL = 3
 SLIPPERINESS = 3
 
 SWIMMING_SPEED = 12
-SWIMMING_ACCEL = 2
-SWIMMING_DRAG = 2
+SWIMMING_ACCEL = 1
+SWIMMING_DRAG = 3
 
 JUMP_SPEED = 48
 DOUBLE_JUMP_SPEED = 48
@@ -222,6 +222,11 @@ check_left:
         min_speed entity_table + EntityState::SpeedX, #(256-SWIMMING_SPEED)
         jmp check_up
 left_not_held:
+        ; friction doesn't go high enough to feel right when swimming, we want
+        ; EVEN LESS of it, so only apply friction every few frames or so
+        lda GameloopCounter
+        and #%00000011
+        bne check_up
         apply_friction entity_table + EntityState::SpeedX, ::SWIMMING_DRAG
 check_up:
         lda #KEY_UP
@@ -243,6 +248,11 @@ check_down:
         max_speed entity_table + EntityState::SpeedY, #SWIMMING_SPEED
         jmp done
 down_not_held:
+        ; friction doesn't go high enough to feel right when swimming, we want
+        ; EVEN LESS of it, so only apply friction every few frames or so
+        lda GameloopCounter
+        and #%00000011
+        bne done
         apply_friction entity_table + EntityState::SpeedY, ::SWIMMING_DRAG
 done:
         rts
@@ -607,7 +617,7 @@ SensedTileX := R6
 SensedTileY := R8
         lda GroundType
         sta PlayerLastGroundTile
-        beq safe_tile
+        jeq safe_tile
 
 check_exit:
         cmp #(SURFACE_EXIT << 2)
@@ -642,6 +652,12 @@ check_shallow_water:
         jsr play_sfx_noise
         jsr spawn_splash_particles
 
+        ; we've just splashed in water; kill all momentum
+        ldx CurrentEntityIndex
+        lda #0
+        sta entity_table + EntityState::SpeedX, x
+        sta entity_table + EntityState::SpeedY, x
+
         rts
 check_deep_water:
         cmp #(DEEP_WATER << 2)
@@ -653,6 +669,12 @@ check_deep_water:
         st16 R0, sfx_splash
         jsr play_sfx_noise
         jsr spawn_splash_particles
+
+        ; we've just splashed in water; kill all momentum
+        ldx CurrentEntityIndex
+        lda #0
+        sta entity_table + EntityState::SpeedX, x
+        sta entity_table + EntityState::SpeedY, x
 
         rts
 safe_tile:
