@@ -633,7 +633,7 @@ check_exit:
         bne safe_tile
         
         ; valid tile, valid height, WHOOSH
-        jsr handle_teleport
+        jsr handle_teleport_tile
         rts
 check_rising_hazard:
         cmp #(RISING_HAZARD << 2)
@@ -1153,6 +1153,14 @@ done_diving:
         ; If we found a valid destination, trigger the map fade now
         ; TODO: this
 
+        far_call FAR_sense_ground
+        lda PlayerLastGroundTile
+        cmp #(DEEP_WATER << 2)
+        bne surface
+        jsr handle_deep_water_teleport
+        rts
+
+surface:
         ; Otherwise, we must surface and transition back to the swimming state
         ; Make boxgirl's sprite appear
         ldy CurrentEntityIndex
@@ -1604,6 +1612,206 @@ done:
         rts
 .endproc
 
+
+
+
+; === Weird stuff that needs to be fixed below === 
+; TODO: does all of this need to be in fixed? Surely there's a critical bit of it
+; and the rest can go in a banked handler
+
+        .segment "PRGFIXED_E000"
+
+; common map scanning code, used for all exit logic. Returns #0 if a valid
+; destination is found, and performs necessary setup. Returns nonzero otherwise.
+; Note: this needs to bank in the map header, so it lives in fixed memory
+.proc find_teleport
+MapAddr := R0
+TestPosX := R5
+TestTileX := R6
+TestPosY := R7
+TestTileY := R8
+ExitTableAddr := R9
+MetaSpriteIndex := R11
+        ; helpfully our scratch registers are still set from the physics function,
+        ; so we don't need to re-do the lookup here
+
+        ; The target registers are our currently loaded map. Use these to locate the
+        ; map header
+        access_data_bank TargetMapBank
+        lda TargetMapAddr
+        sta MapAddr
+        lda TargetMapAddr+1
+        sta MapAddr+1
+
+        ldy #MapHeader::exit_table_ptr
+        lda (MapAddr), y
+        sta ExitTableAddr
+        iny
+        lda (MapAddr), y
+        sta ExitTableAddr+1
+
+
+        ; loop through all the exits, stopping if we find a match for our current tile position
+        ldy #0
+        lda (ExitTableAddr), y ; length byte
+        inc16 ExitTableAddr
+        jeq no_valid_destination ; sanity check, can't leave a map with no exits defined
+        tax ; x is otherwise unused, so it is our counter
+loop:
+        ldy #ExitTableEntry::tile_x
+        lda (ExitTableAddr), y
+        cmp TestTileX
+        jne no_match
+        ldy #ExitTableEntry::tile_y
+        lda (ExitTableAddr), y
+        cmp TestTileY
+        jne no_match
+
+        ; MATCH FOUND (!!!)
+
+        ; Set these map details as our new target map
+        ldy #ExitTableEntry::target_map
+        lda (ExitTableAddr), y
+        sta TargetMapAddr
+        ldy #ExitTableEntry::target_map+1
+        lda (ExitTableAddr), y
+        sta TargetMapAddr+1
+        ldy #ExitTableEntry::target_bank
+        lda (ExitTableAddr), y
+        sta TargetMapBank
+        ldy #ExitTableEntry::target_entrance
+        lda (ExitTableAddr), y
+        sta TargetMapEntrance
+
+        restore_previous_bank
+
+        lda #0
+        rts
+
+no_match:
+        clc
+        add16 ExitTableAddr, #.sizeof(ExitTableEntry)
+        dex
+        jne loop
+
+no_valid_destination:
+        restore_previous_bank
+
+        ; we did NOT find a valid teleport. Signal the error
+        lda #$FF
+        rts
+.endproc
+
+.proc handle_teleport_tile
+MapAddr := R0
+TestPosX := R5
+TestTileX := R6
+TestPosY := R7
+TestTileY := R8
+ExitTableAddr := R9
+MetaSpriteIndex := R11
+        jsr find_teleport
+        bne teleport_invalid
+
+        ; We found a valid destination! Everything that follows is specific to
+        ; stepping on a magic teleport tile, and handles the appropriate animations
+        ; and map transitions
+
+        ; Set the new game mode to "load a new map"
+        st16 GameMode, blackout_to_new_map
+
+        ; play a nifty "whoosh" sfx
+        st16 R0, sfx_teleport
+        jsr play_sfx_pulse1
+
+        ; switch boxgirl to the teleport state and animation
+        ldx CurrentEntityIndex
+        lda #0
+        sta entity_table + EntityState::SpeedZ, x
+        lda entity_table + EntityState::MetaSpriteIndex, x
+        sta MetaSpriteIndex
+        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_teleport
+        set_update_func CurrentEntityIndex, boxgirl_teleport
+
+        ; cleanup and let the kernel handle the rest
+        rts
+
+teleport_invalid:
+        ; we did NOT find a valid exit. This is fairly unusual and probably
+        ; a bug; play a buzzer SFX to tell the QA tester that this should have
+        ; worked.
+
+        ldx CurrentEntityIndex
+        lda TestTileX
+        cmp PlayerSafeTileX
+        bne buzzer
+        lda TestTileY
+        cmp PlayerSafeTileY
+        bne buzzer
+        lda entity_table + EntityState::GroundLevel, x
+        cmp PlayerSafeTileGroundLevel
+        bne buzzer
+
+        jmp no_buzzer
+buzzer:
+        st16 R0, sfx_error_buzz
+        jsr play_sfx_noise
+
+no_buzzer:
+        ; this is not a valid teleport, so we will instead flag it as a valid safe tile.
+        ; That won't break anything, and the above logic can use it to determine whether to
+        ; play the error sound
+        ldx CurrentEntityIndex
+        lda TestTileX
+        sta PlayerSafeTileX
+        lda TestTileY
+        sta PlayerSafeTileY
+        lda entity_table + EntityState::GroundLevel, x
+        sta PlayerSafeTileGroundLevel
+        
+        ; all done
+        rts
+.endproc
+
+.proc handle_deep_water_teleport
+        jsr find_teleport
+        bne teleport_invalid
+
+        ; Set the new game mode to "load a new map"
+        st16 GameMode, blackout_to_new_map
+
+        ; TODO: play a "bloop bloop" transition sound
+        ; this should be fairly long, to hopefully mask
+        ; a music cue that may need a full measure of wait time
+
+        ; Boxgirl's current animation state is just fine, so we'll reuse
+        ; the nearly empty death state here to idle until the kernel is done
+        ; loading the new map
+        set_update_func CurrentEntityIndex, boxgirl_death_rest_in_peace
+        ; all done
+        rts
+
+teleport_invalid:
+        ; This is fairly unusual! Play an error buzz here
+        st16 R0, sfx_error_buzz
+        jsr play_sfx_noise
+
+        ; Now transition the player back to their normal swimming state with a splash
+        ; Make boxgirl's sprite re-appear
+        ldy CurrentEntityIndex
+        lda entity_table + EntityState::MetaSpriteIndex, y
+        tax
+        metasprite_set_flag FLAG_VISIBILITY, VISIBILITY_DISPLAYED
+
+        lda #0
+        sta PlayerPrimaryDirection
+        st16 R0, sfx_splash
+        jsr play_sfx_noise
+        jsr spawn_splash_particles
+        set_update_func CurrentEntityIndex, boxgirl_swimming
+        rts
+.endproc
+
 .proc spawn_surface_bubble
 XOff := R0
 Tile := R2
@@ -1639,139 +1847,5 @@ Tile := R2
         sta particle_table + ParticleState::PositionX+1, y
 
         ; all done. Fly, little bubble, fly!
-        rts
-.endproc
-
-.proc spawn_underwater_bubble
-
-.endproc
-
-; === Weird stuff that needs to be fixed below === 
-; TODO: does all of this need to be in fixed? Surely there's a critical bit of it
-; and the rest can go in a banked handler
-
-        .segment "PRGFIXED_E000"
-; Note: this needs to bank in the map header, so it lives in fixed memory
-.proc handle_teleport
-MapAddr := R0
-TestPosX := R5
-TestTileX := R6
-TestPosY := R7
-TestTileY := R8
-ExitTableAddr := R9
-MetaSpriteIndex := R11
-        ; helpfully our scratch registers are still set from the physics function,
-        ; so we don't need to re-do the lookup here
-        
-        ; The target registers are our currently loaded map. Use these to locate the
-        ; map header
-        access_data_bank TargetMapBank
-        lda TargetMapAddr
-        sta MapAddr
-        lda TargetMapAddr+1
-        sta MapAddr+1
-
-        ldy #MapHeader::exit_table_ptr
-        lda (MapAddr), y
-        sta ExitTableAddr
-        iny
-        lda (MapAddr), y
-        sta ExitTableAddr+1
-
-
-        ; loop through all the exits, stopping if we find a match for our current tile position
-        ldy #0
-        lda (ExitTableAddr), y ; length byte
-        inc16 ExitTableAddr
-        jeq done ; sanity check, can't leave a map with no exits defined
-        tax ; x is otherwise unused, so it is our counter
-loop:
-        ldy #ExitTableEntry::tile_x
-        lda (ExitTableAddr), y
-        cmp TestTileX
-        jne no_match
-        ldy #ExitTableEntry::tile_y
-        lda (ExitTableAddr), y
-        cmp TestTileY
-        jne no_match
-
-        ; MATCH FOUND (!!!)
-
-        ; Set these map details as our new target map
-        ldy #ExitTableEntry::target_map
-        lda (ExitTableAddr), y
-        sta TargetMapAddr
-        ldy #ExitTableEntry::target_map+1
-        lda (ExitTableAddr), y
-        sta TargetMapAddr+1
-        ldy #ExitTableEntry::target_bank
-        lda (ExitTableAddr), y
-        sta TargetMapBank
-        ldy #ExitTableEntry::target_entrance
-        lda (ExitTableAddr), y
-        sta TargetMapEntrance
-
-        ; Set the new game mode to "load a new map"
-        st16 GameMode, blackout_to_new_map
-
-        ; play a nifty "whoosh" sfx
-        st16 R0, sfx_teleport
-        jsr play_sfx_pulse1
-
-        ; now that we are done with the map, we need to be in our own
-        ; bank to manipulate animations, so do that
-        restore_previous_bank
-
-        ; switch boxgirl to the teleport state and animation
-        ldx CurrentEntityIndex
-        lda #0
-        sta entity_table + EntityState::SpeedZ, x
-        lda entity_table + EntityState::MetaSpriteIndex, x
-        sta MetaSpriteIndex
-        set_metasprite_animation MetaSpriteIndex, boxgirl_anim_teleport
-        set_update_func CurrentEntityIndex, boxgirl_teleport
-
-        ; cleanup and let the kernel handle the rest
-        rts
-
-no_match:
-        clc
-        add16 ExitTableAddr, #.sizeof(ExitTableEntry)
-        dex
-        jne loop
-
-        ; we did NOT find a valid exit. This is fairly unusual and probably
-        ; a bug; play a buzzer SFX to tell the QA tester that this should have
-        ; worked.
-
-        ldx CurrentEntityIndex
-        lda TestTileX
-        cmp PlayerSafeTileX
-        bne buzzer
-        lda TestTileY
-        cmp PlayerSafeTileY
-        bne buzzer
-        lda entity_table + EntityState::GroundLevel, x
-        cmp PlayerSafeTileGroundLevel
-        bne buzzer
-
-        jmp no_buzzer
-buzzer:
-        st16 R0, sfx_error_buzz
-        jsr play_sfx_noise
-
-no_buzzer:
-        ; this is not a valid teleport, so we will instead flag it as a valid safe tile.
-        ; That won't break anything, and the above logic can use it to determine whether to
-        ; play the error sound
-        ldx CurrentEntityIndex
-        lda TestTileX
-        sta PlayerSafeTileX
-        lda TestTileY
-        sta PlayerSafeTileY
-        lda entity_table + EntityState::GroundLevel, x
-        sta PlayerSafeTileGroundLevel
-done:
-        restore_previous_bank
         rts
 .endproc
