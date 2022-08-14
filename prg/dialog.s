@@ -305,7 +305,7 @@ SfxPtr := R0
         sta SfxPtr
         lda chirp_lut_ae+1, x
         sta SfxPtr+1
-        jsr play_sfx_pulse2
+        jsr play_sfx_pulse1
         rts
 .endproc
 
@@ -321,7 +321,7 @@ SfxPtr := R0
         sta SfxPtr
         lda chirp_lut_iy+1, x
         sta SfxPtr+1
-        jsr play_sfx_pulse2
+        jsr play_sfx_pulse1
         rts
 .endproc
 
@@ -337,7 +337,7 @@ SfxPtr := R0
         sta SfxPtr
         lda chirp_lut_ou+1, x
         sta SfxPtr+1
-        jsr play_sfx_pulse2
+        jsr play_sfx_pulse1
         rts
 .endproc
 
