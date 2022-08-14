@@ -1835,6 +1835,16 @@ loop:
         lda (ExitTableAddr), y
         sta TargetMapEntrance
 
+        ; We are definitely about to teleport to this map, so read the entry and queue up the new music
+        ; variation (if any) early
+        lda TargetMapAddr
+        sta ExitTableAddr ; we're done with this ptr, so reuse it here
+        lda TargetMapAddr+1
+        sta ExitTableAddr+1
+        ldy #MapHeader::music_variant
+        lda (ExitTableAddr), y
+        jsr play_variant
+
         restore_previous_bank
 
         lda #0
