@@ -30,12 +30,9 @@ loop:
         dec particle_table + ParticleState::Lifetime, x
         ; all particles begin by applying constant speed
 constant_speed:
-        lda particle_table + ParticleState::SpeedX, x
-        sta ScratchSpeed
-        sadd16x particle_table + ParticleState::PositionX, ScratchSpeed
-        lda particle_table + ParticleState::SpeedY, x
-        sta ScratchSpeed
-        sadd16x particle_table + ParticleState::PositionY, ScratchSpeed
+        sadd16 {particle_table + ParticleState::PositionX, x}, {particle_table + ParticleState::SpeedX, x}
+        sadd16 {particle_table + ParticleState::PositionY, x}, {particle_table + ParticleState::SpeedY, x}
+
         ; now particles might have special behavior
         lda particle_table + ParticleState::Behavior, x
         cmp #PARTICLE_GRAVITY

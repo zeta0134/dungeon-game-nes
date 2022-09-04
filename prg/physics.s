@@ -36,11 +36,11 @@ VerticalOffset := R3
         beq done_with_x
         bmi move_left
 move_right:
-        sadd16x entity_table + EntityState::PositionX, R0
+        sadd16 {entity_table + EntityState::PositionX, x}, R0
         near_call FAR_collide_right_with_map
         jmp done_with_x
 move_left:
-        sadd16x entity_table + EntityState::PositionX, R0
+        sadd16 {entity_table + EntityState::PositionX, x}, R0
         near_call FAR_collide_left_with_map
 done_with_x:
         ldx CurrentEntityIndex
@@ -53,11 +53,11 @@ done_with_x:
         beq done
         bmi move_up
 move_down:
-        sadd16x entity_table + EntityState::PositionY, R0
+        sadd16 {entity_table + EntityState::PositionY, x}, R0
         near_call FAR_collide_down_with_map
         jmp done
 move_up:
-        sadd16x entity_table + EntityState::PositionY, R0
+        sadd16 {entity_table + EntityState::PositionY, x}, R0
         near_call FAR_collide_up_with_map
         jmp done
 
@@ -69,9 +69,7 @@ done:
 .proc FAR_standard_entity_vertical_acceleration
         ldx CurrentEntityIndex
         ; first apply the entity's current speed to their height coordinate
-        lda entity_table + EntityState::SpeedZ, x
-        sta R0
-        sadd16x entity_table + EntityState::PositionZ, R0
+        sadd16 {entity_table + EntityState::PositionZ, x}, {entity_table + EntityState::SpeedZ, x}
         ; if their height coordinate is now negative, cap it at 0
         lda entity_table + EntityState::PositionZ + 1, x
         bpl height_not_negative
@@ -94,9 +92,7 @@ height_not_negative:
         ; skips all the other fancy junk.
         ldx CurrentEntityIndex
         ; first apply the entity's current speed to their height coordinate
-        lda entity_table + EntityState::SpeedZ, x
-        sta R0
-        sadd16x entity_table + EntityState::PositionZ, R0
+        sadd16 {entity_table + EntityState::PositionZ, x}, {entity_table + EntityState::SpeedZ, x}
         ; if their height coordinate is now negative, cap it at 0
         lda entity_table + EntityState::PositionZ + 1, x
         bpl height_not_negative

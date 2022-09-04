@@ -1392,9 +1392,9 @@ update_ourselves:
 .proc boxgirl_teleport
         ; freeze position, and rise into the air
         ldx CurrentEntityIndex
-        lda entity_table + EntityState::SpeedZ, x
-        sta R0
-        sadd16x entity_table + EntityState::PositionZ, R0
+
+        sadd16 {entity_table + EntityState::PositionZ, x}, {entity_table + EntityState::SpeedZ, x}
+
         lda entity_table + EntityState::SpeedZ, x
         adc #10
         bmi no_store
@@ -1444,9 +1444,9 @@ no_store:
 .proc boxgirl_rising_hazard_react
         ; freeze horizontal position, and rise into the air at a constant speed
         ldx CurrentEntityIndex
-        lda #$7F
-        sta R0
-        sadd16x entity_table + EntityState::PositionZ, R0
+
+        sadd16 {entity_table + EntityState::PositionZ, x}, #$7F
+
         ; set our palette color to red (for ouchies)
         ldy entity_table + EntityState::MetaSpriteIndex, x
         lda metasprite_table + MetaSpriteState::PaletteOffset, y
