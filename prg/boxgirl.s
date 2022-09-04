@@ -2102,8 +2102,7 @@ loop:
         rts
 
 no_match:
-        clc
-        add16 ExitTableAddr, #.sizeof(ExitTableEntry)
+        add16b ExitTableAddr, #.sizeof(ExitTableEntry)
         dex
         jne loop
 

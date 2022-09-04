@@ -37,13 +37,43 @@ no_carry:
 .endmacro
 
 ; unsigned
-.macro add16 addr, value
+.macro adc16b addr, value
         lda value
         adc addr
         sta addr
         lda #0
-        adc addr+1
-        sta addr+1
+        adc 1+addr
+        sta 1+addr
+.endmacro
+
+; unsigned, explicitly clears carry
+.macro add16b addr, value
+        clc
+        adc16b addr, value
+.endmacro
+
+; unsigned word
+.macro adc16w addr, value
+.if (.match (.left (1, {value}), #))
+        lda #>(.right (.tcount ({value})-1, {value}))
+        adc addr
+        sta addr
+        lda #<(.right (.tcount ({value})-1, {value}))
+        adc 1+addr
+        sta 1+addr
+.else
+        lda value
+        adc addr
+        sta addr
+        lda 1+value
+        adc 1+addr
+        sta 1+addr   
+.endmacro
+
+; unsigned word, explicitly clears carry
+.macro add16w addr, value
+        clc
+        adc16w addr, value
 .endmacro
 
 ; signed

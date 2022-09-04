@@ -175,9 +175,8 @@ no_hidden_surface:
         dec AdjustedGround
         ; if we dropped below floor_height = 0, there are no more valid tiles to consider
         bmi invalid_move 
-        ; otherwise, move to the next map row
-        clc
-        add16 TileAddr, MapWidth
+        ; otherwise, move to the next map row        
+        add16b TileAddr, MapWidth
         jmp loop
 
 invalid_move:

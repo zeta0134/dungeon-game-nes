@@ -118,8 +118,7 @@ done_with_nametables:
         ; Determine the Y coordinate of the bottom of the playfield, based on the Y scroll position we saved earlier
         lda #0
         sta ScratchWord+1
-        clc
-        add16 ScratchWord, PlayfieldHeight
+        add16b ScratchWord, PlayfieldHeight
         ; If this would exceed the scroll seam...
         cmp16 #SCROLL_SEAM, ScratchWord
         bcc hud_split

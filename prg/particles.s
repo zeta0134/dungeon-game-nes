@@ -122,8 +122,7 @@ loop:
         ; the Y coordinate must additionally be offset by 8px to account for the
         ; top segment of the screen, which is blanked
         ; TODO: If we make this user configurable, we should use that value here
-        clc
-        add16 ScratchY, #8
+        add16b ScratchY, #8
 
         ; if the result is actually onscreen (high byte is 0)
         lda ScratchX+1
