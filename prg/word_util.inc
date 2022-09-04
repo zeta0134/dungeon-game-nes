@@ -122,29 +122,6 @@ positive:
 .endscope
 .endmacro
 
-; same as above, but the value to add is already in a
-; (useful in situations where A came from somewhere unusual)
-.macro sadd16a addr
-.scope
-        ; preserve a
-        pha
-        ; handle the low byte normally
-        clc
-        adc addr
-        sta addr
-        ; sign-extend the high bit into the high byte
-        pla
-        and #$80 ;extract the high bit
-        beq positive
-        lda #$FF ; the high bit was high, so set high byte to 0xFF, then add that plus carry 
-        ; note: unless a signed overflow occurred, carry will usually be *set* in this case
-positive:
-        ; the high bit was low; a contains #$00, so add that plus carry
-        adc addr+1
-        sta addr+1
-.endscope
-.endmacro
-
 .macro sub16 addr, value
         lda addr
         sbc value
