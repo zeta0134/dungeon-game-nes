@@ -49,7 +49,7 @@ no_carry:
 ; unsigned, explicitly clears carry
 .macro add16b addr, value
         clc
-        adc16b addr, value
+        adc16b {addr}, {value}
 .endmacro
 
 ; unsigned word
@@ -73,7 +73,7 @@ no_carry:
 ; unsigned word, explicitly clears carry
 .macro add16w addr, value
         clc
-        adc16w addr, value
+        adc16w {addr}, {value}
 .endmacro
 
 ; quicker variant using a branch
@@ -98,7 +98,7 @@ skip:
 ; quicker variant with explicit carry clear
 .macro fadd16b addr, value
         clc
-        fadc16b addr, value
+        fadc16b {addr}, {value}
 .endmacro
 
 ; signed

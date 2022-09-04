@@ -1445,7 +1445,7 @@ no_store:
         ; freeze horizontal position, and rise into the air at a constant speed
         ldx CurrentEntityIndex
 
-        sadd16 {entity_table + EntityState::PositionZ, x}, #$7F
+        fadd16b {entity_table + EntityState::PositionZ, x}, #$7F
 
         ; set our palette color to red (for ouchies)
         ldy entity_table + EntityState::MetaSpriteIndex, x
