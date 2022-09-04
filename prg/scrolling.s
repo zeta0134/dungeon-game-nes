@@ -300,7 +300,7 @@ done:
         ; Advance 13 tiles into the map data, based on the loaded width
         ldx #12
 height_loop:
-        add16b MapLowerLeftRow, MapWidth
+        fadd16b MapLowerLeftRow, MapWidth
         dex
         bne height_loop
 
@@ -311,7 +311,7 @@ height_loop:
 
         ; off the map to the right by +1, -1  
         st16 MapUpperRightColumn, MapData
-        add16b MapUpperRightColumn, #17
+        fadd16b MapUpperRightColumn, #17
 
         ; Initialize the hardware scroll registers
         st16 HWScrollLowerLeftRow, $2340
@@ -349,10 +349,10 @@ height_loop:
         sec
         sub16 AttributeLowerLeftRow, #1
         .repeat 7
-        add16b AttributeLowerLeftRow, AttributeWidth
+        fadd16b AttributeLowerLeftRow, AttributeWidth
         .endrepeat
         st16 AttributeUpperRightColumn, AttributeData
-        add16b AttributeUpperRightColumn, #9
+        fadd16b AttributeUpperRightColumn, #9
 
         st16 HWAttributeUpperLeftRow, $27F7
         st16 HWAttributeUpperLeftColumn, $27C7
@@ -381,7 +381,7 @@ RowCounter := R7
 ColumnCounter := R8
         st16 UpperRowPtr, MapData
         st16 LowerRowPtr, MapData
-        add16b LowerRowPtr, MapWidth
+        fadd16b LowerRowPtr, MapWidth
         st16 AttributeTablePtr, AttributeData
         lda MapHeight
         sta RowCounter
@@ -437,10 +437,10 @@ column_loop:
         cpy MapWidth
         bne column_loop
 done_with_column:
-        add16b UpperRowPtr, MapWidth
-        add16b LowerRowPtr, MapWidth
-        add16b UpperRowPtr, MapWidth
-        add16b LowerRowPtr, MapWidth
+        fadd16b UpperRowPtr, MapWidth
+        fadd16b LowerRowPtr, MapWidth
+        fadd16b UpperRowPtr, MapWidth
+        fadd16b LowerRowPtr, MapWidth
         dec RowCounter
         dec RowCounter
         jne row_loop
@@ -535,7 +535,7 @@ row_loop:
         sta VRAM_TABLE_START,x
         inx
 
-        add16b MapAddr, MapWidth
+        fadd16b MapAddr, MapWidth
         dec TilesRemaining
         bne row_loop
         stx VRAM_TABLE_INDEX
@@ -558,7 +558,7 @@ row_loop:
         sta VRAM_TABLE_START,x
         inx
 
-        add16b MapAddr, MapWidth
+        fadd16b MapAddr, MapWidth
         dec TilesRemaining
         bne row_loop
         stx VRAM_TABLE_INDEX
@@ -618,9 +618,9 @@ row_loop:
         stx VRAM_TABLE_INDEX
         inc VRAM_TABLE_ENTRIES
         ; increment our address by the map width
-        add16b AttrAddr, AttributeWidth
+        fadd16b AttrAddr, AttributeWidth
         ; ... and our target by one HW attribute row
-        add16b DestAddr, #8
+        fadd16b DestAddr, #8
         dec BytesRemaining
         bne row_loop
 skip:
@@ -964,7 +964,7 @@ tile_height_loop:
         mov16 R0, MapUpperLeftRow
         split_row_across_nametables HWScrollUpperLeftRow, draw_lower_half_row
         incRow HWScrollUpperLeftRow
-        add16b MapUpperLeftRow, MapWidth
+        fadd16b MapUpperLeftRow, MapWidth
         mov16 R0, MapUpperLeftRow
         split_row_across_nametables HWScrollUpperLeftRow, draw_upper_half_row
         incRow HWScrollUpperLeftRow
@@ -992,7 +992,7 @@ tile_undo_loop:
         sta RowCounter
 attr_height_loop:
         incAttrRow HWAttributeUpperLeftRow
-        add16b AttributeUpperLeftRow, AttributeWidth
+        fadd16b AttributeUpperLeftRow, AttributeWidth
         mov16 R0, AttributeUpperLeftRow
         split_attribute_row_across_nametables HWAttributeUpperLeftRow, draw_attribute_row
 
@@ -1027,10 +1027,10 @@ StartingTileY := R1
         ; For each row we want to skip, add the MapWidth to relevant variables
 row_loop:
         ; on every row, update the Map pointer
-        add16b MapUpperLeftRow, MapWidth
-        add16b MapUpperLeftColumn, MapWidth
-        add16b MapUpperRightColumn, MapWidth
-        add16b MapLowerLeftRow, MapWidth
+        fadd16b MapUpperLeftRow, MapWidth
+        fadd16b MapUpperLeftColumn, MapWidth
+        fadd16b MapUpperRightColumn, MapWidth
+        fadd16b MapLowerLeftRow, MapWidth
         ; do that twice for the camera scroll, since it measures 8x8 hardware tiles, not
         ; 16x16 map tiles
         inc CameraYTileCurrent
@@ -1038,14 +1038,14 @@ row_loop:
         dec StartingTileY
         beq done_with_rows
         ; on every other row, also update the Attribute pointer
-        add16b MapUpperLeftRow, MapWidth
-        add16b MapUpperLeftColumn, MapWidth
-        add16b MapUpperRightColumn, MapWidth
-        add16b MapLowerLeftRow, MapWidth
-        add16b AttributeUpperLeftRow, AttributeWidth
-        add16b AttributeUpperLeftColumn, AttributeWidth
-        add16b AttributeUpperRightColumn, AttributeWidth
-        add16b AttributeLowerLeftRow, AttributeWidth
+        fadd16b MapUpperLeftRow, MapWidth
+        fadd16b MapUpperLeftColumn, MapWidth
+        fadd16b MapUpperRightColumn, MapWidth
+        fadd16b MapLowerLeftRow, MapWidth
+        fadd16b AttributeUpperLeftRow, AttributeWidth
+        fadd16b AttributeUpperLeftColumn, AttributeWidth
+        fadd16b AttributeUpperRightColumn, AttributeWidth
+        fadd16b AttributeLowerLeftRow, AttributeWidth
         inc CameraYTileCurrent
         inc CameraYTileCurrent
         dec StartingTileY
@@ -1053,10 +1053,10 @@ row_loop:
 done_with_rows:
         ; For the X coordinate we can just add it directly to both pointers. First
         ; the map, using the original value:
-        add16b MapUpperLeftRow, StartingTileX
-        add16b MapUpperLeftColumn, StartingTileX
-        add16b MapUpperRightColumn, StartingTileX
-        add16b MapLowerLeftRow, StartingTileX
+        fadd16b MapUpperLeftRow, StartingTileX
+        fadd16b MapUpperLeftColumn, StartingTileX
+        fadd16b MapUpperRightColumn, StartingTileX
+        fadd16b MapLowerLeftRow, StartingTileX
         ; The same adjustment for the camera X
         lda CameraXTileCurrent
         clc
@@ -1067,10 +1067,10 @@ done_with_rows:
         sta PpuXOffset
         ; Now the attribute table, but using half of (width + 1)
         lsr StartingTileX
-        add16b AttributeUpperLeftRow, StartingTileX
-        add16b AttributeUpperLeftColumn, StartingTileX
-        add16b AttributeUpperRightColumn, StartingTileX        
-        add16b AttributeLowerLeftRow, StartingTileX
+        fadd16b AttributeUpperLeftRow, StartingTileX
+        fadd16b AttributeUpperLeftColumn, StartingTileX
+        fadd16b AttributeUpperRightColumn, StartingTileX        
+        fadd16b AttributeLowerLeftRow, StartingTileX
 
         ; for lerping purposes
         lda CameraXTileCurrent
@@ -1104,8 +1104,8 @@ lower_edge_upper_row:
         ; Shift columns down *twice* to advance a complete metatile
         jsr shift_hwcolumns_down
         jsr shift_hwcolumns_down
-        add16b MapUpperRightColumn, MapWidth
-        add16b MapUpperLeftColumn, MapWidth
+        fadd16b MapUpperRightColumn, MapWidth
+        fadd16b MapUpperLeftColumn, MapWidth
         ; Increment MapYOffset with wrap around
         inc MapYOffset
         lda #14
@@ -1117,8 +1117,8 @@ lower_edge_upper_row:
         jmp done
 lower_edge_lower_row:
         split_row_across_nametables HWScrollLowerLeftRow, draw_lower_half_row
-        add16b MapUpperLeftRow, MapWidth
-        add16b MapLowerLeftRow, MapWidth
+        fadd16b MapUpperLeftRow, MapWidth
+        fadd16b MapLowerLeftRow, MapWidth
         ; Finish shifting hwrows down to the next metatile
         ; (We need to leave the columns alone until we cross a metatile boundary)
         jsr shift_hwrows_down
@@ -1131,10 +1131,10 @@ done:
         mov16 R0, AttributeLowerLeftRow
         split_attribute_row_across_nametables HWAttributeLowerLeftRow, draw_attribute_row
         ; move the attribute indices down
-        add16b AttributeUpperRightColumn, AttributeWidth
-        add16b AttributeUpperLeftColumn, AttributeWidth
-        add16b AttributeUpperLeftRow, AttributeWidth
-        add16b AttributeLowerLeftRow, AttributeWidth
+        fadd16b AttributeUpperRightColumn, AttributeWidth
+        fadd16b AttributeUpperLeftColumn, AttributeWidth
+        fadd16b AttributeUpperLeftRow, AttributeWidth
+        fadd16b AttributeLowerLeftRow, AttributeWidth
         ; Increment AttributeYOffset with wraparound
         inc AttributeYOffset
         lda #7

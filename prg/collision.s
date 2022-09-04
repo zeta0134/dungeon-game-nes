@@ -176,7 +176,7 @@ no_hidden_surface:
         ; if we dropped below floor_height = 0, there are no more valid tiles to consider
         bmi invalid_move 
         ; otherwise, move to the next map row        
-        add16b TileAddr, MapWidth
+        fadd16b TileAddr, MapWidth
         jmp loop
 
 invalid_move:

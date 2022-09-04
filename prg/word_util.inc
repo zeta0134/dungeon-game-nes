@@ -38,12 +38,12 @@ no_carry:
 
 ; unsigned
 .macro adc16b addr, value
-        lda value
-        adc addr
-        sta addr
-        lda #0
-        adc 1+addr
-        sta 1+addr
+        lda value ; 2
+        adc addr ; 3
+        sta addr ; 3
+        lda #0 ; 2
+        adc 1+addr ; 3
+        sta 1+addr ; 3
 .endmacro
 
 ; unsigned, explicitly clears carry
@@ -74,6 +74,31 @@ no_carry:
 .macro add16w addr, value
         clc
         adc16w addr, value
+.endmacro
+
+; quicker variant using a branch
+; note: carry output will always respect low byte, which
+; may be incorrect. Unsuitable for chaining!
+.macro fadc16b addr, value
+.scope
+        lda value ; 2
+        adc addr  ; 3z
+        sta addr  ; 3z
+        bcc skip  ; 3 (taken) 2 (not taken)
+        inc 1+addr ; 5z
+skip:
+; with zp addr and imm value:
+; original: 16
+; new total (taken): 11
+; new total (not taken): 15
+; saves: 1 cycle worst case, 5 cycles best case
+.endscope
+.endmacro
+
+; quicker variant with explicit carry clear
+.macro fadd16b addr, value
+        clc
+        fadc16b addr, value
 .endmacro
 
 ; signed
