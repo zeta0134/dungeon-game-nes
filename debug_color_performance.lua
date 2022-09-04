@@ -3,13 +3,13 @@ last_color_emphasis = 0
 last_cycle_count = 0
 
 color_names = {
-  [0]="none",
-  [1]="red",
-  [2]="green",
-  [3]="yellow",
-  [4]="blue",
-  [5]="magenta",
-  [6]="cyan",
+  [0]="idle (no color)",
+  [1]="scroll (red)",
+  [2]="particles (green)",
+  [3]="entities (yellow)",
+  [4]="animations (blue)",
+  [5]="raster FX (magenta)",
+  [6]="metasprites (cyan)",
   [7]="dark"
 }
 
@@ -26,7 +26,10 @@ end
 y_offset = 0
 
 function draw_parameter(label, value)
-  parameter_string = string.format("%s: %s", label, value)
+  parameter_string = string.format("%s:", label)
+  emu.drawString(10, y_offset, parameter_string, 0x00FFFFFF, 0x40200020)
+  y_offset = y_offset + 9
+  parameter_string = string.format("  %s", value)
   emu.drawString(10, y_offset, parameter_string, 0x00FFFFFF, 0x40200020)
   y_offset = y_offset + 9
 end
