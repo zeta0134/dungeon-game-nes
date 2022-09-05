@@ -104,21 +104,25 @@ skip:
 ; signed
 .macro sadd16 addr, value
 .scope
-        ; handle the low byte normally
-        clc
-        lda value
-        adc addr
-        sta addr
-        ; sign-extend the high bit into the high byte
-        lda value
-        and #$80 ;extract the high bit
-        beq positive
-        lda #$FF ; the high bit was high, so set high byte to 0xFF, then add that plus carry 
-        ; note: unless a signed overflow occurred, carry will usually be *set* in this case
+        clc          ; 2
+        lda value    ; 2i
+        bpl positive ; 3t, 2nt
+negative:
+        adc addr     ; 3z
+        sta addr     ; 3z
+        bcs done     ; 3t, 2nt
+        dec 1+addr   ; 5z
+        jmp done     ; 3
 positive:
-        ; the high bit was low; a contains #$00, so add that plus carry
-        adc 1+addr
-        sta 1+addr
+        adc addr     ; 3z
+        sta addr     ; 3z
+        bcc done     ; 3t, 2nt
+        inc 1+addr   ; 5z
+done:
+; total (positive, no overflow) : 16
+; total (positive, overflow)    : 20
+; total (negative, no overflow) : 15
+; total (negative, overflow)    : 22
 .endscope
 .endmacro
 
