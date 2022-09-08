@@ -272,6 +272,9 @@ done:
 .endproc
 
 .proc refresh_palettes_lag_frame
+        lda HudPaletteActive
+        beq done
+        
         set_ppuaddr #$3F00
         ; quickly copy the BG palette *directly* into PPU memory, bypassing
         ; the vram buffer entirely. This is meant to be called from NMI during
@@ -294,5 +297,6 @@ bg_loop:
         cpx #16
         bne bg_loop
 
+done:
         rts        
 .endproc
