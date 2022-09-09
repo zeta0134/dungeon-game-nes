@@ -1,9 +1,11 @@
         .setcpu "6502"
+        .include "far_call.inc"
         .include "input.inc"
         .include "kernel.inc"
         .include "nes.inc"
         .include "palette.inc"
         .include "ppu.inc"
+        .include "scrolling.inc"
         .include "subscreen.inc"
         .include "word_util.inc"
         .include "vram_buffer.inc"
@@ -163,11 +165,53 @@ Brightness := R2
 
 done_with_fadeout:
         st16 SubScreenState, subscreen_terminal
-        st16 GameMode, return_from_subscreen
         rts
 .endproc
 
 .proc subscreen_terminal
-        ; Do nothing! Wait for the kernel to clean things up.
+        ; we are about to restore a large chunk of the nametable, so disable all interrupts and rendering,
+        ; but not NMI, similar to a map load
+        sei
+
+         ; disable rendering
+        lda #$00
+        sta PPUMASK
+
+        ; soft-disable NMI (sound engine updates only)
+        lda #1
+        sta NmiSoftDisable
+        ; Reset PPUCTRL, but leave NMI enabled
+        lda #(VBLANK_NMI)
+        sta PPUCTRL
+
+        ; TODO: restore the nametable here! (function not yet written)
+        far_call FAR_render_initial_viewport
+
+
+        ; reset PPUADDR to top-left
+        set_ppuaddr #$2000
+
+        lda #$00
+        sta GameloopCounter
+        sta LastNmi
+
+        ; re-enable graphics
+        lda #$1E
+        sta PPUMASK
+        lda #(VBLANK_NMI | BG_0000 | OBJ_1000 | OBJ_8X16)
+        sta PPUCTRL
+
+        ; un-soft-disable NMI
+        lda #0
+        sta NmiSoftDisable
+
+        ; immediately wait for one vblank, for sync purposes
+        jsr wait_for_next_vblank
+
+        ; now we may safely enable interrupts
+        cli
+
+        ; Now signal to the kernel that it is safe to return to the main game mode
+        st16 GameMode, return_from_subscreen
         rts
 .endproc

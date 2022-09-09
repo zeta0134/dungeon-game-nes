@@ -597,7 +597,6 @@ done:
         lda #1
         sta HudPaletteActive
 
-        ; TODO: restore the playfield graphics!
         lda #0
         sta FadeTimer
         st16 GameMode, _blackin_load_new_map

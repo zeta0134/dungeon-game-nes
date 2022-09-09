@@ -949,13 +949,49 @@ last_segment:
 ; Copies the first entire screen worth of map data into the PPU
 ; Conditions:
 ;   This routine assumes rendering is already disabled.
-;   This routine depends on initialization from init_map, and will misbehave
-;     if called with a non-aligned HW scroll
+;   (This routine now works for any map position.)
 ; Notes:
 ;   This routine will flush the VRAM buffer to perform drawing.
 ;   Anything queued up for PPU writing will be written immediately.
 
 .proc FAR_render_initial_viewport
+        lda #%00100000
+        bit HWScrollUpperLeftRow
+        bne odd_row
+even_row:
+        ; disabled, just to make sure this logic is working
+        jsr _render_initial_viewport_even
+        rts
+odd_row:
+        jsr _render_initial_viewport_odd
+        rts
+.endproc
+
+.proc _render_initial_viewport_even
+RowCounter := R5
+        lda #13
+        sta RowCounter
+        ; basically, start from the top row and render every row, moving down the screen
+tile_height_loop:
+        mov16 R0, MapUpperLeftRow
+        split_row_across_nametables HWScrollUpperLeftRow, draw_upper_half_row
+        incRow HWScrollUpperLeftRow
+        mov16 R0, MapUpperLeftRow
+        split_row_across_nametables HWScrollUpperLeftRow, draw_lower_half_row
+        incRow HWScrollUpperLeftRow
+        fadd16b MapUpperLeftRow, MapWidth
+
+        ; flush the VRAM buffer each row, otherwise we'll smash the stack
+        jsr vram_slowboat
+
+        dec RowCounter
+        jne tile_height_loop
+
+        jmp _render_initial_viewport_converge
+        ; tail call
+.endproc
+
+.proc _render_initial_viewport_odd
 RowCounter := R5
         lda #13
         sta RowCounter
@@ -975,6 +1011,12 @@ tile_height_loop:
         dec RowCounter
         jne tile_height_loop
 
+        jmp _render_initial_viewport_converge
+        ; tail call
+.endproc
+
+.proc _render_initial_viewport_converge
+RowCounter := R5
         ; now, reverse the changes we made to the scroll registers, to set up for runtime
         lda #13
         sta RowCounter
