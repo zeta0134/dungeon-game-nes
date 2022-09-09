@@ -124,12 +124,11 @@ Brightness := R2
 
         inc FadeCounter
 
-        lda #20
+        lda #10
         cmp FadeCounter
         beq done_with_fadein
 
         lda FadeCounter
-        lsr
         lsr
         sta Brightness
         st16 BasePaletteAddr, subscreen_palette
@@ -150,7 +149,7 @@ done_with_fadein:
         lda #KEY_START
         bit ButtonsDown
         beq subscreen_still_active
-        lda #20
+        lda #10
         sta FadeCounter
         st16 SubScreenState, subscreen_fade_out
         rts
@@ -167,7 +166,6 @@ Brightness := R2
         beq done_with_fadeout
 
         lda FadeCounter
-        lsr
         lsr
         sta Brightness
         st16 BasePaletteAddr, subscreen_palette

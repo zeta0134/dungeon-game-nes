@@ -526,7 +526,7 @@ continue:
 
 ; setup a fade to black
 .proc subscreen_init
-        lda #20
+        lda #10
         sta FadeTimer
         st16 GameMode, _blackout_to_subscreen
         rts
@@ -537,7 +537,6 @@ continue:
         dec FadeTimer
         ; use that to determine the current brightness
         lda FadeTimer
-        lsr
         lsr
         jsr set_brightness
         ; now, execute a paused standard game loop
@@ -599,6 +598,24 @@ done:
 
         lda #0
         sta FadeTimer
-        st16 GameMode, _blackin_load_new_map
+        st16 GameMode, _blackin_from_subscreen
+        rts
+.endproc
+
+.proc _blackin_from_subscreen
+        ; increment the fade timer
+        inc FadeTimer
+        ; use that to determine the current brightness
+        lda FadeTimer
+        lsr
+        jsr set_brightness
+        ; now, execute a standard game loop
+        jsr standard_gameplay_loop
+        ; finally, if our FadeTimer has capped out, switch to standard gameplay. We're done!
+        lda FadeTimer
+        cmp #8
+        bne done
+        st16 GameMode, standard_gameplay_loop
+done:
         rts
 .endproc
