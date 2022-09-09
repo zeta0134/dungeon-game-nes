@@ -12,3 +12,4 @@
 .global blackout_to_new_map
 .global dialog_init
 .global dialog_closing
+.global subscreen_init

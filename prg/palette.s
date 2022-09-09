@@ -300,3 +300,48 @@ bg_loop:
 done:
         rts        
 .endproc
+
+.proc _queue_arbitrary_palette
+BasePaletteAddr := R0
+Brightness := R2
+PalAddr := R3
+PalIndex := R5
+        ; First, pick the appropriate brightness LUT based on the supplied parameter
+        lda Brightness
+        asl
+        tax
+        lda brightness_table, x
+        sta PalAddr
+        lda brightness_table+1, x
+        sta PalAddr+1
+
+        lda #0
+        sta PalIndex
+loop:
+        ldy PalIndex             ; From the original buffer
+        lda (BasePaletteAddr), y ; Grab a palette color
+        tay
+        lda (PalAddr), y       ; And use it to index the brightness table we picked
+        ldx VRAM_TABLE_INDEX
+        sta VRAM_TABLE_START,x
+        inc VRAM_TABLE_INDEX
+        inc PalIndex
+        lda #16
+        cmp PalIndex
+        bne loop
+        inc VRAM_TABLE_ENTRIES
+
+        rts
+.endproc
+
+.proc queue_arbitrary_bg_palette
+        ; Now use this table to copy in the palette, from the supplied address
+        write_vram_header_imm $3F00, #16, VRAM_INC_1
+        jmp _queue_arbitrary_palette ; tail call
+.endproc
+
+.proc queue_arbitrary_obj_palette
+        ; Now use this table to copy in the palette, from the supplied address
+        write_vram_header_imm $3F10, #16, VRAM_INC_1
+        jmp _queue_arbitrary_palette ; tail call
+.endproc

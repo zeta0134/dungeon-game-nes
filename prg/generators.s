@@ -739,3 +739,24 @@ cleanup:
         ; ... and we're done?
         rts
 .endproc
+
+.proc FAR_generate_subscreen
+IrqGenerationIndex := R0
+        ; Generate a single large segment, starting at scroll position 0,0, and spanning the entire screen.
+        ; This will be used for most non-gameplay screens, like the inventory, map and title screens.
+        ldx IrqGenerationIndex
+        lda #(BG_ON)
+        sta irq_table_ppumask, x
+        lda #$FF
+        sta irq_table_scanlines, x
+        lda #0
+        sta irq_table_scroll_x, x
+        lda #0
+        sta irq_table_scroll_y, x
+        lda #0
+        sta irq_table_nametable_high, x
+        lda #HUD_BANK
+        sta irq_table_chr0_bank, x
+        inc IrqGenerationIndex 
+        rts
+.endproc

@@ -6,6 +6,7 @@
 .global FAR_generate_dialog_hud
 .global FAR_generate_blank_hud
 .global FAR_generate_underwater_distortion
+.global FAR_generate_subscreen
 
 .global CurrentDistortion
 

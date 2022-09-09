@@ -21,6 +21,7 @@
         .include "scrolling.inc"
         .include "sprites.inc"
         .include "statusbar.inc"
+        .include "subscreen.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
 
@@ -304,8 +305,13 @@ time_waste_loop:
         bne still_in_hitstun
         st16 GameMode, standard_gameplay_loop
 still_in_hitstun:
-        ; Update absolutely nothing! That's the whole point.
+        jsr _hitstun_gameplay_loop
 
+        rts
+.endproc
+
+.proc _hitstun_gameplay_loop
+        ; Update absolutely nothing! That's the whole point.
         far_call FAR_update_camera
         far_call FAR_scroll_camera
         far_call FAR_draw_metasprites
@@ -515,5 +521,74 @@ no_debug:
         st16 GameMode, standard_gameplay_loop
         jsr init_statusbar
 continue:
+        rts
+.endproc
+
+; setup a fade to black
+.proc subscreen_init
+        lda #20
+        sta FadeTimer
+        st16 GameMode, _blackout_to_subscreen
+        rts
+.endproc
+
+.proc _blackout_to_subscreen
+        ; decrement the fade timer
+        dec FadeTimer
+        ; use that to determine the current brightness
+        lda FadeTimer
+        lsr
+        lsr
+        jsr set_brightness
+        ; now, execute a paused standard game loop
+        jsr _hitstun_gameplay_loop
+        ; finally, if our FadeTimer has reached zero, switch to the subscreen
+        lda FadeTimer
+        bne done
+        st16 GameMode, _load_subscreen
+done:
+        rts
+.endproc
+
+.proc _load_subscreen
+        ; We are about to clobber the HUD state, so write a blank palette
+        jsr write_blank_hud_palette
+        ; And reset the HUD to its initial state. (This won't take effect until
+        ; we exit the subscreen later, but this will cause the HUD to re-initialize
+        ; itself and restore all of its graphics tiles and palette.)
+        jsr init_statusbar
+
+        ; The subscreen does not use the HUD, so stop updating the palette for it
+        lda #0
+        sta HudPaletteActive
+
+        ; Initialize the subscreen state machine
+        far_call FAR_init_subscreen
+        
+        st16 GameMode, _subscreen_active
+
+        rts
+.endproc
+
+.proc _subscreen_active
+        far_call FAR_update_subscreen
+
+        ; starting IRQ index for the subscreen
+        lda inactive_irq_index
+        sta R0
+
+        ; CHR bank to use for BG graphics
+        debug_color TINT_R | TINT_B
+        far_call FAR_generate_subscreen
+        debug_color 0 ; disable debug colors
+
+        jsr swap_irq_buffers
+        jsr wait_for_next_vblank
+
+        ; refresh the animation timer (... repeatedly) so that it starts in the right spot
+        ; when we close the subscreen
+        lda #20
+        sta FadeTimer
+
         rts
 .endproc

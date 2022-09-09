@@ -1,0 +1,2 @@
+.global FAR_init_subscreen
+.global FAR_update_subscreen

@@ -1227,12 +1227,20 @@ dive_not_pressed:
         ; DEBUG STUFF
         lda #KEY_SELECT
         bit ButtonsDown
-        beq no_debug
+        beq no_debug        
 
         ; activate the dialog system!
         st16 GameMode, dialog_init
 
 no_debug:
+        ; SUBSCREEN STUFF
+        lda #KEY_START
+        bit ButtonsDown
+        beq no_subscreen
+
+        ; open the subscreen
+        st16 GameMode, subscreen_init
+no_subscreen:
         rts
 .endproc
 
