@@ -13,3 +13,4 @@
 .global dialog_init
 .global dialog_closing
 .global subscreen_init
+.global return_from_subscreen

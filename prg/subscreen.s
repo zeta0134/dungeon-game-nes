@@ -1,4 +1,5 @@
         .setcpu "6502"
+        .include "input.inc"
         .include "kernel.inc"
         .include "nes.inc"
         .include "palette.inc"
@@ -130,6 +131,43 @@ done_with_fadein:
 .endproc
 
 .proc subscreen_active
-        ; for now, do nothing!
+        ; for now, the only thing we need to do is detect a press of the START
+        ; key, and trigger the closing sequence
+
+        lda #KEY_START
+        bit ButtonsDown
+        beq subscreen_still_active
+        lda #20
+        sta FadeCounter
+        st16 SubScreenState, subscreen_fade_out
+        rts
+
+subscreen_still_active:
+        rts
+.endproc
+
+.proc subscreen_fade_out
+; parameters to the palette set functions
+BasePaletteAddr := R0
+Brightness := R2
+        dec FadeCounter
+        beq done_with_fadeout
+
+        lda FadeCounter
+        lsr
+        lsr
+        sta Brightness
+        st16 BasePaletteAddr, subscreen_palette
+        jsr queue_arbitrary_bg_palette
+        rts
+
+done_with_fadeout:
+        st16 SubScreenState, subscreen_terminal
+        st16 GameMode, return_from_subscreen
+        rts
+.endproc
+
+.proc subscreen_terminal
+        ; Do nothing! Wait for the kernel to clean things up.
         rts
 .endproc

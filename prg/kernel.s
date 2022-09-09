@@ -592,3 +592,14 @@ done:
 
         rts
 .endproc
+
+.proc return_from_subscreen
+        lda #1
+        sta HudPaletteActive
+
+        ; TODO: restore the playfield graphics!
+        lda #0
+        sta FadeTimer
+        st16 GameMode, _blackin_load_new_map
+        rts
+.endproc
