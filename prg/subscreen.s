@@ -62,14 +62,25 @@ NametableLength := R2
         st16 NametableLength, $400
         ldx #0
         ldy #0
-loop:
+left_nametable_loop:
         lda (NametableAddr), y
         sta PPUDATA
         inc16 NametableAddr
         dec16 NametableLength
         lda NametableLength
         ora NametableLength+1
-        bne loop
+        bne left_nametable_loop
+        
+        ; Clear out the other nametable (set to tile 0, blank)
+        set_ppuaddr #$2400
+        st16 NametableLength, $400
+right_nametable_loop:
+        lda #0
+        sta PPUDATA
+        dec16 NametableLength
+        lda NametableLength
+        ora NametableLength+1
+        bne right_nametable_loop
 
         ; TODO: other setup!
 

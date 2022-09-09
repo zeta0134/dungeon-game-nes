@@ -749,9 +749,9 @@ IrqGenerationIndex := R0
         sta irq_table_ppumask, x
         lda #$FF
         sta irq_table_scanlines, x
-        lda #0
+        lda #8
         sta irq_table_scroll_x, x
-        lda #0
+        lda #8
         sta irq_table_scroll_y, x
         lda #0
         sta irq_table_nametable_high, x
