@@ -472,3 +472,82 @@ sfx_dive_underwater_noise:
         noise_cont    0,    $9,  $1,      7
         noise_cont    0,    $8,  $1,      7
 
+sfx_open_subscreen_pulse1:
+        ; Length in rows
+        .byte 15
+        ;                 pitch,    duty,  volume,                            sweep, length
+        pulse_init_sweep  PITCH_B2,   $1,      $1, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      0
+        pulse_cont_duty               $1,      $2,                                        0
+        pulse_cont_duty               $1,      $3,                                        0
+        pulse_cont_duty               $1,      $4,                                        0
+        pulse_cont_duty               $1,      $5,                                        0
+        pulse_cont_duty               $1,      $6,                                        0
+        pulse_cont_duty               $1,      $7,                                        0
+        pulse_cont_duty               $1,      $8,                                        0
+        pulse_cont_duty               $1,      $7,                                        0
+        pulse_cont_duty               $1,      $6,                                        0
+        pulse_cont_duty               $1,      $5,                                        0
+        pulse_cont_duty               $1,      $4,                                        0
+        pulse_cont_duty               $1,      $3,                                        0
+        pulse_cont_duty               $1,      $2,                                        0
+        pulse_cont_duty               $1,      $1,                                        0
+
+sfx_open_subscreen_pulse2:
+        ; Length in rows
+        .byte 15
+        ;                 pitch,    duty,  volume,                            sweep, length
+        pulse_init_sweep  PITCH_E2,   $2,      $1, (S_PERIOD_0 | S_SHIFT_5 | S_NEG),      0
+        pulse_cont_duty               $2,      $2,                                        0
+        pulse_cont_duty               $2,      $3,                                        0
+        pulse_cont_duty               $2,      $4,                                        0
+        pulse_cont_duty               $2,      $5,                                        0
+        pulse_cont_duty               $2,      $6,                                        0
+        pulse_cont_duty               $2,      $7,                                        0
+        pulse_cont_duty               $2,      $8,                                        0
+        pulse_cont_duty               $2,      $7,                                        0
+        pulse_cont_duty               $2,      $6,                                        0
+        pulse_cont_duty               $2,      $5,                                        0
+        pulse_cont_duty               $2,      $4,                                        0
+        pulse_cont_duty               $2,      $3,                                        0
+        pulse_cont_duty               $2,      $2,                                        0
+        pulse_cont_duty               $2,      $1,                                        0
+
+sfx_close_subscreen_pulse1:
+        ; Length in rows
+        .byte 15
+        ;                 pitch,    duty,  volume,                            sweep, length
+        pulse_init_sweep  PITCH_G3,   $1,      $1,         (S_PERIOD_0 | S_SHIFT_5),      0
+        pulse_cont_duty               $1,      $2,                                        0
+        pulse_cont_duty               $1,      $3,                                        0
+        pulse_cont_duty               $1,      $4,                                        0
+        pulse_cont_duty               $1,      $5,                                        0
+        pulse_cont_duty               $1,      $6,                                        0
+        pulse_cont_duty               $1,      $7,                                        0
+        pulse_cont_duty               $1,      $8,                                        0
+        pulse_cont_duty               $1,      $7,                                        0
+        pulse_cont_duty               $1,      $6,                                        0
+        pulse_cont_duty               $1,      $5,                                        0
+        pulse_cont_duty               $1,      $4,                                        0
+        pulse_cont_duty               $1,      $3,                                        0
+        pulse_cont_duty               $1,      $2,                                        0
+        pulse_cont_duty               $1,      $1,                                        0
+
+sfx_close_subscreen_pulse2:
+        ; Length in rows
+        .byte 15
+        ;                 pitch,    duty,  volume,                            sweep, length
+        pulse_init_sweep  PITCH_D4,   $2,      $1,         (S_PERIOD_0 | S_SHIFT_5),      0
+        pulse_cont_duty               $2,      $2,                                        0
+        pulse_cont_duty               $2,      $3,                                        0
+        pulse_cont_duty               $2,      $4,                                        0
+        pulse_cont_duty               $2,      $5,                                        0
+        pulse_cont_duty               $2,      $6,                                        0
+        pulse_cont_duty               $2,      $7,                                        0
+        pulse_cont_duty               $2,      $8,                                        0
+        pulse_cont_duty               $2,      $7,                                        0
+        pulse_cont_duty               $2,      $6,                                        0
+        pulse_cont_duty               $2,      $5,                                        0
+        pulse_cont_duty               $2,      $4,                                        0
+        pulse_cont_duty               $2,      $3,                                        0
+        pulse_cont_duty               $2,      $2,                                        0
+        pulse_cont_duty               $2,      $1,                                        0

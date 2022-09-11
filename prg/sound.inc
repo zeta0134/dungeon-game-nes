@@ -54,6 +54,11 @@
 
 .global sfx_splash
 
+.global sfx_open_subscreen_pulse1
+.global sfx_open_subscreen_pulse2
+.global sfx_close_subscreen_pulse1
+.global sfx_close_subscreen_pulse2
+
 .macro play_dpcm sample_addr, length
 .scope
 SampleAddr := R0

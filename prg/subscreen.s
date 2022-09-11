@@ -6,6 +6,7 @@
         .include "palette.inc"
         .include "ppu.inc"
         .include "scrolling.inc"
+        .include "sound.inc"
         .include "sprites.inc"
         .include "subscreen.inc"
         .include "word_util.inc"
@@ -263,6 +264,11 @@ done_with_fadein:
         lda #10
         sta FadeCounter
         st16 SubScreenState, subscreen_fade_out
+        ; Play a subscreen closing SFX over the transition
+        st16 R0, sfx_close_subscreen_pulse1
+        jsr play_sfx_pulse1
+        st16 R0, sfx_close_subscreen_pulse2
+        jsr play_sfx_pulse2
         rts
 
 subscreen_still_active:

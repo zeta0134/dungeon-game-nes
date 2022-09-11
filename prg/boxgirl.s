@@ -1240,6 +1240,11 @@ no_debug:
 
         ; open the subscreen
         st16 GameMode, subscreen_init
+        ; Play a "subscreen opening" sound over the fade
+        st16 R0, sfx_open_subscreen_pulse1
+        jsr play_sfx_pulse1
+        st16 R0, sfx_open_subscreen_pulse2
+        jsr play_sfx_pulse2
 no_subscreen:
         rts
 .endproc
