@@ -96,13 +96,19 @@ inventory_screen_regions:
         ; POS:   Top  Bottom  Left  Right
         .byte     12,     13,    6,     7
         ; EXITS:  Up    Down  Left  Right 
-        .byte      2,    $FF,  $FF,     5
+        .byte      2,      6,  $FF,     5
 
         ; [ID 5] - Equip Row 1, Slot 2 
         ; POS:   Top  Bottom  Left  Right
         .byte     12,     13,   10,    11
         ; EXITS:  Up    Down  Left  Right 
-        .byte      3,    $FF,    4,   $FF
+        .byte      3,      6,    4,   $FF
+
+        ; [ID 6] - Quest Region (absolutely gigantic)
+        ; POS:   Top  Bottom  Left  Right
+        .byte     18,     27,    4,    29
+        ; EXITS:  Up    Down  Left  Right 
+        .byte      4,    $FF,  $FF,   $FF        
 
 
 ; === External Functions ===
@@ -618,6 +624,11 @@ Distance := R4
         lda TargetPos+1
         sbc CurrentPos+1
         sta Distance+1
+        ; for sign checks, we need a third distance byte; we'll use
+        ; #0 for both incoming values
+        lda #0
+        sbc #0
+        sta Distance+2
 
         ; sanity check: are we already very close to the target?
         ; If our distance byte is either $00 or $FF, then there is
@@ -629,7 +640,7 @@ Distance := R4
         beq arrived_at_target
 
         ; this is a signed comparison, and it's much easier to simply split the code here
-        lda Distance+1
+        lda Distance+2
         bmi negative_distance
 
 positive_distance:
