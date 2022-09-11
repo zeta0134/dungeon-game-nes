@@ -76,31 +76,31 @@ inventory_screen_regions:
 
         ; [ID 1] - Equip Row 1, Slot 2 
         ; POS:   Top  Bottom  Left  Right
-        .byte     16,     32,   64,    80
+        .byte      4,      5,   10,    11
         ; EXITS:  Up    Down  Left  Right 
         .byte    $FF,      3,    0,   $FF
 
         ; [ID 2] - Equip Row 1, Slot 1 
         ; POS:   Top  Bottom  Left  Right
-        .byte     48,     64,   32,    48
+        .byte      8,      9,    6,     7
         ; EXITS:  Up    Down  Left  Right 
         .byte      0,      4,  $FF,     3
 
         ; [ID 3] - Equip Row 1, Slot 2 
         ; POS:   Top  Bottom  Left  Right
-        .byte     48,     64,   64,    80
+        .byte      8,      9,   10,    11
         ; EXITS:  Up    Down  Left  Right 
         .byte      1,      5,    2,   $FF
 
         ; [ID 4] - Equip Row 1, Slot 1 
         ; POS:   Top  Bottom  Left  Right
-        .byte     80,     96,   32,    48
+        .byte     12,     13,    6,     7
         ; EXITS:  Up    Down  Left  Right 
         .byte      2,    $FF,  $FF,     5
 
         ; [ID 5] - Equip Row 1, Slot 2 
         ; POS:   Top  Bottom  Left  Right
-        .byte     80,     96,   64,    80
+        .byte     12,     13,   10,    11
         ; EXITS:  Up    Down  Left  Right 
         .byte      3,    $FF,    4,   $FF
 
@@ -261,6 +261,8 @@ done_with_fadein:
 
 subscreen_still_active:
         ; update all active cursors
+        jsr handle_move_cursor
+        jsr lerp_cursor_position
         jsr draw_cursor
         inc CursorPulseCounter
 
@@ -524,6 +526,237 @@ CursorOffset := R0
         sta SHADOW_OAM + CURSOR_TR_OAM_INDEX + 2
         sta SHADOW_OAM + CURSOR_BL_OAM_INDEX + 2
         sta SHADOW_OAM + CURSOR_BR_OAM_INDEX + 2
+
+        rts
+.endproc
+
+.proc handle_move_cursor
+RegionPtr := R14
+        jsr selected_region_ptr
+
+        lda #KEY_RIGHT
+        bit ButtonsDown
+        beq right_not_pressed
+
+        ldy #Region::ExitRight
+        lda (RegionPtr), y
+        ; If this exit contains the special value $FF, then there
+        ; is no exit from this direction. Skip this move entirely.
+        cmp #$FF
+        beq right_not_pressed
+        ; A contains the new region, so store that
+        sta RegionIndex
+        ; Update the new target postiion
+        ; (this also conveniently refreshes our RegionPtr)
+        jsr update_cursor_pos
+
+right_not_pressed:
+        lda #KEY_LEFT
+        bit ButtonsDown
+        beq left_not_pressed
+
+        ldy #Region::ExitLeft
+        lda (RegionPtr), y
+        ; If this exit contains the special value $FF, then there
+        ; is no exit from this direction. Skip this move entirely.
+        cmp #$FF
+        beq left_not_pressed
+        ; A contains the new region, so store that
+        sta RegionIndex
+        ; Update the new target postiion
+        ; (this also conveniently refreshes our RegionPtr)
+        jsr update_cursor_pos
+
+left_not_pressed:
+        lda #KEY_UP
+        bit ButtonsDown
+        beq up_not_pressed
+
+        ldy #Region::ExitUp
+        lda (RegionPtr), y
+        ; If this exit contains the special value $FF, then there
+        ; is no exit from this direction. Skip this move entirely.
+        cmp #$FF
+        beq up_not_pressed
+        ; A contains the new region, so store that
+        sta RegionIndex
+        ; Update the new target postiion
+        ; (this also conveniently refreshes our RegionPtr)
+        jsr update_cursor_pos
+
+up_not_pressed:
+        lda #KEY_DOWN
+        bit ButtonsDown
+        beq down_not_pressed
+
+        ldy #Region::ExitDown
+        lda (RegionPtr), y
+        ; If this exit contains the special value $FF, then there
+        ; is no exit from this direction. Skip this move entirely.
+        cmp #$FF
+        beq down_not_pressed
+        ; A contains the new region, so store that
+        sta RegionIndex
+        ; Update the new target postiion
+        ; (this also conveniently refreshes our RegionPtr)
+        jsr update_cursor_pos
+
+down_not_pressed:
+        ; All done
+
+        rts
+.endproc
+
+.proc lerp_coordinate
+CurrentPos := R0
+TargetPos := R2
+Distance := R4
+        sec
+        lda TargetPos
+        sbc CurrentPos
+        sta Distance
+        lda TargetPos+1
+        sbc CurrentPos+1
+        sta Distance+1
+
+        ; sanity check: are we already very close to the target?
+        ; If our distance byte is either $00 or $FF, then there is
+        ; less than 1px remaining
+        lda Distance+1
+        cmp #$00
+        beq arrived_at_target
+        cmp #$FF
+        beq arrived_at_target
+
+        ; this is a signed comparison, and it's much easier to simply split the code here
+        lda Distance+1
+        bmi negative_distance
+
+positive_distance:
+        ; divide the distance by 4
+.repeat 2
+        lsr Distance+1
+        ror Distance
+.endrepeat
+        jmp store_result
+
+negative_distance:
+        ; divide the distance by 4
+.repeat 2
+        sec
+        ror Distance+1
+        ror Distance
+.endrepeat
+
+store_result:
+        ; apply the computed distance/4 to the current position
+        clc
+        lda CurrentPos
+        adc Distance
+        sta CurrentPos
+        lda CurrentPos+1
+        adc Distance+1
+        sta CurrentPos+1
+        ; and we're done!
+        rts
+
+arrived_at_target:
+        ; go ahead and apply the target position completely, to skip the tail end of the lerp
+        lda TargetPos + 1
+        sta CurrentPos + 1
+        lda #0
+        sta CurrentPos
+        rts
+.endproc
+
+.proc lerp_cursor_position
+CurrentPos := R0
+TargetPos := R2
+        ; LEFT
+        ; For the target byte, use 0 for the subpixel value
+        lda CursorLeftTarget
+        sta TargetPos+1
+        lda #0
+        sta TargetPos
+
+        ; Provide our current position to the lerp coordinate routine
+        lda CursorLeftCurrent
+        sta CurrentPos
+        lda CursorLeftCurrent+1
+        sta CurrentPos+1
+
+        jsr lerp_coordinate
+
+        ; Save the result for this coordinate
+        lda CurrentPos
+        sta CursorLeftCurrent
+        lda CurrentPos+1
+        sta CursorLeftCurrent+1
+
+        ; Lather, rinse, repeat for the other 3 coordinates
+
+        ; RIGHT
+        ; For the target byte, use 0 for the subpixel value
+        lda CursorRightTarget
+        sta TargetPos+1
+        lda #0
+        sta TargetPos
+
+        ; Provide our current position to the lerp coordinate routine
+        lda CursorRightCurrent
+        sta CurrentPos
+        lda CursorRightCurrent+1
+        sta CurrentPos+1
+
+        jsr lerp_coordinate
+
+        ; Save the result for this coordinate
+        lda CurrentPos
+        sta CursorRightCurrent
+        lda CurrentPos+1
+        sta CursorRightCurrent+1
+
+        ; TOP
+        ; For the target byte, use 0 for the subpixel value
+        lda CursorTopTarget
+        sta TargetPos+1
+        lda #0
+        sta TargetPos
+
+        ; Provide our current position to the lerp coordinate routine
+        lda CursorTopCurrent
+        sta CurrentPos
+        lda CursorTopCurrent+1
+        sta CurrentPos+1
+
+        jsr lerp_coordinate
+
+        ; Save the result for this coordinate
+        lda CurrentPos
+        sta CursorTopCurrent
+        lda CurrentPos+1
+        sta CursorTopCurrent+1
+
+        ; BOTTOM
+        ; For the target byte, use 0 for the subpixel value
+        lda CursorBottomTarget
+        sta TargetPos+1
+        lda #0
+        sta TargetPos
+
+        ; Provide our current position to the lerp coordinate routine
+        lda CursorBottomCurrent
+        sta CurrentPos
+        lda CursorBottomCurrent+1
+        sta CurrentPos+1
+
+        jsr lerp_coordinate
+
+        ; Save the result for this coordinate
+        lda CurrentPos
+        sta CursorBottomCurrent
+        lda CurrentPos+1
+        sta CursorBottomCurrent+1
 
         rts
 .endproc
