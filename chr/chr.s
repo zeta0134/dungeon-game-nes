@@ -48,6 +48,8 @@ shadow_graphics:
         .incbin "build/sprites/shadow.chr"
 particle_graphics:
         .incbin "build/sprites/particles.chr"
+cursor_graphics:
+        .incbin "build/sprites/cursor3d.chr"
 
         .segment "OBJ2"
 blobby_graphics:

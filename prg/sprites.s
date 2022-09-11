@@ -1,5 +1,6 @@
         .setcpu "6502"
         .include "entity.inc"
+        .include "far_call.inc"
         .include "sprites.inc"
         .include "scrolling.inc"
         .include "word_util.inc"
@@ -280,7 +281,8 @@ next_metasprite:
         rts
 .endproc
 
-.proc hide_all_sprites
+.proc FAR_hide_all_sprites
+        ; TODO: maybe make this less generic?
         ldx #16 ; actually don't hide sprite zero and friends
         lda #$F8
 loop:
@@ -641,7 +643,7 @@ all_done:
 .proc FAR_draw_metasprites
         ; setup
         jsr update_camera_scroll
-        jsr hide_all_sprites
+        near_call FAR_hide_all_sprites
         ; start drawing at OAM entry 4 for now
         ; (maybe later we draw particles first?)
         lda #16
@@ -660,7 +662,7 @@ all_done:
 MetaSpriteCount := R0
 MetaSpriteIndex := R1
         jsr update_camera_scroll
-        jsr hide_all_sprites
+        near_call FAR_hide_all_sprites
         lda #16
         sta MetaSpriteCount
         lda #0

@@ -15,6 +15,7 @@ _SPRITES_INC := 1
 .global FAR_unregister_low_priority_metasprite
 .global FAR_register_sorted_entity
 .global FAR_unregister_sorted_entity
+.global FAR_hide_all_sprites
 
 .global metasprite_table
 .globalzp OAMTableLength, OAMEntryIndex, OAMTableAddr, MetaspritePosX, MetaspritePosY, ScratchSpritePtr

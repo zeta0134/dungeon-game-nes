@@ -6,6 +6,7 @@
         .include "palette.inc"
         .include "ppu.inc"
         .include "scrolling.inc"
+        .include "sprites.inc"
         .include "subscreen.inc"
         .include "word_util.inc"
         .include "vram_buffer.inc"
@@ -17,12 +18,92 @@ SubScreenState: .res 2
         .segment "RAM"
 FadeCounter: .res 1
 
+LayoutPtr: .res 2
+RegionIndex: .res 2
+
+CursorTopCurrent: .res 2
+CursorBottomCurrent: .res 2
+CursorLeftCurrent: .res 2
+CursorRightCurrent: .res 2
+CursorTopTarget: .res 1
+CursorBottomTarget: .res 1
+CursorLeftTarget: .res 1
+CursorRightTarget: .res 1
+CursorPulseCounter: .res 1
+
         .segment "SUBSCREEN_A000"
+
+CURSOR_TL_OAM_INDEX = 16
+CURSOR_TR_OAM_INDEX = 20
+CURSOR_BL_OAM_INDEX = 24
+CURSOR_BR_OAM_INDEX = 28
+
+CURSOR_TL_TILE = 83
+CURSOR_TR_TILE = 85
+CURSOR_BL_TILE = 87
+CURSOR_BR_TILE = 89
 
 subscreen_base_nametable:
         .incbin "art/raw_nametables/subscreen_base.nam"
-subscreen_palette:
+subscreen_bg_palette:
         .incbin "art/palettes/subscreen.pal"
+subscreen_obj_palette:
+        .incbin "art/palettes/subscreen_sprites.pal"
+
+
+.struct Layout
+        Length .byte ; in regions
+        RegionsPtr .word
+.endstruct
+
+.struct Region
+        PositionTop .byte
+        PositionBottom .byte
+        PositionLeft .byte
+        PositionRight .byte
+        ExitUp .byte
+        ExitDown .byte
+        ExitLeft .byte
+        ExitRight .byte
+.endstruct
+
+inventory_screen_regions:
+        ; [ID 0] - Equip Row 1, Slot 1 
+        ; POS:   Top  Bottom  Left  Right
+        .byte      4,      5,    6,     7
+        ; EXITS:  Up    Down  Left  Right 
+        .byte    $FF,      2,  $FF,     1
+
+        ; [ID 1] - Equip Row 1, Slot 2 
+        ; POS:   Top  Bottom  Left  Right
+        .byte     16,     32,   64,    80
+        ; EXITS:  Up    Down  Left  Right 
+        .byte    $FF,      3,    0,   $FF
+
+        ; [ID 2] - Equip Row 1, Slot 1 
+        ; POS:   Top  Bottom  Left  Right
+        .byte     48,     64,   32,    48
+        ; EXITS:  Up    Down  Left  Right 
+        .byte      0,      4,  $FF,     3
+
+        ; [ID 3] - Equip Row 1, Slot 2 
+        ; POS:   Top  Bottom  Left  Right
+        .byte     48,     64,   64,    80
+        ; EXITS:  Up    Down  Left  Right 
+        .byte      1,      5,    2,   $FF
+
+        ; [ID 4] - Equip Row 1, Slot 1 
+        ; POS:   Top  Bottom  Left  Right
+        .byte     80,     96,   32,    48
+        ; EXITS:  Up    Down  Left  Right 
+        .byte      2,    $FF,  $FF,     5
+
+        ; [ID 5] - Equip Row 1, Slot 2 
+        ; POS:   Top  Bottom  Left  Right
+        .byte     80,     96,   64,    80
+        ; EXITS:  Up    Down  Left  Right 
+        .byte      3,    $FF,    4,   $FF
+
 
 ; === External Functions ===
 
@@ -35,6 +116,8 @@ subscreen_palette:
         jmp (SubScreenState)
         rts
 .endproc
+
+; === Subscreen States ===
 
 .proc subscreen_state_initial
 NametableAddr := R0
@@ -81,6 +164,24 @@ right_nametable_loop:
         lda NametableLength
         ora NametableLength+1
         bne right_nametable_loop
+
+        ; Hide all game sprites
+        far_call FAR_hide_all_sprites
+
+        ; FOR NOW, we'll start with the inventory screen, so initialize that 
+        ; particular layout
+        lda #<inventory_screen_regions
+        sta LayoutPtr
+        lda #>inventory_screen_regions
+        sta LayoutPtr+1
+        ; FOR NOW, we will always start in the 0th region
+        ; (Later I really want to memorize the last region for player convenience)
+        lda #0
+        sta RegionIndex
+        ; Using the above, initialize the cursor's position
+        jsr initialize_cursor_pos
+        ; Draw the cursor once here, so it is present during fade-in
+        jsr draw_cursor
 
         ; TODO: other setup!
 
@@ -131,8 +232,11 @@ Brightness := R2
         lda FadeCounter
         lsr
         sta Brightness
-        st16 BasePaletteAddr, subscreen_palette
+        st16 BasePaletteAddr, subscreen_obj_palette
+        jsr queue_arbitrary_obj_palette
+        st16 BasePaletteAddr, subscreen_bg_palette
         jsr queue_arbitrary_bg_palette
+
         rts
 
 done_with_fadein:
@@ -143,9 +247,10 @@ done_with_fadein:
 .endproc
 
 .proc subscreen_active
-        ; for now, the only thing we need to do is detect a press of the START
-        ; key, and trigger the closing sequence
-
+        ; If the user has pressed START, exit the subscreen
+        ; TODO: if we are partway through a multi-click action, like moving
+        ; inventory items around, should we block exiting until that sequence
+        ; is complete?
         lda #KEY_START
         bit ButtonsDown
         beq subscreen_still_active
@@ -155,6 +260,10 @@ done_with_fadein:
         rts
 
 subscreen_still_active:
+        ; update all active cursors
+        jsr draw_cursor
+        inc CursorPulseCounter
+
         rts
 .endproc
 
@@ -168,7 +277,9 @@ Brightness := R2
         lda FadeCounter
         lsr
         sta Brightness
-        st16 BasePaletteAddr, subscreen_palette
+        st16 BasePaletteAddr, subscreen_obj_palette
+        jsr queue_arbitrary_obj_palette
+        st16 BasePaletteAddr, subscreen_bg_palette
         jsr queue_arbitrary_bg_palette
         rts
 
@@ -207,6 +318,7 @@ done_with_fadeout:
         ; re-enable graphics
         lda #$1E
         sta PPUMASK
+        ; The main game loop expects 8x16 sprites, so set that here
         lda #(VBLANK_NMI | BG_0000 | OBJ_1000 | OBJ_8X16)
         sta PPUCTRL
 
@@ -222,5 +334,196 @@ done_with_fadeout:
 
         ; Now signal to the kernel that it is safe to return to the main game mode
         st16 GameMode, return_from_subscreen
+        rts
+.endproc
+
+; === Utility ===
+
+.proc selected_region_ptr
+RegionPtr := R14
+        ; Initialize the pointer to the current region index, expanded to 16bit
+        lda RegionIndex
+        sta RegionPtr
+        lda #0
+        sta RegionPtr+1
+
+        ; multiply the current region index by 8, which is the size
+        ; of a Region struct
+        .repeat 3
+        asl RegionPtr
+        rol RegionPtr+1
+        .endrepeat
+
+        ; add in the layout ptr, which is the start of the current region table
+        clc
+        lda LayoutPtr
+        adc RegionPtr
+        sta RegionPtr
+        lda LayoutPtr+1
+        adc RegionPtr+1
+        sta RegionPtr+1
+
+        rts
+.endproc
+
+; Meant to be called when first activating a particular subscreen.
+; Reads the currently selected index and sets all relevant cursor
+; variables to this position without any lerping of position.
+.proc initialize_cursor_pos
+RegionPtr := R14
+        ; First perform a normal cursor update, which will provide sane values
+        ; for the target position
+        jsr update_cursor_pos
+
+        ; Now, instead of lerping, immediately apply the target to the current position
+        lda CursorTopTarget
+        sta CursorTopCurrent + 1
+        lda CursorBottomTarget
+        sta CursorBottomCurrent + 1
+        lda CursorLeftTarget
+        sta CursorLeftCurrent + 1
+        lda CursorRightTarget
+        sta CursorRightCurrent + 1
+
+        ; Clear out the sub-pixel coordinates
+        lda #0
+        sta CursorTopCurrent
+        sta CursorBottomCurrent
+        sta CursorLeftCurrent
+        sta CursorRightCurrent
+
+        ; Initialize other cursor-related tracking vars
+        lda #0
+        sta CursorPulseCounter
+
+        rts
+.endproc
+
+.proc update_cursor_pos
+RegionPtr := R14
+        jsr selected_region_ptr
+
+        ldy #Region::PositionTop
+        lda (RegionPtr), y
+        ; convert from tile index to pixel coordinate
+        .repeat 3
+        asl
+        .endrepeat
+        ; align the corner with the scrolled / offset tile boundary
+        sec
+        sbc #11
+        sta CursorTopTarget
+
+        ldy #Region::PositionBottom
+        lda (RegionPtr), y
+        .repeat 3
+        asl
+        .endrepeat
+        sec
+        sbc #1
+        sta CursorBottomTarget
+
+        ldy #Region::PositionLeft
+        lda (RegionPtr), y
+        .repeat 3
+        asl
+        .endrepeat
+        sec
+        sbc #13
+        sta CursorLeftTarget
+
+        ldy #Region::PositionRight
+        lda (RegionPtr), y
+        .repeat 3
+        asl
+        .endrepeat
+        sec
+        sbc #3
+        sta CursorRightTarget
+
+        rts
+.endproc
+
+; Side note: we will NOT be using the metasprite system, as doing so might clobber
+; game state. Fortunately the various cursors are not that complicated, so it is
+; fine to draw them manually. We *can* mess with OAM, the game loop will correct
+; this when we return to it by performing a full redraw, as it does every frame.
+.proc draw_cursor
+CursorOffset := R0
+        lda CursorPulseCounter
+        .repeat 5
+        lsr
+        .endrepeat
+        and #%00000001
+        sta CursorOffset
+
+        ; TOP LEFT
+        ; Y position
+        lda CursorTopCurrent + 1
+        sec
+        sbc CursorOffset
+        sta SHADOW_OAM + CURSOR_TL_OAM_INDEX + 0
+        ; X position
+        lda CursorLeftCurrent + 1
+        sec
+        sbc CursorOffset
+        sta SHADOW_OAM + CURSOR_TL_OAM_INDEX + 3
+        ; Tile Index
+        lda #CURSOR_TL_TILE
+        sta SHADOW_OAM + CURSOR_TL_OAM_INDEX + 1
+
+        ; TOP RIGHT
+        ; Y position
+        lda CursorTopCurrent + 1
+        sec
+        sbc CursorOffset
+        sta SHADOW_OAM + CURSOR_TR_OAM_INDEX + 0
+        ; X position
+        lda CursorRightCurrent + 1
+        clc
+        adc CursorOffset
+        sta SHADOW_OAM + CURSOR_TR_OAM_INDEX + 3
+        ; Tile Index
+        lda #CURSOR_TR_TILE
+        sta SHADOW_OAM + CURSOR_TR_OAM_INDEX + 1    
+
+        ; BOTTOM LEFT
+        ; Y position
+        lda CursorBottomCurrent + 1
+        clc
+        adc CursorOffset
+        sta SHADOW_OAM + CURSOR_BL_OAM_INDEX + 0
+        ; X position
+        lda CursorLeftCurrent + 1
+        sec
+        sbc CursorOffset
+        sta SHADOW_OAM + CURSOR_BL_OAM_INDEX + 3       
+        ; Tile Index
+        lda #CURSOR_BL_TILE
+        sta SHADOW_OAM + CURSOR_BL_OAM_INDEX + 1
+
+        ; BOTTOM RIGHT
+        ; Y position
+        lda CursorBottomCurrent + 1
+        clc
+        adc CursorOffset
+        sta SHADOW_OAM + CURSOR_BR_OAM_INDEX + 0
+        ; X position
+        lda CursorRightCurrent + 1
+        clc
+        adc CursorOffset
+        sta SHADOW_OAM + CURSOR_BR_OAM_INDEX + 3               
+        ; Tile Index
+        lda #CURSOR_BR_TILE
+        sta SHADOW_OAM + CURSOR_BR_OAM_INDEX + 1
+
+
+        ; Standard boring attributes, with palette 0
+        lda #0
+        sta SHADOW_OAM + CURSOR_TL_OAM_INDEX + 2
+        sta SHADOW_OAM + CURSOR_TR_OAM_INDEX + 2
+        sta SHADOW_OAM + CURSOR_BL_OAM_INDEX + 2
+        sta SHADOW_OAM + CURSOR_BR_OAM_INDEX + 2
+
         rts
 .endproc
