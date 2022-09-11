@@ -37,6 +37,8 @@ S_SHIFT_7 = %00000111
 
 S_NEG = %00001000
 
+S_DISABLE = $08
+
 NOISE_VOL = $0
 NOISE_PERIOD = $2
 NOISE_LENGTH = $3
@@ -54,8 +56,12 @@ MAX_LENGTH = %11111000
 
 ; === Macros to make defining long, complex sounds a bit less tedious ===
 
-.macro pulse_init pitch, volume, duty
-        
+.macro pulse_init row_pitch, row_duty, row_volume, row_length
+        .byte PULSE_DLV, (row_duty << 6) | VOL | row_volume
+        .byte PULSE_FREQ_LOW, <(row_pitch)
+        .byte PULSE_FREQ_HIGH, >(row_pitch) | MAX_LENGTH
+        .byte PULSE_SWEEP, S_DISABLE
+        .byte END_ROW | row_length
 .endmacro
 
 .macro pulse_init_sweep row_pitch, row_duty, row_volume, row_sweep_params, row_length
@@ -551,3 +557,10 @@ sfx_close_subscreen_pulse2:
         pulse_cont_duty               $2,      $3,                                        0
         pulse_cont_duty               $2,      $2,                                        0
         pulse_cont_duty               $2,      $1,                                        0
+
+sfx_move_cursor:
+        ; Length in rows
+        .byte 2
+        ;           pitch,    duty,  volume,     length
+        pulse_init  PITCH_G4,   $2,      $5,          0
+        pulse_cont_duty         $2,      $1,          0

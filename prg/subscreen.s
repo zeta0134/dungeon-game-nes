@@ -561,6 +561,9 @@ RegionPtr := R14
         ; Update the new target postiion
         ; (this also conveniently refreshes our RegionPtr)
         jsr update_cursor_pos
+        ; Play a cursor move SFX
+        st16 R0, sfx_move_cursor
+        jsr play_sfx_pulse1
 
 right_not_pressed:
         lda #KEY_LEFT
@@ -578,6 +581,9 @@ right_not_pressed:
         ; Update the new target postiion
         ; (this also conveniently refreshes our RegionPtr)
         jsr update_cursor_pos
+        ; Play a cursor move SFX
+        st16 R0, sfx_move_cursor
+        jsr play_sfx_pulse1
 
 left_not_pressed:
         lda #KEY_UP
@@ -595,6 +601,9 @@ left_not_pressed:
         ; Update the new target postiion
         ; (this also conveniently refreshes our RegionPtr)
         jsr update_cursor_pos
+        ; Play a cursor move SFX
+        st16 R0, sfx_move_cursor
+        jsr play_sfx_pulse1
 
 up_not_pressed:
         lda #KEY_DOWN
@@ -612,6 +621,9 @@ up_not_pressed:
         ; Update the new target postiion
         ; (this also conveniently refreshes our RegionPtr)
         jsr update_cursor_pos
+        ; Play a cursor move SFX
+        st16 R0, sfx_move_cursor
+        jsr play_sfx_pulse1
 
 down_not_pressed:
         ; All done
