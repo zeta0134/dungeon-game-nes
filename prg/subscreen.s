@@ -69,6 +69,8 @@ subscreen_obj_palette:
 .endstruct
 
 inventory_screen_regions:
+        ; === Equip Slots ===
+
         ; [ID 0] - Equip Row 1, Slot 1 
         ; POS:   Top  Bottom  Left  Right
         .byte      4,      5,    6,     7
@@ -79,7 +81,7 @@ inventory_screen_regions:
         ; POS:   Top  Bottom  Left  Right
         .byte      4,      5,   10,    11
         ; EXITS:  Up    Down  Left  Right 
-        .byte    $FF,      3,    0,   $FF
+        .byte    $FF,      3,    0,     6
 
         ; [ID 2] - Equip Row 1, Slot 1 
         ; POS:   Top  Bottom  Left  Right
@@ -91,21 +93,98 @@ inventory_screen_regions:
         ; POS:   Top  Bottom  Left  Right
         .byte      8,      9,   10,    11
         ; EXITS:  Up    Down  Left  Right 
-        .byte      1,      5,    2,   $FF
+        .byte      1,      5,    2,    10
 
         ; [ID 4] - Equip Row 1, Slot 1 
         ; POS:   Top  Bottom  Left  Right
         .byte     12,     13,    6,     7
         ; EXITS:  Up    Down  Left  Right 
-        .byte      2,      6,  $FF,     5
+        .byte      2,     18,  $FF,     5
 
         ; [ID 5] - Equip Row 1, Slot 2 
         ; POS:   Top  Bottom  Left  Right
         .byte     12,     13,   10,    11
         ; EXITS:  Up    Down  Left  Right 
-        .byte      3,      6,    4,   $FF
+        .byte      3,     18,    4,    14
 
-        ; [ID 6] - Quest Region (absolutely gigantic)
+        ; === Inventory Slots ===
+
+        ; [ID 6] - Inventory Row 1, Column 1 
+        ; POS:   Top  Bottom  Left  Right
+        .byte      4,      5,   16,    17
+        ; EXITS:  Up    Down  Left  Right 
+        .byte    $FF,     10,    1,     7
+
+        ; [ID 7] - Inventory Row 1, Column 2 
+        ; POS:   Top  Bottom  Left  Right
+        .byte      4,      5,   20,    21
+        ; EXITS:  Up    Down  Left  Right 
+        .byte    $FF,     11,    6,     8
+
+        ; [ID 8] - Inventory Row 1, Column 3 
+        ; POS:   Top  Bottom  Left  Right
+        .byte      4,      5,   24,    25
+        ; EXITS:  Up    Down  Left  Right 
+        .byte    $FF,     12,    7,     9
+
+        ; [ID 9] - Inventory Row 1, Column 4 
+        ; POS:   Top  Bottom  Left  Right
+        .byte      4,      5,   28,    29
+        ; EXITS:  Up    Down  Left  Right 
+        .byte    $FF,     13,    8,   $FF
+
+        ; [ID 10] - Inventory Row 2, Column 1 
+        ; POS:   Top  Bottom  Left  Right
+        .byte      8,      9,   16,    17
+        ; EXITS:  Up    Down  Left  Right 
+        .byte      6,     14,    3,    11
+
+        ; [ID 11] - Inventory Row 2, Column 2 
+        ; POS:   Top  Bottom  Left  Right
+        .byte      8,      9,   20,    21
+        ; EXITS:  Up    Down  Left  Right 
+        .byte      7,     15,   10,    12
+
+        ; [ID 12] - Inventory Row 2, Column 3 
+        ; POS:   Top  Bottom  Left  Right
+        .byte      8,      9,   24,    25
+        ; EXITS:  Up    Down  Left  Right 
+        .byte      8,     16,   11,    13
+
+        ; [ID 13] - Inventory Row 2, Column 4 
+        ; POS:   Top  Bottom  Left  Right
+        .byte      8,      9,   28,    29
+        ; EXITS:  Up    Down  Left  Right 
+        .byte      9,     17,   12,   $FF
+
+        ; [ID 14] - Inventory Row 3, Column 1 
+        ; POS:   Top  Bottom  Left  Right
+        .byte     12,     13,   16,    17
+        ; EXITS:  Up    Down  Left  Right 
+        .byte     10,     18,    5,    15
+
+        ; [ID 15] - Inventory Row 3, Column 2 
+        ; POS:   Top  Bottom  Left  Right
+        .byte     12,     13,   20,    21
+        ; EXITS:  Up    Down  Left  Right 
+        .byte     11,     18,   14,    16
+
+        ; [ID 16] - Inventory Row 3, Column 3 
+        ; POS:   Top  Bottom  Left  Right
+        .byte     12,     13,   24,    25
+        ; EXITS:  Up    Down  Left  Right 
+        .byte     12,     18,   15,    17
+
+        ; [ID 17] - Inventory Row 3, Column 4 
+        ; POS:   Top  Bottom  Left  Right
+        .byte     12,     13,   28,    29
+        ; EXITS:  Up    Down  Left  Right 
+        .byte     13,     18,   16,   $FF
+
+        ; === Quest Status Area ===
+        ; (currently very much placeholder)
+
+        ; [ID 18] - Quest Region (absolutely gigantic)
         ; POS:   Top  Bottom  Left  Right
         .byte     18,     27,    4,    29
         ; EXITS:  Up    Down  Left  Right 
