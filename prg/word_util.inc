@@ -55,10 +55,10 @@ no_carry:
 ; unsigned word
 .macro adc16w addr, value
 .if (.match (.left (1, {value}), #))
-        lda #>(.right (.tcount ({value})-1, {value}))
+        lda #<(.right (.tcount ({value})-1, {value}))
         adc addr
         sta addr
-        lda #<(.right (.tcount ({value})-1, {value}))
+        lda #>(.right (.tcount ({value})-1, {value}))
         adc 1+addr
         sta 1+addr
 .else
@@ -68,6 +68,7 @@ no_carry:
         lda 1+value
         adc 1+addr
         sta 1+addr   
+.endif
 .endmacro
 
 ; unsigned word, explicitly clears carry
