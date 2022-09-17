@@ -21,7 +21,7 @@ SubScreenState: .res 2
 FadeCounter: .res 1
 
 LayoutPtr: .res 2
-RegionIndex: .res 2
+CurrentRegionIndex: .res 2
 
 CursorTopCurrent: .res 2
 CursorBottomCurrent: .res 2
@@ -34,6 +34,12 @@ CursorRightTarget: .res 1
 CursorPulseCounter: .res 1
 
 StaticChrPreserve: .res 1
+
+; Ability memory, TODO: move this somewhere more shared
+actionset_a: .res 2
+actionset_b: .res 2
+actionset_c: .res 2
+action_inventory: .res 12
 
         .segment "SUBSCREEN_A000"
 
@@ -55,6 +61,15 @@ subscreen_bg_palette:
         .incbin "art/palettes/subscreen.pal"
 subscreen_obj_palette:
         .incbin "art/palettes/subscreen_sprites.pal"
+
+ability_icons_tiles:
+        .byte 0, 0, 0, 0
+        .byte 128, 129, 130, 131
+        .byte 132, 133, 134, 135
+        .byte 136, 137, 138, 139
+        .byte 140, 141, 142, 143
+        .byte 144, 145, 146, 147
+        .byte 148, 149, 150, 151
 
 
 .struct Layout
@@ -268,7 +283,7 @@ right_nametable_loop:
         ; FOR NOW, we will always start in the 0th region
         ; (Later I really want to memorize the last region for player convenience)
         lda #0
-        sta RegionIndex
+        sta CurrentRegionIndex
         ; Using the above, initialize the cursor's position
         jsr initialize_cursor_pos
         ; Draw the cursor once here, so it is present during fade-in
@@ -284,6 +299,26 @@ right_nametable_loop:
         sta StaticChrBank
 
         ; TODO: other setup!
+
+        ; DEBUG!
+        ; For testing the subscreen, reset the inventory memory
+        ; each time it is opened. Later we should initialize this
+        ; at boot, and much later we should initialize it from the
+        ; player's loaded save file.
+        lda #1
+        sta actionset_a + 0
+        lda #2
+        sta actionset_a + 1
+        lda #0
+        sta actionset_b + 0
+        sta actionset_b + 1
+        sta actionset_c + 0
+        sta actionset_c + 1
+
+        .repeat 12, i
+        sta action_inventory + i
+        .endrepeat
+        jsr initialize_ability_icons
 
         ; Now, fully re-enable rendering
 
@@ -448,7 +483,8 @@ done_with_fadeout:
 
 ; === Utility ===
 
-.proc selected_region_ptr
+.proc region_ptr
+RegionIndex := R0
 RegionPtr := R14
         ; Initialize the pointer to the current region index, expanded to 16bit
         lda RegionIndex
@@ -510,7 +546,9 @@ RegionPtr := R14
 
 .proc update_cursor_pos
 RegionPtr := R14
-        jsr selected_region_ptr
+        lda CurrentRegionIndex
+        sta R0
+        jsr region_ptr
 
         ldy #Region::PositionTop
         lda (RegionPtr), y
@@ -639,7 +677,9 @@ CursorOffset := R0
 
 .proc handle_move_cursor
 RegionPtr := R14
-        jsr selected_region_ptr
+        lda CurrentRegionIndex
+        sta R0
+        jsr region_ptr
 
         lda #KEY_RIGHT
         bit ButtonsDown
@@ -652,7 +692,7 @@ RegionPtr := R14
         cmp #$FF
         beq right_not_pressed
         ; A contains the new region, so store that
-        sta RegionIndex
+        sta CurrentRegionIndex
         ; Update the new target postiion
         ; (this also conveniently refreshes our RegionPtr)
         jsr update_cursor_pos
@@ -672,7 +712,7 @@ right_not_pressed:
         cmp #$FF
         beq left_not_pressed
         ; A contains the new region, so store that
-        sta RegionIndex
+        sta CurrentRegionIndex
         ; Update the new target postiion
         ; (this also conveniently refreshes our RegionPtr)
         jsr update_cursor_pos
@@ -692,7 +732,7 @@ left_not_pressed:
         cmp #$FF
         beq up_not_pressed
         ; A contains the new region, so store that
-        sta RegionIndex
+        sta CurrentRegionIndex
         ; Update the new target postiion
         ; (this also conveniently refreshes our RegionPtr)
         jsr update_cursor_pos
@@ -712,7 +752,7 @@ up_not_pressed:
         cmp #$FF
         beq down_not_pressed
         ; A contains the new region, so store that
-        sta RegionIndex
+        sta CurrentRegionIndex
         ; Update the new target postiion
         ; (this also conveniently refreshes our RegionPtr)
         jsr update_cursor_pos
@@ -881,6 +921,91 @@ TargetPos := R2
         sta CursorBottomCurrent
         lda CurrentPos+1
         sta CursorBottomCurrent+1
+
+        rts
+.endproc
+
+.proc region_tile_addr
+RegionIndex := R0
+PpuAddrScratch := R2
+RegionAddr := R14
+        ; RegionIndex is already in R0, so we can call region_ptr right away
+        jsr region_ptr
+        ; Now use this region's position to work out the PpuAddr to draw the icon
+        ; We'll start the draw at the top-left corner in the nametable
+        lda #0
+        sta PpuAddrScratch+1
+        ldy #Region::PositionTop
+        lda (RegionAddr), y
+        sta PpuAddrScratch
+        ; multiply Y by 32
+        .repeat 5
+        asl PpuAddrScratch
+        rol PpuAddrScratch+1
+        .endrepeat
+        ; simply add X
+        ldy #Region::PositionLeft
+        add16b PpuAddrScratch, {(RegionAddr), y}
+        ; finally add the base nametable
+        add16w PpuAddrScratch, #$2000
+        rts
+.endproc
+
+; Meant to be used only during init. Only valid when called with the RegionId of an
+; ability icon, as it will draw a 2x2 bit of tiles at that region's top-left corner.
+.proc draw_ability_icon_immediate
+RegionIndex := R0
+AbilityIndex := R1
+PpuAddrScratch := R2
+AbilityTileScratch := R4
+RegionAddr := R14
+        jsr region_tile_addr        
+        set_ppuaddr PpuAddrScratch
+
+        ; Ability Index * 4 gives us the index into the tile LUT
+        lda AbilityIndex
+        asl
+        asl
+        tax
+        ; First draw the upper row
+        lda ability_icons_tiles, x
+        sta PPUDATA
+        lda ability_icons_tiles + 1, x
+        sta PPUDATA
+        ; Now move PPUADDR one row down...
+        add16b PpuAddrScratch, #32
+        set_ppuaddr PpuAddrScratch
+        ; and draw the second row of tiles
+        lda ability_icons_tiles + 2, x
+        sta PPUDATA
+        lda ability_icons_tiles + 3, x
+        sta PPUDATA
+
+        ; TODO: compute and set the attribute byte here
+
+        rts
+.endproc
+
+.proc initialize_ability_icons
+RegionIndex := R0
+AbilityIndex := R1
+AbilityCounter := R6
+        ; Action Sets
+        lda #0
+        sta RegionIndex
+        lda #0
+        sta AbilityCounter
+actionset_loop:
+        ldx AbilityCounter
+        lda actionset_a, x
+        sta AbilityIndex
+        jsr draw_ability_icon_immediate
+        inc RegionIndex
+        inc AbilityIndex
+        inc AbilityCounter
+        lda #18
+        cmp AbilityCounter
+        bne actionset_loop
 
         rts
 .endproc
