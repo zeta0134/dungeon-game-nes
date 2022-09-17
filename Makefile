@@ -58,6 +58,9 @@ run: dir $(ROM_NAME)
 mesen: dir $(ROM_NAME)
 	mono vendor/Mesen-X-v1.0.0.exe $(ROM_NAME)
 
+beta: dir $(ROM_NAME)
+	/home/zeta0134/Downloads/MesenBeta/Mesen $(ROM_NAME)
+
 debug: dir $(ROM_NAME)
 	mono vendor/Mesen-X-v1.0.0.exe $(ROM_NAME) debug_entity_0.lua
 
