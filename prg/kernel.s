@@ -38,6 +38,8 @@ PlayfieldPpuMask: .res 1
 
         .segment "PRGFIXED_E000"
 
+ABILITY_ICON_BANK = $14
+
 ; === Utility Functions ===
 .proc wait_for_next_vblank
         inc GameloopCounter
@@ -293,6 +295,11 @@ time_waste_loop:
         far_call FAR_generate_playfield
         debug_color 0 ; disable debug colors
 
+        ; The main hud graphics will use CHR0, but we also need
+        ; ability icons, so put those in CHR1
+        lda #ABILITY_ICON_BANK
+        sta HudChr1Bank
+
         far_call FAR_generate_hud_palette_swap
         far_call FAR_generate_standard_hud
         jsr swap_irq_buffers
@@ -329,6 +336,12 @@ still_in_hitstun:
         debug_color TINT_R | TINT_B
         far_call FAR_generate_playfield
         debug_color 0 ; disable debug colors
+
+        ; The main hud graphics will use CHR0, but we also need
+        ; ability icons, so put those in CHR1
+        lda #ABILITY_ICON_BANK
+        sta HudChr1Bank
+        
         far_call FAR_generate_hud_palette_swap
         far_call FAR_generate_standard_hud
         jsr swap_irq_buffers

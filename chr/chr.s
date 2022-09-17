@@ -39,6 +39,10 @@ hud_graphics:
         .include "../build/dialog_portraits/zero.odd.chr"
         .include "../build/dialog_portraits/ciel.odd.chr"
 
+        .segment "BG10"
+ability_icon_graphics:
+        .incbin "../art/raw_chr/ability_icons.chr"
+
         .segment "OBJ0"
 boxgirl_graphics:
         .incbin "build/sprites/greybox.chr"

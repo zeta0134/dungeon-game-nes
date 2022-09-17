@@ -34,6 +34,10 @@ irq_table_chr0_bank: .res IRQ_TABLE_SIZE
 
         .segment "RAM"
 
+; We use the same byte here on purpose. The palette swap segment
+; always swaps in the "even" bank, but only the dialog segment alternates
+; this with the odd bank.
+HudChr1Bank:
 EvenChr1Bank: .res 1
 OddChr1Bank: .res 1
 

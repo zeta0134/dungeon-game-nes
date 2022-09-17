@@ -2,6 +2,7 @@
         .include "far_call.inc"
         .include "input.inc"
         .include "kernel.inc"
+        .include "mmc3.inc"
         .include "nes.inc"
         .include "palette.inc"
         .include "ppu.inc"
@@ -32,6 +33,8 @@ CursorLeftTarget: .res 1
 CursorRightTarget: .res 1
 CursorPulseCounter: .res 1
 
+StaticChrPreserve: .res 1
+
         .segment "SUBSCREEN_A000"
 
 CURSOR_TL_OAM_INDEX = 16
@@ -43,6 +46,8 @@ CURSOR_TL_TILE = 83
 CURSOR_TR_TILE = 85
 CURSOR_BL_TILE = 87
 CURSOR_BR_TILE = 89
+
+ABILITY_ICON_BANK = $14
 
 subscreen_base_nametable:
         .incbin "art/raw_nametables/subscreen_base.nam"
@@ -269,6 +274,15 @@ right_nametable_loop:
         ; Draw the cursor once here, so it is present during fade-in
         jsr draw_cursor
 
+        ; We need to set our static bank to the ability icons, so the NMI routine loads it into
+        ; place for us, but we don't want to clobber the background tiles that are there when we exit.
+        ; So first preserve those
+        lda StaticChrBank
+        sta StaticChrPreserve
+        ; Then overwrite the static bank with the icons
+        lda #ABILITY_ICON_BANK
+        sta StaticChrBank
+
         ; TODO: other setup!
 
         ; Now, fully re-enable rendering
@@ -397,9 +411,11 @@ done_with_fadeout:
         lda #(VBLANK_NMI)
         sta PPUCTRL
 
-        ; TODO: restore the nametable here! (function not yet written)
+        ; Restore the nametable that we clobbered
         far_call FAR_render_initial_viewport
-
+        ; Restore the static CHR bank that this nametable uses
+        lda StaticChrPreserve
+        sta StaticChrBank
 
         ; reset PPUADDR to top-left
         set_ppuaddr #$2000
