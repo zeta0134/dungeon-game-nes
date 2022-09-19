@@ -35,6 +35,12 @@ CursorPulseCounter: .res 1
 
 StaticChrPreserve: .res 1
 
+ShadowCursorTop: .res 1
+ShadowCursorBottom: .res 1
+ShadowCursorLeft: .res 1
+ShadowCursorRight: .res 1
+ShadowCursorShown: .res 1
+
 ; Ability memory, TODO: move this somewhere more shared
 actionset_a: .res 2
 actionset_b: .res 2
@@ -47,6 +53,11 @@ CURSOR_TL_OAM_INDEX = 16
 CURSOR_TR_OAM_INDEX = 20
 CURSOR_BL_OAM_INDEX = 24
 CURSOR_BR_OAM_INDEX = 28
+
+SHADOW_CURSOR_TL_OAM_INDEX = 32
+SHADOW_CURSOR_TR_OAM_INDEX = 36
+SHADOW_CURSOR_BL_OAM_INDEX = 40
+SHADOW_CURSOR_BR_OAM_INDEX = 44
 
 CURSOR_TL_TILE = 83
 CURSOR_TR_TILE = 85
@@ -288,6 +299,8 @@ right_nametable_loop:
         jsr initialize_cursor_pos
         ; Draw the cursor once here, so it is present during fade-in
         jsr draw_cursor
+        lda #0
+        sta ShadowCursorShown
 
         ; We need to set our static bank to the ability icons, so the NMI routine loads it into
         ; place for us, but we don't want to clobber the background tiles that are there when we exit.
@@ -315,9 +328,21 @@ right_nametable_loop:
         sta actionset_c + 0
         sta actionset_c + 1
 
-        .repeat 12, i
-        sta action_inventory + i
+        lda #1
+        sta action_inventory + 0
+        lda #2
+        sta action_inventory + 1
+        lda #3
+        sta action_inventory + 2
+        lda #4
+        sta action_inventory + 3
+        lda #5
+        sta action_inventory + 4
+        lda #0
+        .repeat 6, i
+        sta action_inventory + 6 + i
         .endrepeat
+
         jsr initialize_ability_icons
 
         ; Now, fully re-enable rendering
@@ -404,6 +429,7 @@ subscreen_still_active:
         jsr handle_move_cursor
         jsr lerp_cursor_position
         jsr draw_cursor
+        jsr draw_shadow_cursor
         inc CursorPulseCounter
 
         rts
@@ -1007,5 +1033,103 @@ actionset_loop:
         cmp AbilityCounter
         bne actionset_loop
 
+        rts
+.endproc
+
+.proc activate_shadow_cursor
+        lda CursorTopTarget
+        sta ShadowCursorTop
+        lda CursorBottomTarget
+        sta ShadowCursorBottom
+        lda CursorLeftTarget
+        sta ShadowCursorLeft
+        lda CursorRightTarget
+        sta ShadowCursorRight
+        lda #1
+        sta ShadowCursorShown
+        rts
+.endproc
+
+.proc draw_shadow_cursor
+INNER_OFFSET = 4
+        lda ShadowCursorShown
+        beq hide
+
+draw:
+        ; TOP LEFT
+        ; Y position
+        lda ShadowCursorTop
+        clc
+        adc #INNER_OFFSET
+        sta SHADOW_OAM + SHADOW_CURSOR_TL_OAM_INDEX + 0
+        ; X position
+        lda ShadowCursorLeft
+        clc
+        adc #INNER_OFFSET
+        sta SHADOW_OAM + SHADOW_CURSOR_TL_OAM_INDEX + 3
+        ; Tile Index
+        lda #CURSOR_TL_TILE
+        sta SHADOW_OAM + SHADOW_CURSOR_TL_OAM_INDEX + 1
+
+        ; TOP RIGHT
+        ; Y position
+        lda ShadowCursorTop
+        clc
+        adc #INNER_OFFSET
+        sta SHADOW_OAM + SHADOW_CURSOR_TR_OAM_INDEX + 0
+        ; X position
+        lda ShadowCursorRight
+        sec
+        sbc #4
+        sta SHADOW_OAM + SHADOW_CURSOR_TR_OAM_INDEX + 3
+        ; Tile Index
+        lda #CURSOR_TR_TILE
+        sta SHADOW_OAM + SHADOW_CURSOR_TR_OAM_INDEX + 1    
+
+        ; BOTTOM LEFT
+        ; Y position
+        lda ShadowCursorBottom
+        sec
+        sbc #INNER_OFFSET
+        sta SHADOW_OAM + SHADOW_CURSOR_BL_OAM_INDEX + 0
+        ; X position
+        lda ShadowCursorLeft
+        clc
+        adc #INNER_OFFSET
+        sta SHADOW_OAM + SHADOW_CURSOR_BL_OAM_INDEX + 3       
+        ; Tile Index
+        lda #CURSOR_BL_TILE
+        sta SHADOW_OAM + SHADOW_CURSOR_BL_OAM_INDEX + 1
+
+        ; BOTTOM RIGHT
+        ; Y position
+        lda ShadowCursorBottom
+        sec
+        sbc #INNER_OFFSET
+        sta SHADOW_OAM + SHADOW_CURSOR_BR_OAM_INDEX + 0
+        ; X position
+        lda ShadowCursorRight
+        sec
+        sbc #4
+        sta SHADOW_OAM + SHADOW_CURSOR_BR_OAM_INDEX + 3               
+        ; Tile Index
+        lda #CURSOR_BR_TILE
+        sta SHADOW_OAM + SHADOW_CURSOR_BR_OAM_INDEX + 1
+
+
+        ; Standard boring attributes, with palette 1
+        lda #1
+        sta SHADOW_OAM + SHADOW_CURSOR_TL_OAM_INDEX + 2
+        sta SHADOW_OAM + SHADOW_CURSOR_TR_OAM_INDEX + 2
+        sta SHADOW_OAM + SHADOW_CURSOR_BL_OAM_INDEX + 2
+        sta SHADOW_OAM + SHADOW_CURSOR_BR_OAM_INDEX + 2
+        rts
+
+hide:
+        lda #$F8
+        sta SHADOW_OAM + SHADOW_CURSOR_TL_OAM_INDEX + 0
+        sta SHADOW_OAM + SHADOW_CURSOR_TR_OAM_INDEX + 0
+        sta SHADOW_OAM + SHADOW_CURSOR_BL_OAM_INDEX + 0
+        sta SHADOW_OAM + SHADOW_CURSOR_BR_OAM_INDEX + 0
         rts
 .endproc
