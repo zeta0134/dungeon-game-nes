@@ -59,6 +59,9 @@
 .global sfx_close_subscreen_pulse1
 .global sfx_close_subscreen_pulse2
 .global sfx_move_cursor
+.global sfx_select_ability
+.global sfx_equip_ability_pulse1
+.global sfx_equip_ability_pulse2
 
 .macro play_dpcm sample_addr, length
 .scope

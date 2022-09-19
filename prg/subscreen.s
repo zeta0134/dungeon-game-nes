@@ -21,7 +21,9 @@ SubScreenState: .res 2
 FadeCounter: .res 1
 
 LayoutPtr: .res 2
+BehaviorPtr: .res 2
 CurrentRegionIndex: .res 2
+ShadowRegionIndex: .res 2
 
 CursorTopCurrent: .res 2
 CursorBottomCurrent: .res 2
@@ -42,6 +44,7 @@ ShadowCursorRight: .res 1
 ShadowCursorShown: .res 1
 
 ; Ability memory, TODO: move this somewhere more shared
+action_memory:
 actionset_a: .res 2
 actionset_b: .res 2
 actionset_c: .res 2
@@ -221,6 +224,17 @@ inventory_screen_regions:
         ; EXITS:  Up    Down  Left  Right 
         .byte      4,    $FF,  $FF,   $FF        
 
+inventory_screen_behaviors:
+        ; Equip Slots
+        .repeat 6
+        .word click_ability_slot
+        .endrepeat
+        ; Inventory Slots
+        .repeat 12
+        .word click_ability_slot
+        .endrepeat
+        ; Silly and temporary quest screen
+        .word click_unimplemented_slot
 
 ; === External Functions ===
 
@@ -291,6 +305,12 @@ right_nametable_loop:
         sta LayoutPtr
         lda #>inventory_screen_regions
         sta LayoutPtr+1
+
+        lda #<inventory_screen_behaviors
+        sta BehaviorPtr
+        lda #>inventory_screen_behaviors
+        sta BehaviorPtr+1
+
         ; FOR NOW, we will always start in the 0th region
         ; (Later I really want to memorize the last region for player convenience)
         lda #0
@@ -301,6 +321,8 @@ right_nametable_loop:
         jsr draw_cursor
         lda #0
         sta ShadowCursorShown
+        lda #$FF
+        sta ShadowRegionIndex
 
         ; We need to set our static bank to the ability icons, so the NMI routine loads it into
         ; place for us, but we don't want to clobber the background tiles that are there when we exit.
@@ -328,18 +350,14 @@ right_nametable_loop:
         sta actionset_c + 0
         sta actionset_c + 1
 
-        lda #1
-        sta action_inventory + 0
-        lda #2
-        sta action_inventory + 1
         lda #3
-        sta action_inventory + 2
+        sta action_inventory + 0
         lda #4
-        sta action_inventory + 3
+        sta action_inventory + 1
         lda #5
-        sta action_inventory + 4
+        sta action_inventory + 2
         lda #0
-        .repeat 6, i
+        .repeat 9, i
         sta action_inventory + 6 + i
         .endrepeat
 
@@ -428,6 +446,7 @@ subscreen_still_active:
         ; update all active cursors
         jsr handle_move_cursor
         jsr lerp_cursor_position
+        jsr handle_click
         jsr draw_cursor
         jsr draw_shadow_cursor
         inc CursorPulseCounter
@@ -1051,7 +1070,7 @@ actionset_loop:
 .endproc
 
 .proc draw_shadow_cursor
-INNER_OFFSET = 4
+INNER_OFFSET = 2
         lda ShadowCursorShown
         beq hide
 
@@ -1131,5 +1150,158 @@ hide:
         sta SHADOW_OAM + SHADOW_CURSOR_TR_OAM_INDEX + 0
         sta SHADOW_OAM + SHADOW_CURSOR_BL_OAM_INDEX + 0
         sta SHADOW_OAM + SHADOW_CURSOR_BR_OAM_INDEX + 0
+        rts
+.endproc
+
+.proc handle_click
+ZpBehaviorPtr := R0
+ClickHandler := R2
+        lda #KEY_A
+        and ButtonsDown
+        bne has_clicked
+        rts
+
+has_clicked:
+        lda BehaviorPtr
+        sta ZpBehaviorPtr
+        lda BehaviorPtr+1
+        sta ZpBehaviorPtr+1
+
+        lda CurrentRegionIndex
+        asl
+        tay
+        lda (ZpBehaviorPtr), y
+        sta ClickHandler
+        iny
+        lda (ZpBehaviorPtr), y
+        sta ClickHandler+1
+        jmp (ClickHandler)
+        ; tail call
+.endproc
+
+.proc click_ability_slot
+ScratchByte := R0
+        lda ShadowRegionIndex
+        cmp #$FF
+        bne second_click
+
+first_click:
+        ldy CurrentRegionIndex
+        lda action_memory, y
+        beq done ; if there is nothing in this slot, take no action
+        sty ShadowRegionIndex
+        jsr activate_shadow_cursor
+        st16 R0, sfx_select_ability
+        jsr play_sfx_pulse1        
+        rts
+
+second_click:
+        ; Did we click the same slot? If so, simply cancel the selection and do nothing
+        lda CurrentRegionIndex
+        cmp ShadowRegionIndex
+        beq cancel_selection
+
+        ; Otherwise, swap these abilities
+        ldx CurrentRegionIndex
+        ldy ShadowRegionIndex
+        lda action_memory, x
+        sta ScratchByte
+        lda action_memory, y
+        sta action_memory, x
+        lda ScratchByte
+        sta action_memory, y
+
+        ; Now we need to redraw both ability slots
+        ldx CurrentRegionIndex
+        stx R0
+        lda action_memory, x 
+        sta R1
+        jsr draw_ability_icon_buffered
+
+        ldx ShadowRegionIndex
+        stx R0
+        lda action_memory, x 
+        sta R1
+        jsr draw_ability_icon_buffered
+
+        ; Play an appropriate equip SFX
+        st16 R0, sfx_equip_ability_pulse1
+        jsr play_sfx_pulse1
+        st16 R0, sfx_equip_ability_pulse2
+        jsr play_sfx_pulse2
+
+        jmp hide_shadow_cursor
+
+cancel_selection:
+        st16 R0, sfx_select_ability ; TODO: SFX for canceling a selection. Maybe a super gentle error buzz?
+        jsr play_sfx_pulse1
+hide_shadow_cursor:
+        lda #$FF
+        sta ShadowRegionIndex
+        lda #0
+        sta ShadowCursorShown
+done:
+        rts
+.endproc
+
+.proc click_unimplemented_slot
+        st16 R0, sfx_error_buzz
+        jsr play_sfx_noise
+        rts
+.endproc
+
+; Safe to call nearly any time. Only valid when called with the RegionId of an
+; ability icon, as it will draw a 2x2 bit of tiles at that region's top-left corner.
+.proc draw_ability_icon_buffered
+RegionIndex := R0
+AbilityIndex := R1
+PpuAddrScratch := R2
+AbilityTileScratch := R4
+RegionAddr := R14
+        jsr region_tile_addr
+
+        write_vram_header_ptr PpuAddrScratch, #2, VRAM_INC_1
+        ldy VRAM_TABLE_INDEX
+
+        ; Ability Index * 4 gives us the index into the tile LUT
+        lda AbilityIndex
+        asl
+        asl
+        tax
+        ; First draw the upper row
+        lda ability_icons_tiles, x
+        sta VRAM_TABLE_START, y
+        iny
+        lda ability_icons_tiles + 1, x
+        sta VRAM_TABLE_START, y
+        iny
+
+        sty VRAM_TABLE_INDEX
+        inc VRAM_TABLE_ENTRIES
+
+        ; Now move PPUADDR one row down...
+        add16b PpuAddrScratch, #32
+        write_vram_header_ptr PpuAddrScratch, #2, VRAM_INC_1
+        ldy VRAM_TABLE_INDEX
+
+        ; (We need to do this again because writing the vram header clobbered X)
+        lda AbilityIndex
+        asl
+        asl
+        tax
+
+        ; and draw the second row of tiles
+        lda ability_icons_tiles + 2, x
+        sta VRAM_TABLE_START, y
+        iny
+        lda ability_icons_tiles + 3, x
+        sta VRAM_TABLE_START, y
+        iny
+
+        sty VRAM_TABLE_INDEX
+        inc VRAM_TABLE_ENTRIES
+
+        ; TODO: compute and set the attribute byte here
+
         rts
 .endproc
