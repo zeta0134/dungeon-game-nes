@@ -1,6 +1,6 @@
 DEBUG_MODE = 0
 DEBUG_TIME_WASTE = 0
-DEBUG_DISABLE_MUSIC = 1
+DEBUG_DISABLE_MUSIC = 0
 
 .macro debug_color flags
         .if ::DEBUG_MODE
