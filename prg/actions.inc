@@ -9,6 +9,18 @@
 .global actionset_c
 .global action_inventory
 
+.global actions_down_low
+.global actions_down_high
+.global actions_held_low
+.global actions_held_high
+.global actions_released_low
+.global actions_released_high
+
+.global action_a_slot
+.global action_a_id
+.global action_b_slot
+.global action_b_id
+
 ; Action Index IDs
 ACTION_NONE = 0
 ; Implemented

@@ -288,7 +288,7 @@ done_with_health_change:
         ; check to see if any of our abilities need to be redrawn
         ; TODO: workout the actually equipped action, don't just use actionset A
 check_left_action:
-        lda actionset_a + 0
+        lda action_a_id
         cmp ActionDisplayedLeft
         beq check_right_action
 
@@ -300,7 +300,7 @@ check_left_action:
         ; TODO: jump away?
         ; for now, fall through
 check_right_action:
-        lda actionset_a + 1
+        lda action_b_id
         cmp ActionDisplayedRight
         beq check_right_action
 
