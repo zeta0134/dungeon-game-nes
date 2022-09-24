@@ -1,7 +1,7 @@
 .global FAR_initialize_actions
 .global FAR_draw_ability_icon_immediate, FAR_draw_ability_icon_buffered
 .global FAR_draw_ability_icon_buffered_top_row, FAR_draw_ability_icon_buffered_bottom_row
-.global FAR_update_action_masks
+.global FAR_update_action_masks, FAR_update_action_buttons
 
 .global action_memory
 .global actionset_a

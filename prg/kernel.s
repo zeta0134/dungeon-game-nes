@@ -269,6 +269,7 @@ time_waste_loop:
         dex
         bne time_waste_loop
         .endif
+        far_call FAR_update_action_buttons
         debug_color LIGHTGRAY
         far_call FAR_update_camera
         debug_color TINT_R | TINT_G

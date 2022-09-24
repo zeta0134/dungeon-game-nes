@@ -1,6 +1,7 @@
         .setcpu "6502"
         .include "actions.inc"
         .include "far_call.inc"
+        .include "input.inc"
         .include "nes.inc"
         .include "ppu.inc"
         .include "vram_buffer.inc"
@@ -19,8 +20,8 @@ actions_down_low: .res 1
 actions_down_high: .res 1
 actions_held_low: .res 1
 actions_held_high: .res 1
-actions_released_low: .res 1
-actions_released_high: .res 1
+actions_up_low: .res 1
+actions_up_high: .res 1
 
 action_a_slot: .res 1
 action_a_id: .res 1
@@ -211,5 +212,84 @@ done_with_loop_b:
         sta action_b_low_mask
         lda ScratchWord+1
         sta action_b_high_mask
+        rts
+.endproc
+
+.proc FAR_update_action_buttons
+        lda #0
+        sta actions_down_low
+        sta actions_down_high
+        sta actions_held_low
+        sta actions_held_high
+        sta actions_up_low
+        sta actions_up_high
+
+check_button_a_down:
+        lda #KEY_A
+        and ButtonsDown
+        beq check_button_a_held
+
+        lda action_a_low_mask
+        sta actions_down_low
+        lda action_a_high_mask
+        sta actions_down_high
+
+check_button_a_held:
+        lda #KEY_A
+        and ButtonsHeld
+        beq check_button_a_up
+
+        lda action_a_low_mask
+        sta actions_held_low
+        lda action_a_high_mask
+        sta actions_held_high
+
+check_button_a_up:
+        lda #KEY_A
+        and ButtonsUp
+        beq check_button_b_down
+
+        lda action_a_low_mask
+        sta actions_up_low
+        lda action_a_high_mask
+        sta actions_up_high
+
+check_button_b_down:
+        lda #KEY_B
+        and ButtonsDown
+        beq check_button_b_held
+
+        lda action_b_low_mask
+        ora actions_down_low
+        sta actions_down_low
+        lda action_b_high_mask
+        ora actions_down_high
+        sta actions_down_high
+
+check_button_b_held:
+        lda #KEY_B
+        and ButtonsHeld
+        beq check_button_b_up
+
+        lda action_b_low_mask
+        ora actions_held_low
+        sta actions_held_low
+        lda action_b_high_mask
+        ora actions_held_high
+        sta actions_held_high
+
+check_button_b_up:
+        lda #KEY_B
+        and ButtonsUp
+        beq done
+
+        lda action_b_low_mask
+        ora actions_up_low
+        sta actions_up_low
+        lda action_b_high_mask
+        ora actions_up_high
+        sta actions_up_high
+
+done:
         rts
 .endproc
