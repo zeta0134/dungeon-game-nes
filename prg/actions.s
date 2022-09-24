@@ -15,6 +15,22 @@ actionset_b: .res 2
 actionset_c: .res 2
 action_inventory: .res 12
 
+actions_down_low: .res 1
+actions_down_high: .res 1
+actions_held_low: .res 1
+actions_held_high: .res 1
+actions_released_low: .res 1
+actions_released_high: .res 1
+
+action_a_slot: .res 1
+action_a_id: .res 1
+action_a_low_mask: .res 1
+action_a_high_mask: .res 1
+action_b_slot: .res 1
+action_b_id: .res 1
+action_b_low_mask: .res 1
+action_b_high_mask: .res 1
+
         .segment "SUBSCREEN_A000"
 
 ability_icons_tiles:
@@ -50,6 +66,11 @@ ability_icons_tiles:
         .repeat 9, i
         sta action_inventory + 6 + i
         .endrepeat
+
+        lda #0
+        sta action_a_slot
+        sta action_b_slot
+        near_call FAR_update_action_masks
         rts
 .endproc
 
@@ -144,5 +165,51 @@ DestPpuAddr := R2
 
         sty VRAM_TABLE_INDEX
         inc VRAM_TABLE_ENTRIES
+        rts
+.endproc
+
+.proc FAR_update_action_masks
+ScratchWord := R0
+        lda action_a_slot
+        asl
+        tax
+        lda action_memory + 0, x
+        sta action_a_id
+
+        lda action_b_slot
+        asl
+        tax
+        lda action_memory + 1, x
+        sta action_b_id
+
+        st16 ScratchWord, $0000
+        sec
+        ldy action_a_id
+        beq done_with_loop_a
+loop_a: 
+        rol ScratchWord
+        rol ScratchWord+1
+        dey
+        bne loop_a
+done_with_loop_a:
+        lda ScratchWord
+        sta action_a_low_mask
+        lda ScratchWord+1
+        sta action_a_high_mask
+
+        st16 ScratchWord, $0000
+        sec
+        ldy action_b_id
+        beq done_with_loop_b
+loop_b: 
+        rol ScratchWord
+        rol ScratchWord+1
+        dey
+        bne loop_b
+done_with_loop_b:
+        lda ScratchWord
+        sta action_b_low_mask
+        lda ScratchWord+1
+        sta action_b_high_mask
         rts
 .endproc

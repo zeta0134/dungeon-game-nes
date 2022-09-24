@@ -481,6 +481,10 @@ done_with_fadeout:
         ; now we may safely enable interrupts
         cli
 
+        ; Here we perform some last-minute gameplay updates. In particular, we need to refresh
+        ; the ability icon masks, so the player's newly-equipped abilities take effect
+        near_call FAR_update_action_masks
+
         ; Now signal to the kernel that it is safe to return to the main game mode
         st16 GameMode, return_from_subscreen
         rts
