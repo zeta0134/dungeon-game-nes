@@ -1,7 +1,9 @@
         .setcpu "6502"
         ; for player variables and whatnot
+        .include "actions.inc"
         .include "branch_util.inc"
         .include "boxgirl.inc"
+        .include "far_call.inc"
         .include "statusbar.inc"
         .include "nes.inc"
         .include "palette.inc"
@@ -18,6 +20,8 @@ HudState: .res 2
 HealthDisplayed: .res 1
 HealthCooldown: .res 1
 HudStateCounter: .res 1
+ActionDisplayedLeft: .res 1
+ActionDisplayedRight: .res 1
 
         .segment "PRGFIXED_E000"
 
@@ -64,6 +68,8 @@ basic_hud:
         st16 HudState, hud_cold_draw
         lda #0
         sta HudStateCounter
+        sta ActionDisplayedLeft
+        sta ActionDisplayedRight
         rts
 .endproc
 
@@ -208,8 +214,14 @@ attribute_loop_2:
         rts
 .endproc
 
+; TODO: We may wish to limit this functions VRAM buffer queues when there is a lot
+; going on. Consider giving health higher priority, since it has a cooldown, and also
+; consider only queueing up a single ability icon change at a time.
 .proc hud_active
 TileAddr := R0
+        ; First check to see if we need to update the heart indicator. We use a cooldown
+        ; here to subtly animate big health changes, and this also ensures that health
+        ; updates will never exceed 1 byte
         lda HealthCooldown
         beq check_health
         dec HealthCooldown
@@ -273,6 +285,31 @@ write_heart_increase:
         sta HealthCooldown
         ; fall through
 done_with_health_change:
+        ; check to see if any of our abilities need to be redrawn
+        ; TODO: workout the actually equipped action, don't just use actionset A
+check_left_action:
+        lda actionset_a + 0
+        cmp ActionDisplayedLeft
+        beq check_right_action
+
+        sta R1 ; ability index
+        st16 R2, $23B7 ; DestPpuAddr
+        far_call FAR_draw_ability_icon_buffered_top_row
+        st16 R2, $2797 ; DestPpuAddr
+        far_call FAR_draw_ability_icon_buffered_bottom_row
+        ; TODO: jump away?
+        ; for now, fall through
+check_right_action:
+        lda actionset_a + 1
+        cmp ActionDisplayedRight
+        beq check_right_action
+
+        sta R1 ; ability index
+        st16 R2, $23BB ; DestPpuAddr
+        far_call FAR_draw_ability_icon_buffered_top_row
+        st16 R2, $279B ; DestPpuAddr
+        far_call FAR_draw_ability_icon_buffered_bottom_row
+done_with_actions:
         rts
 .endproc
 

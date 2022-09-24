@@ -1,5 +1,6 @@
         .setcpu "6502"
 
+        .include "actions.inc"
         .include "blobby.inc"
         .include "boxgirl.inc"
         .include "camera.inc"
@@ -54,6 +55,8 @@ ABILITY_ICON_BANK = $14
 ScratchAddr := R0
 CurrentEntityIndex := R2
 MapAddr := R4 ; load_entities requires that MapAddr be R4
+
+        ; Currently hardcoded: all maps will contain boxgirl
         st16 ScratchAddr, boxgirl_init
         far_call FAR_spawn_entity
 
@@ -147,6 +150,7 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
 
 ; === Game Mode Functions Follow ===
 .proc init_engine
+        ; Initialize the palette system
         lda #4
         sta Brightness
         lda #1
@@ -155,10 +159,14 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         lda #$1E
         sta PlayfieldPpuMask
 
+        ; Begin by loading a debug test map
         st16 TargetMapAddr, (debug_hub)
         lda #<.bank(debug_hub)
         sta TargetMapBank
         st16 GameMode, load_new_map
+
+        ; Initialize some bits of global state here
+        far_call FAR_initialize_actions
         rts
 .endproc
 

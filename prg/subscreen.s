@@ -1,4 +1,5 @@
         .setcpu "6502"
+        .include "actions.inc"
         .include "far_call.inc"
         .include "input.inc"
         .include "kernel.inc"
@@ -43,12 +44,7 @@ ShadowCursorLeft: .res 1
 ShadowCursorRight: .res 1
 ShadowCursorShown: .res 1
 
-; Ability memory, TODO: move this somewhere more shared
-action_memory:
-actionset_a: .res 2
-actionset_b: .res 2
-actionset_c: .res 2
-action_inventory: .res 12
+
 
         .segment "SUBSCREEN_A000"
 
@@ -75,16 +71,6 @@ subscreen_bg_palette:
         .incbin "art/palettes/subscreen.pal"
 subscreen_obj_palette:
         .incbin "art/palettes/subscreen_sprites.pal"
-
-ability_icons_tiles:
-        .byte 0, 0, 0, 0
-        .byte 128, 129, 130, 131
-        .byte 132, 133, 134, 135
-        .byte 136, 137, 138, 139
-        .byte 140, 141, 142, 143
-        .byte 144, 145, 146, 147
-        .byte 148, 149, 150, 151
-
 
 .struct Layout
         Length .byte ; in regions
@@ -334,32 +320,6 @@ right_nametable_loop:
         sta StaticChrBank
 
         ; TODO: other setup!
-
-        ; DEBUG!
-        ; For testing the subscreen, reset the inventory memory
-        ; each time it is opened. Later we should initialize this
-        ; at boot, and much later we should initialize it from the
-        ; player's loaded save file.
-        lda #1
-        sta actionset_a + 0
-        lda #2
-        sta actionset_a + 1
-        lda #0
-        sta actionset_b + 0
-        sta actionset_b + 1
-        sta actionset_c + 0
-        sta actionset_c + 1
-
-        lda #3
-        sta action_inventory + 0
-        lda #4
-        sta action_inventory + 1
-        lda #5
-        sta action_inventory + 2
-        lda #0
-        .repeat 9, i
-        sta action_inventory + 6 + i
-        .endrepeat
 
         jsr initialize_ability_icons
 
@@ -998,36 +958,13 @@ RegionAddr := R14
 
 ; Meant to be used only during init. Only valid when called with the RegionId of an
 ; ability icon, as it will draw a 2x2 bit of tiles at that region's top-left corner.
-.proc draw_ability_icon_immediate
+.proc draw_ability_region_immediate
 RegionIndex := R0
 AbilityIndex := R1
 PpuAddrScratch := R2
-AbilityTileScratch := R4
 RegionAddr := R14
         jsr region_tile_addr        
-        set_ppuaddr PpuAddrScratch
-
-        ; Ability Index * 4 gives us the index into the tile LUT
-        lda AbilityIndex
-        asl
-        asl
-        tax
-        ; First draw the upper row
-        lda ability_icons_tiles, x
-        sta PPUDATA
-        lda ability_icons_tiles + 1, x
-        sta PPUDATA
-        ; Now move PPUADDR one row down...
-        add16b PpuAddrScratch, #32
-        set_ppuaddr PpuAddrScratch
-        ; and draw the second row of tiles
-        lda ability_icons_tiles + 2, x
-        sta PPUDATA
-        lda ability_icons_tiles + 3, x
-        sta PPUDATA
-
-        ; TODO: compute and set the attribute byte here
-
+        near_call FAR_draw_ability_icon_immediate
         rts
 .endproc
 
@@ -1044,7 +981,7 @@ actionset_loop:
         ldx AbilityCounter
         lda actionset_a, x
         sta AbilityIndex
-        jsr draw_ability_icon_immediate
+        jsr draw_ability_region_immediate
         inc RegionIndex
         inc AbilityIndex
         inc AbilityCounter
@@ -1216,13 +1153,13 @@ second_click:
         stx R0
         lda action_memory, x 
         sta R1
-        jsr draw_ability_icon_buffered
+        jsr draw_ability_region_buffered
 
         ldx ShadowRegionIndex
         stx R0
         lda action_memory, x 
         sta R1
-        jsr draw_ability_icon_buffered
+        jsr draw_ability_region_buffered
 
         ; Play an appropriate equip SFX
         st16 R0, sfx_equip_ability_pulse1
@@ -1252,56 +1189,12 @@ done:
 
 ; Safe to call nearly any time. Only valid when called with the RegionId of an
 ; ability icon, as it will draw a 2x2 bit of tiles at that region's top-left corner.
-.proc draw_ability_icon_buffered
+.proc draw_ability_region_buffered
 RegionIndex := R0
 AbilityIndex := R1
 PpuAddrScratch := R2
-AbilityTileScratch := R4
 RegionAddr := R14
         jsr region_tile_addr
-
-        write_vram_header_ptr PpuAddrScratch, #2, VRAM_INC_1
-        ldy VRAM_TABLE_INDEX
-
-        ; Ability Index * 4 gives us the index into the tile LUT
-        lda AbilityIndex
-        asl
-        asl
-        tax
-        ; First draw the upper row
-        lda ability_icons_tiles, x
-        sta VRAM_TABLE_START, y
-        iny
-        lda ability_icons_tiles + 1, x
-        sta VRAM_TABLE_START, y
-        iny
-
-        sty VRAM_TABLE_INDEX
-        inc VRAM_TABLE_ENTRIES
-
-        ; Now move PPUADDR one row down...
-        add16b PpuAddrScratch, #32
-        write_vram_header_ptr PpuAddrScratch, #2, VRAM_INC_1
-        ldy VRAM_TABLE_INDEX
-
-        ; (We need to do this again because writing the vram header clobbered X)
-        lda AbilityIndex
-        asl
-        asl
-        tax
-
-        ; and draw the second row of tiles
-        lda ability_icons_tiles + 2, x
-        sta VRAM_TABLE_START, y
-        iny
-        lda ability_icons_tiles + 3, x
-        sta VRAM_TABLE_START, y
-        iny
-
-        sty VRAM_TABLE_INDEX
-        inc VRAM_TABLE_ENTRIES
-
-        ; TODO: compute and set the attribute byte here
-
+        near_call FAR_draw_ability_icon_buffered
         rts
 .endproc
