@@ -24,19 +24,48 @@
 ; Action Index IDs
 ACTION_NONE = 0
 ; Implemented
-ACTION_DASH = 1
-ACTION_JUMP = 2
+ACTION_JUMP = 1
+ACTION_DASH = 2
 ; Unimplemented
 ACTION_FEATHER = 3
 ACTION_FIRE = 4
 ACTION_HAMMER = 5
 
-; Action button masks
-ACTION_BUTTON_DASH =    (1 << (ACTION_DASH - 1))
-ACTION_BUTTON_JUMP =    (1 << (ACTION_JUMP - 1))
-ACTION_BUTTON_FEATHER = (1 << (ACTION_FEATHER - 1))
-ACTION_BUTTON_FIRE =    (1 << (ACTION_FIRE - 1))
-ACTION_BUTTON_HAMMER =  (1 << (ACTION_HAMMER - 1))
+.macro if_action_held ACTION_ID
+.scope
+ACTION_MASK = (1 << (ACTION_ID - 1))
+.if (ACTION_MASK > $FF)
+        lda #>ACTION_MASK
+        bit actions_held_high
+.else
+        lda #<ACTION_MASK
+        bit actions_held_low
+.endif
+.endscope
+.endmacro
 
+.macro if_action_down ACTION_ID
+.scope
+ACTION_MASK = (1 << (ACTION_ID - 1))
+.if (ACTION_MASK > $FF)
+        lda #>ACTION_MASK
+        bit actions_down_high
+.else
+        lda #<ACTION_MASK
+        bit actions_down_low
+.endif
+.endscope
+.endmacro
 
-
+.macro if_action_up ACTION_ID
+.scope
+ACTION_MASK = (1 << (ACTION_ID - 1))
+.if (ACTION_MASK > $FF)
+        lda #>ACTION_MASK
+        bit actions_up_high
+.else
+        lda #<ACTION_MASK
+        bit actions_up_low
+.endif
+.endscope
+.endmacro

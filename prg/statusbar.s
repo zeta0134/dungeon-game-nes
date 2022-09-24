@@ -288,7 +288,7 @@ done_with_health_change:
         ; check to see if any of our abilities need to be redrawn
         ; TODO: workout the actually equipped action, don't just use actionset A
 check_left_action:
-        lda action_a_id
+        lda action_b_id
         cmp ActionDisplayedLeft
         beq check_right_action
 
@@ -300,9 +300,9 @@ check_left_action:
         ; TODO: jump away?
         ; for now, fall through
 check_right_action:
-        lda action_b_id
+        lda action_a_id
         cmp ActionDisplayedRight
-        beq check_right_action
+        beq done_with_actions
 
         sta R1 ; ability index
         st16 R2, $23BB ; DestPpuAddr

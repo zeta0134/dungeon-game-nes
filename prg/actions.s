@@ -47,9 +47,9 @@ ability_icons_tiles:
         ; TODO: Once we know the player's starting inventory set, we should
         ; initialize that here. For now, this contains the DEBUG set, for
         ; rapid testing of game mechanics.
-        lda #2
+        lda #ACTION_DASH
         sta actionset_a + 0
-        lda #1
+        lda #ACTION_JUMP
         sta actionset_a + 1
         lda #0
         sta actionset_b + 0
@@ -57,11 +57,11 @@ ability_icons_tiles:
         sta actionset_c + 0
         sta actionset_c + 1
 
-        lda #3
+        lda #ACTION_FEATHER
         sta action_inventory + 0
-        lda #4
+        lda #ACTION_FIRE
         sta action_inventory + 1
-        lda #5
+        lda #ACTION_HAMMER
         sta action_inventory + 2
         lda #0
         .repeat 9, i
@@ -174,13 +174,13 @@ ScratchWord := R0
         lda action_a_slot
         asl
         tax
-        lda action_memory + 0, x
+        lda action_memory + 1, x
         sta action_a_id
 
         lda action_b_slot
         asl
         tax
-        lda action_memory + 1, x
+        lda action_memory + 0, x
         sta action_b_id
 
         st16 ScratchWord, $0000

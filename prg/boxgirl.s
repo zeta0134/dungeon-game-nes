@@ -1,4 +1,5 @@
         .setcpu "6502"
+        .include "actions.inc"
         .include "bhop/bhop.inc"
         .include "boxgirl.inc"
         .include "branch_util.inc"
@@ -572,8 +573,7 @@ done:
 .proc handle_jump
         ldx CurrentEntityIndex
         ; have we pressed the jump button?
-        lda #KEY_A
-        bit ButtonsDown
+        if_action_down ::ACTION_JUMP
         beq jump_not_pressed
         ; may we single jump?
         entity_check_flag_x FLAG_JUMP
@@ -710,8 +710,7 @@ converge:
 .proc handle_dash
         ldx CurrentEntityIndex
         ; have we pressed the dash button?
-        lda #KEY_B
-        bit ButtonsDown
+        if_action_down ::ACTION_DASH
         beq dash_not_pressed
         ; may we dash?
         entity_check_flag_x FLAG_DASH
