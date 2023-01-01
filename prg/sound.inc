@@ -9,6 +9,7 @@
 .global play_sfx_noise
 .global play_sfx_dpcm
 
+
 .global sfx_jump
 .global sfx_double_jump
 .global sfx_bounce

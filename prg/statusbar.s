@@ -292,6 +292,7 @@ check_left_action:
         cmp ActionDisplayedLeft
         beq check_right_action
 
+        sta ActionDisplayedLeft
         sta R1 ; ability index
         st16 R2, $23B7 ; DestPpuAddr
         far_call FAR_draw_ability_icon_buffered_top_row
@@ -304,6 +305,7 @@ check_right_action:
         cmp ActionDisplayedRight
         beq done_with_actions
 
+        sta ActionDisplayedRight
         sta R1 ; ability index
         st16 R2, $23BB ; DestPpuAddr
         far_call FAR_draw_ability_icon_buffered_top_row

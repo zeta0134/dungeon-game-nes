@@ -604,3 +604,7 @@ sfx_equip_ability_pulse2:
         pulse_cont_duty               $0,      $3,                                        0
         pulse_cont_duty               $0,      $2,                                        0
         pulse_cont_duty               $0,      $1,                                        0
+
+
+
+

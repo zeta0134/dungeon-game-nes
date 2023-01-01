@@ -1,9 +1,11 @@
         .setcpu "6502"
         .include "actions.inc"
+        .include "branch_util.inc"
         .include "far_call.inc"
         .include "input.inc"
         .include "nes.inc"
         .include "ppu.inc"
+        .include "sound.inc"
         .include "vram_buffer.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
@@ -31,6 +33,15 @@ action_b_slot: .res 1
 action_b_id: .res 1
 action_b_low_mask: .res 1
 action_b_high_mask: .res 1
+total_action_slots: .res 1
+
+; used to manage state for action switching
+action_flags: .res 1
+desync_counter: .res 1
+
+SWITCH_INITIATED      = %00000001
+SWITCH_DESYNC_PRESSED = %00000010
+
 
         .segment "SUBSCREEN_A000"
 
@@ -67,6 +78,12 @@ ability_icons_tiles:
         .repeat 9, i
         sta action_inventory + 6 + i
         .endrepeat
+
+        lda #0
+        sta action_flags
+        sta desync_counter
+        lda #3
+        sta total_action_slots
 
         lda #0
         sta action_a_slot
@@ -216,6 +233,8 @@ done_with_loop_b:
 .endproc
 
 .proc FAR_update_action_buttons
+        near_call FAR_handle_action_switching
+
         lda #0
         sta actions_down_low
         sta actions_down_high
@@ -223,6 +242,11 @@ done_with_loop_b:
         sta actions_held_high
         sta actions_up_low
         sta actions_up_high
+
+        ; If we are currently mid-switch, suppress all action behavior
+        lda #SWITCH_INITIATED
+        and action_flags
+        bne done
 
 check_button_a_down:
         lda #KEY_A
@@ -291,5 +315,160 @@ check_button_b_up:
         sta actions_up_high
 
 done:
+        rts
+.endproc
+
+.proc FAR_handle_action_switching
+        ; First: if we just pressed select, then initiate a switch. This suppresses all activity
+        ; for the other actions
+        lda #KEY_SELECT
+        bit ButtonsDown
+        beq select_not_down
+
+        ; sanity check: if ANY action button is currently pressed, do not initiate a switch
+        lda #(KEY_A | KEY_B)
+        bit ButtonsHeld
+        jne done_with_switch
+
+        lda #SWITCH_INITIATED
+        sta action_flags
+
+select_not_down:
+        
+        ; If select is held, then check both A and B for a desync
+        lda #KEY_SELECT
+        bit ButtonsHeld
+        beq done_with_desyncs
+
+check_a:
+        lda #KEY_A
+        bit ButtonsDown
+        beq check_b
+
+        jsr advance_a_action
+
+        ; TODO: have a specific SFX for advancing a single action?
+        st16 R0, sfx_equip_ability_pulse1
+        jsr play_sfx_pulse1
+        st16 R0, sfx_equip_ability_pulse2
+        jsr play_sfx_pulse2
+
+check_b:
+        lda #KEY_B
+        bit ButtonsDown
+        beq done_with_desyncs
+
+        jsr advance_b_action
+
+        ; TODO: have a specific SFX for advancing a single action?
+        st16 R0, sfx_equip_ability_pulse1
+        jsr play_sfx_pulse1
+        st16 R0, sfx_equip_ability_pulse2
+        jsr play_sfx_pulse2
+
+done_with_desyncs:
+        ; If select is released...
+        lda #KEY_SELECT
+        bit ButtonsUp
+        beq done_with_switch
+
+        ; Sanity check: were we actually in the middle of a switch?
+        ; We might not be, if it was canceled or we somehow got into a play state
+        ; with select already held; in this case, do nothing.
+        lda #SWITCH_INITIATED
+        bit action_flags
+        beq done_with_switch
+
+        ; If we did a desync during this session, then take no additional action
+        lda #SWITCH_DESYNC_PRESSED
+        bit action_flags
+        bne clear_switch_flags
+
+        ; Otherwise, we process this like a SELECT press then release.
+        ; If we are NOT currently desynced...
+        lda desync_counter
+        bne resync_action_sets
+        ; Then we merely advance both A and B to the next action set
+        jsr advance_a_action
+        jsr advance_b_action
+
+        ; TODO: have a specific SFX for advancing both sets at once?
+        st16 R0, sfx_equip_ability_pulse1
+        jsr play_sfx_pulse1
+        st16 R0, sfx_equip_ability_pulse2
+        jsr play_sfx_pulse2
+
+        jmp clear_switch_flags
+resync_action_sets:
+        ; Otherwise we now need to *fix* the desync. Whichever side is ahead, the other side
+        ; will have its slot set to match
+
+        ; TODO: have a specific SFX for re-syncing sets?
+        st16 R0, sfx_equip_ability_pulse1
+        jsr play_sfx_pulse1
+        st16 R0, sfx_equip_ability_pulse2
+        jsr play_sfx_pulse2
+
+        lda desync_counter
+        bmi b_is_ahead
+a_is_ahead:
+        lda action_a_slot
+        sta action_b_slot
+        near_call FAR_update_action_masks
+        lda #0
+        sta desync_counter
+        jmp clear_switch_flags
+b_is_ahead:
+        lda action_b_slot
+        sta action_a_slot
+        lda #0
+        sta desync_counter
+        near_call FAR_update_action_masks
+        ; fall through
+clear_switch_flags:
+        lda #0
+        sta action_flags
+
+done_with_switch:
+        rts
+.endproc
+
+.proc advance_a_action
+        ; advance the action slot and the desync counter
+        inc action_a_slot
+        inc desync_counter
+        ; correct overflow if necessary
+        lda action_a_slot
+        cmp total_action_slots
+        bne no_a_overflow
+        lda #0
+        sta action_a_slot
+no_a_overflow:
+        ; make note that a desync occured
+        lda #SWITCH_DESYNC_PRESSED
+        ora action_flags
+        sta action_flags
+        ; update action icon details
+        near_call FAR_update_action_masks
+        rts
+.endproc
+
+.proc advance_b_action
+        ; advance the action slot and the desync counter
+        inc action_b_slot
+        dec desync_counter
+        ; correct overflow if necessary
+        lda action_b_slot
+        cmp total_action_slots
+        bne no_b_overflow
+        lda #0
+        sta action_b_slot
+no_b_overflow:
+        ; make note that a desync occured
+        lda #SWITCH_DESYNC_PRESSED
+        ora action_flags
+        sta action_flags
+        ; update action icon details
+        near_call FAR_update_action_masks
         rts
 .endproc
