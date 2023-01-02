@@ -403,7 +403,7 @@ def generate_collision_tileset():
     # First off, there is a permanent wall tile, with no walkable surfaces:
     tiles.append(BLANK_TILE)
 
-    # There are 16 visible surface heights, 0-15
+    # There are 16 visible surface heights, 0 - 15
     for visible_surface_height in range(0, 16):
         vislble_surface_tile = TiledTile(
             tiled_index=len(tiles), 
@@ -418,8 +418,13 @@ def generate_collision_tileset():
             type="collision"
         )
         tiles.append(vislble_surface_tile)
-    # There are 15 occluded surface heights, 0-14
-    for hidden_surface_height in range(0, 15):
+    # There are 15 occluded surface heights, 0-14, but we only permit the even numbered ones
+    # for two reasons:
+    #   - art-wise, we can only occlude if the background is BG0, but we signal height variance by
+    #       changing a given platform's background color. This means odd-numbered platforms are never
+    #       the right color, visually, to be a hidden surface
+    #   - doing this greatly decreases the number of hidden+visible combinations we'll need later
+    for hidden_surface_height in range(0, 15, 2):
         hidden_surface_tile = TiledTile(
             tiled_index=len(tiles), 
             ordinal_index=len(tiles), 
@@ -438,7 +443,7 @@ def generate_collision_tileset():
     # occluded surfaces must always appear "behind" a visible surface, that is:
     # occluded surface < visible surface
     for visible_surface_height in range(1, 16):
-        for hidden_surface_height in range(0, visible_surface_height):
+        for hidden_surface_height in range(0, visible_surface_height, 2):
             combined_surface_tile = TiledTile(
                 tiled_index=len(tiles), 
                 ordinal_index=len(tiles), 
