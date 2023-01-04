@@ -101,7 +101,7 @@ def read_tileset(tileset_filename, first_gid=0, name=""):
     for ordinal_index in range(0, len(tile_elements)):
         tile_element = tile_elements[ordinal_index]
         tiled_index = int(tile_element.get("id"))
-        tiled_type = tile_element.get("type")
+        tiled_type = tile_element.get("class")
         boolean_properties = read_boolean_properties(tile_element)
         integer_properties = read_integer_properties(tile_element)
         string_properties = read_string_properties(tile_element)
@@ -460,6 +460,26 @@ def generate_collision_tileset():
             )
             tiles.append(combined_surface_tile)
 
+    # Finally we need to generate collision variants. Right now we only support 3 of these, one for each type of ramp.
+    # Collision variants are all visible surfaces, we'll never have these "behind" things in a way that would require
+    # player occlusion.
+    for visible_surface_height in range(0, 16):
+        for collision_variant in range(1, 4):
+            collision_variant_tile = TiledTile(
+                tiled_index=len(tiles), 
+                ordinal_index=len(tiles), 
+                integer_properties={
+                    "floor_height": visible_surface_height,
+                    "collision_variant": collision_variant
+                }, 
+                boolean_properties={
+                    "is_floor": True
+                },
+                string_properties={},
+                type="collision"
+            )
+            tiles.append(collision_variant_tile)
+
     return tiles
 
 def find_collision_index(combined_tile, collision_tiles):
@@ -468,7 +488,8 @@ def find_collision_index(combined_tile, collision_tiles):
             candidate_tile.integer_properties.get("floor_height") == combined_tile.integer_properties.get("floor_height") and
             candidate_tile.integer_properties.get("hidden_floor_height") == combined_tile.integer_properties.get("hidden_floor_height") and
             candidate_tile.boolean_properties.get("is_floor") == combined_tile.boolean_properties.get("is_floor") and
-            candidate_tile.boolean_properties.get("is_hidden_floor") == combined_tile.boolean_properties.get("is_hidden_floor")
+            candidate_tile.boolean_properties.get("is_hidden_floor") == combined_tile.boolean_properties.get("is_hidden_floor") and
+            candidate_tile.integer_properties.get("collision_variant") == combined_tile.integer_properties.get("collision_variant")
         ):
             return candidate_tile.ordinal_index
     # no valid collision tile was found! BAIL, we cannot generate this map.

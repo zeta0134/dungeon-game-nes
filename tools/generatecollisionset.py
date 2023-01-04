@@ -19,7 +19,8 @@ def height_byte(tile):
 def flags_byte(tile):
   is_floor_bit = int(tile.boolean_properties.get("is_floor", False))
   is_hidden_floor_bit = int(tile.boolean_properties.get("is_hidden_floor", False))
-  return (is_floor_bit << 7) | (is_hidden_floor_bit << 6)
+  collision_variant = int(tile.integer_properties.get("collision_variant", 0)) & 0x3F
+  return (is_floor_bit << 7) | (is_hidden_floor_bit << 6) | collision_variant
 
 if __name__ == '__main__':
   # DEBUG TEST THINGS
