@@ -14,6 +14,9 @@
 GravityAccel: .res 1
 TerminalVelocity: .res 1
 
+        .zeropage
+RampLutPtr: .res 1
+
         .segment "PHYSICS_A000"
 
 no_ramp_lut: ; identity, used to make ramp sampling code simpler and less dumb
@@ -88,6 +91,12 @@ done:
         apply_bg_priority
 
         lda AccumulatedColFlags
+        ; if we perform collision at all, we should have accumulated visible/hidden surface
+        ; flags. Otherwise this byte will be entirely 0; in that case, do NOT perform any
+        ; height adjustment and exit immediately
+        bne check_ramp_adjustment
+        rts
+check_ramp_adjustment:
         and #%00111111
         sta AccumulatedColFlags
         beq no_ramp_adjustment
@@ -223,5 +232,89 @@ TestTileY := R8
 .endproc
 
 .proc compute_ramp_height
+SampledRampHeight := R0
+
+LeftX := R1
+RightX := R2
+  
+SubtileX := R4
+TileX := R5
+SubtileY := R6
+TileY := R7
+TileAddr := R8
+
+        ; At this stage we know that *some* ramp collision has occurred, now we need to work out the specifics.
+        
+
+        ; First, sample the left hitpoint and figure out the ramp height at this point
+check_left_sample:
+        tile_offset LeftX, SubtileX, SubtileY
+        nav_map_index TileX, TileY, TileAddr
+        ldy #0
+        lda (TileAddr), y
+        ; we only care about samples that match our current ground height, this
+        ; deals with one foot hanging off a ledge near a ramp
+        tax
+        lda collision_heights, x
+        ldy CurrentEntityIndex
+        cmp entity_table + EntityState::GroundLevel, y
+        bne check_right_sample
+
+        lda collision_flags, x
+        jsr sample_ramp_height ; clobbers X, Y
+        sta SampledRampHeight
+
+check_right_sample:
+        tile_offset RightX, SubtileX, SubtileY
+        nav_map_index TileX, TileY, TileAddr
+        ldy #0
+        lda (TileAddr), y
+        ; we only care about samples that match our current ground height, this
+        ; deals with one foot hanging off a ledge near a ramp
+        tax
+        lda collision_heights, x
+        ldy CurrentEntityIndex
+        cmp entity_table + EntityState::GroundLevel, y
+        bne keep_left_sample
+
+        lda collision_flags, x
+        jsr sample_ramp_height ; clobbers X, Y
+
+        ; Keep this height only if it's higher than the previous sample
+        cmp SampledRampHeight
+        bcc keep_left_sample
+keep_right_sample:
+        sta SampledRampHeight        
+keep_left_sample:
+        lda SampledRampHeight
+        ldx CurrentEntityIndex
+        sta entity_table + EntityState::RampHeight, x
+
         rts
+.endproc
+
+; ColFlags byte in A, test point X position in SubtileY
+; Resulting height bonus in A
+; Clobbers X, Y
+.proc sample_ramp_height
+SubtileX := R4
+
+        ; First, work out what kind of ramp is here and set the approprite LUT
+        ; TODO: expand this mask if we add more ramp types
+        and #%00000011 ; safety
+        asl
+        tax
+        lda ramp_types_table, x
+        sta RampLutPtr
+        lda ramp_types_table+1, x
+        sta RampLutPtr+1
+        ; Next work out the pixel position and use that to index the LUT
+        lda SubtileX
+        .repeat 4
+        lsr
+        .endrepeat
+        tay
+        lda (RampLutPtr), y 
+        rts
+
 .endproc
