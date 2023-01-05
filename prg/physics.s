@@ -147,6 +147,23 @@ height_not_negative:
         rts
 .endproc
 
+; Identical to the above, but uses Y for the entity index. Used during drawing
+.proc FAR_compute_ramp_height_y
+        ; here we check for ramps. If we're nowhere near a ramp then we're done
+        lda entity_table + EntityState::RampHeight, y
+        ; if a ramp is active, we consider the ramp height to be our minimum ground height.
+        ; ramp height is given in pixels, so expand that to a 16bit Z coordinate here
+        asl
+        asl
+        asl
+        asl ; possible bit into carry
+        sta RampGroundHeight
+        lda #0
+        sta RampGroundHeight+1
+        rol RampGroundHeight+1 ; put that carry bit into place
+        rts
+.endproc
+
 .proc FAR_apply_ramp_height
         ; here we check for ramps. If we're nowhere near a ramp then we're done
         lda entity_table + EntityState::RampHeight, x

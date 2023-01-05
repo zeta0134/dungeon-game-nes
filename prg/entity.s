@@ -154,7 +154,23 @@ MetaSpriteIndex := R0
         ldx entity_table + EntityState::ShadowSpriteIndex, y
         stx MetaSpriteIndex
 
-        ; Shadow check: is our height nonzero?
+        lda entity_table + EntityState::RampHeight, y
+        beq standard_shadow_check
+ramp_shadow_check:
+        ; If a ramp is in play, then we must only draw the shadow if the entity
+        ; height is currently above the ramp height
+        far_call FAR_compute_ramp_height_y
+        ; Now compare against the Z coordinate
+        lda RampGroundHeight+1
+        cmp entity_table + EntityState::PositionZ+1, y
+        bne check_if_below_ramp
+        lda RampGroundHeight
+        cmp entity_table + EntityState::PositionZ, y
+check_if_below_ramp:
+        jcs no_shadow
+
+standard_shadow_check:
+        ; simple check: is our height nonzero?
         lda entity_table + EntityState::PositionZ, y
         ora entity_table + EntityState::PositionZ + 1, y
         jeq no_shadow
@@ -182,6 +198,15 @@ MetaSpriteIndex := R0
         lsr metasprite_table + MetaSpriteState::PositionY+1, x
         ror metasprite_table + MetaSpriteState::PositionY, x
         .endrepeat
+
+        ; subtract the ramp height here, which is already in pixels
+        sec
+        lda metasprite_table + MetaSpriteState::PositionY, x
+        sbc entity_table + EntityState::RampHeight, y
+        sta metasprite_table + MetaSpriteState::PositionY, x
+        lda metasprite_table + MetaSpriteState::PositionY+1, x
+        sbc #0
+        sta metasprite_table + MetaSpriteState::PositionY+1, x
 
         ; done drawing the shadow, get outta here
         rts

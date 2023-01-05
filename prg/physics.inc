@@ -5,6 +5,7 @@
 .global FAR_ground_nav_properties
 .global FAR_apply_ramp_height
 .global FAR_compute_ramp_height
+.global FAR_compute_ramp_height_y
 
 .globalzp RampGroundHeight
 
