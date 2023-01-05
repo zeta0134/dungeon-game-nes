@@ -16,7 +16,7 @@ TerminalVelocity: .res 1
 
         .zeropage
 ; (We never need both of these at the same time)
-RampScratchWord:
+RampGroundHeight:
 RampLutPtr: .res 2
 
         .segment "PHYSICS_A000"
@@ -112,7 +112,6 @@ no_ramp_adjustment:
 .endproc
 
 .proc FAR_standard_entity_vertical_acceleration
-RampGroundHeight := RampScratchWord
         ldx CurrentEntityIndex
         ; first apply the entity's current speed to their height coordinate
         sadd16 {entity_table + EntityState::PositionZ, x}, {entity_table + EntityState::SpeedZ, x}
@@ -125,9 +124,16 @@ RampGroundHeight := RampScratchWord
         ; also zero out speed, so that if we fall off a ledge we start accelerating again
         sta entity_table + EntityState::SpeedZ, x
 height_not_negative:
+        ; Now apply acceleration due to gravity, and clamp it to the terminal velocity
+        accelerate entity_table + EntityState::SpeedZ, GravityAccel
+        min_speed entity_table + EntityState::SpeedZ, TerminalVelocity
+        ; and we should be done
+        rts
+.endproc
+
+.proc FAR_compute_ramp_height
         ; here we check for ramps. If we're nowhere near a ramp then we're done
         lda entity_table + EntityState::RampHeight, x
-        beq done_with_ramps
         ; if a ramp is active, we consider the ramp height to be our minimum ground height.
         ; ramp height is given in pixels, so expand that to a 16bit Z coordinate here
         asl
@@ -138,6 +144,14 @@ height_not_negative:
         lda #0
         sta RampGroundHeight+1
         rol RampGroundHeight+1 ; put that carry bit into place
+        rts
+.endproc
+
+.proc FAR_apply_ramp_height
+        ; here we check for ramps. If we're nowhere near a ramp then we're done
+        lda entity_table + EntityState::RampHeight, x
+        beq done_with_ramps
+        near_call FAR_compute_ramp_height
 
         ; Now compare against the Z coordinate
         lda RampGroundHeight+1
@@ -157,12 +171,7 @@ apply_ramp_response:
         ; our speed
         lda #0
         sta entity_table + EntityState::SpeedZ, x
-
 done_with_ramps:
-        ; Now apply acceleration due to gravity, and clamp it to the terminal velocity
-        accelerate entity_table + EntityState::SpeedZ, GravityAccel
-        min_speed entity_table + EntityState::SpeedZ, TerminalVelocity
-        ; and we should be done
         rts
 .endproc
 
@@ -281,7 +290,8 @@ TileY := R7
 TileAddr := R8
 
         ; At this stage we know that *some* ramp collision has occurred, now we need to work out the specifics.
-        
+        lda #0
+        sta SampledRampHeight
 
         ; First, sample the left hitpoint and figure out the ramp height at this point
 check_left_sample:

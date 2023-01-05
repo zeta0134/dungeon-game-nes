@@ -538,11 +538,27 @@ facing_left:
 ; certain things need to happen whenever we make contact with the ground.
 ; these are those things
 .proc handle_ground_contact
-        ; are we currently grounded? (height == 0)
+        ; are we currently grounded?
         ldx CurrentEntityIndex
+        lda entity_table + EntityState::RampHeight, x
+        bne ramp_contact_check
+standard_contact_check:
         lda entity_table + EntityState::PositionZ, x
         ora entity_table + EntityState::PositionZ + 1, x
         bne not_grounded
+        jmp grounded
+ramp_contact_check:
+        far_call FAR_compute_ramp_height
+        ; Now compare against the Z coordinate
+        lda RampGroundHeight+1
+        cmp entity_table + EntityState::PositionZ+1, x
+        bne check_if_below_ramp
+        lda RampGroundHeight
+        cmp entity_table + EntityState::PositionZ, x
+check_if_below_ramp:
+        bcc not_grounded
+
+grounded:
         ; we are grounded; reset abilities which restore on landing
         entity_set_flag_x (FLAG_JUMP | FLAG_DOUBLE_JUMP | FLAG_DASH | FLAG_DOUBLE_DASH), (FLAG_JUMP | FLAG_DOUBLE_JUMP | FLAG_DASH | FLAG_DOUBLE_DASH)
         ; if CoyoteTime is any value other than its max, we were off the ground on the previous frame.
@@ -1209,6 +1225,7 @@ dive_not_pressed:
         jsr walking_acceleration
         ; apply physics normally
         far_call FAR_standard_entity_vertical_acceleration
+        far_call FAR_apply_ramp_height
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
         jsr pick_walk_animation
@@ -1253,6 +1270,7 @@ no_subscreen:
         jsr swimming_acceleration
         ; apply physics normally
         far_call FAR_standard_entity_vertical_acceleration
+        far_call FAR_apply_ramp_height
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
         jsr pick_underwater_animation
@@ -1403,6 +1421,7 @@ update_ourselves:
         apply_friction entity_table + EntityState::SpeedX, ::SLIPPERINESS
         apply_friction entity_table + EntityState::SpeedY, ::SLIPPERINESS
         far_call FAR_standard_entity_vertical_acceleration
+        far_call FAR_apply_ramp_height
         far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
         ; while stunned, we can't collide with other entities, but we
@@ -1738,6 +1757,8 @@ update_ourselves:
         apply_friction entity_table + EntityState::SpeedY, ::DASH_DECELERATION
         ; We ignore gravity! Instead, process the static rising velocity we had set before
         far_call FAR_vertical_speed_only
+        ; ... but *do* apply ramp height adjustments here
+        far_call FAR_apply_ramp_height
 
         jsr set_3d_metasprite_pos
         ; while dashing, we can't collide with other entities, and we are

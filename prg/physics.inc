@@ -3,6 +3,10 @@
 .global FAR_vertical_speed_only
 .global FAR_sense_ground
 .global FAR_ground_nav_properties
+.global FAR_apply_ramp_height
+.global FAR_compute_ramp_height
+
+.globalzp RampGroundHeight
 
 STANDARD_GRAVITY_ACCEL = ($FF - 3)
 UNDERWATER_GRAVITY_ACCEL = ($FF - 1)
