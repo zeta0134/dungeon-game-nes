@@ -15,7 +15,9 @@ GravityAccel: .res 1
 TerminalVelocity: .res 1
 
         .zeropage
-RampLutPtr: .res 1
+; (We never need both of these at the same time)
+RampScratchWord:
+RampLutPtr: .res 2
 
         .segment "PHYSICS_A000"
 
@@ -110,6 +112,7 @@ no_ramp_adjustment:
 .endproc
 
 .proc FAR_standard_entity_vertical_acceleration
+RampGroundHeight := RampScratchWord
         ldx CurrentEntityIndex
         ; first apply the entity's current speed to their height coordinate
         sadd16 {entity_table + EntityState::PositionZ, x}, {entity_table + EntityState::SpeedZ, x}
@@ -122,6 +125,40 @@ no_ramp_adjustment:
         ; also zero out speed, so that if we fall off a ledge we start accelerating again
         sta entity_table + EntityState::SpeedZ, x
 height_not_negative:
+        ; here we check for ramps. If we're nowhere near a ramp then we're done
+        lda entity_table + EntityState::RampHeight, x
+        beq done_with_ramps
+        ; if a ramp is active, we consider the ramp height to be our minimum ground height.
+        ; ramp height is given in pixels, so expand that to a 16bit Z coordinate here
+        asl
+        asl
+        asl
+        asl ; possible bit into carry
+        sta RampGroundHeight
+        lda #0
+        sta RampGroundHeight+1
+        rol RampGroundHeight+1 ; put that carry bit into place
+
+        ; Now compare against the Z coordinate
+        lda RampGroundHeight+1
+        cmp entity_table + EntityState::PositionZ+1, x
+        bne check_if_below_ramp
+        lda RampGroundHeight
+        cmp entity_table + EntityState::PositionZ, x
+check_if_below_ramp:
+        bcc done_with_ramps
+apply_ramp_response:
+        ; the computed ramp height becomes our new Z coordinate
+        lda RampGroundHeight
+        sta entity_table + EntityState::PositionZ, x
+        lda RampGroundHeight+1
+        sta entity_table + EntityState::PositionZ+1, x
+        ; and just like hitting the ground normally, we now zero out
+        ; our speed
+        lda #0
+        sta entity_table + EntityState::SpeedZ, x
+
+done_with_ramps:
         ; Now apply acceleration due to gravity, and clamp it to the terminal velocity
         accelerate entity_table + EntityState::SpeedZ, GravityAccel
         min_speed entity_table + EntityState::SpeedZ, TerminalVelocity
