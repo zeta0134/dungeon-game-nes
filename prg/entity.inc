@@ -25,7 +25,8 @@
         ShadowSpriteIndex .byte
         CollisionMask .byte ; Touch of death, man!
         CollisionResponse .byte ; for entities that need to know when they are bumped, squished, or set on fire
-        Data .byte 4 ; arbitrary bytes for any purpose really
+        RampHeight .byte ; bonus height for ramps and other uneven surfaces
+        Data .byte 3 ; arbitrary bytes for any purpose really
 .endstruct
 
 MAX_ENTITIES = 12

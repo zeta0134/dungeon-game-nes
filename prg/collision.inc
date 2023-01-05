@@ -2,6 +2,7 @@
 
 .globalzp NavLutPtrLow
 .globalzp NavLutPtrHigh
+.globalzp AccumulatedColFlags
 
 .global FAR_collide_up_with_map
 .global FAR_collide_down_with_map

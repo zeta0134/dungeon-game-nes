@@ -247,6 +247,8 @@ CollisionHeights := R2
         ; default our height above the ground to 0
         sta entity_table + EntityState::PositionZ, x
         sta entity_table + EntityState::PositionZ+1, x
+        ; default some other transient variables to 0
+        sta entity_table + EntityState::RampHeight, x
         ; Our hitbox is at the bottom of our feet, but the spawning routine only gives us
         ; a tile coordinate, causing us to land at the top of our tile. That looks weird,
         ; so fix it here

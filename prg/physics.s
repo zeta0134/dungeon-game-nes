@@ -10,10 +10,30 @@
         .include "zeropage.inc"
 
         .segment "RAM"
+; Physics "Constants," tweakable by area
 GravityAccel: .res 1
 TerminalVelocity: .res 1
 
         .segment "PHYSICS_A000"
+
+no_ramp_lut: ; identity, used to make ramp sampling code simpler and less dumb
+        ; at px: 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15
+        .byte     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0
+
+steep_ramp_east_lut:   ; towards +X
+        ; at px: 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15
+        .byte     1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16
+
+steep_ramp_west_lut:   ; towards -X
+steep_ramp_north_lut:  ; towards -Y
+        ; at px: 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15
+        .byte    16, 15, 14, 13, 12, 11, 10,  9,  8,  7,  6,  5,  4,  3,  2,  1
+
+ramp_types_table:
+        .word no_ramp_lut
+        .word steep_ramp_west_lut
+        .word steep_ramp_east_lut
+        .word steep_ramp_north_lut
 
 .proc FAR_apply_standard_entity_speed
 LeftX := R1
@@ -25,6 +45,9 @@ VerticalOffset := R3
         ; right
         lda #(12 << 4)
         sta RightX
+
+        lda #0
+        sta AccumulatedColFlags
 
         ; apply speed to position for each axis, then check the
         ; tilemap and correct for any tile collisions
@@ -62,7 +85,18 @@ move_up:
         jmp done
 
 done:
-        apply_bg_priority        
+        apply_bg_priority
+
+        lda AccumulatedColFlags
+        and #%00111111
+        sta AccumulatedColFlags
+        beq no_ramp_adjustment
+        jsr compute_ramp_height
+        rts
+no_ramp_adjustment:
+        ldx CurrentEntityIndex
+        lda #0
+        sta entity_table + EntityState::RampHeight, x
         rts
 .endproc
 
@@ -185,5 +219,9 @@ TestTileY := R8
         sta CollisionHeights
         lda collision_flags, y
         sta CollisionFlags
+        rts
+.endproc
+
+.proc compute_ramp_height
         rts
 .endproc

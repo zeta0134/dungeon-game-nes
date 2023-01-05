@@ -21,6 +21,9 @@ NavLutPtrLow: .res 2
 NavLutPtrHigh: .res 2
 ScratchTileAddr: .res 2 ; used by the collision scanning routines
 
+; Temporary values used during movement and hit detection
+AccumulatedColFlags: .res 1
+
         .segment "PHYSICS_A000"
 
 .align 256
@@ -189,6 +192,11 @@ invalid_move:
         sta HighestGround
         jmp finished
 is_valid_move:
+        ; For every valid move, merge ColFlags high bits into AccumulatedColFlags; we use this later to
+        ; detect ramp adjustments
+        lda ColFlags
+        ora AccumulatedColFlags
+        sta AccumulatedColFlags
         ; This was a valid move, so correct HighestGround if needed
         lda AdjustedGround
         ; only write if we are higher than the existing value
