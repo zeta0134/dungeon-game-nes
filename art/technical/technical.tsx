@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.9" tiledversion="1.9.2" name="technical" tilewidth="16" tileheight="16" tilecount="12" columns="0">
+<tileset version="1.9" tiledversion="1.9.2" name="technical" tilewidth="16" tileheight="16" tilecount="16" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image width="16" height="16" source="blank.png"/>
@@ -55,6 +55,18 @@
   </properties>
   <image width="16" height="16" source="steep_ramp_up.png"/>
  </tile>
+ <tile id="12">
+  <properties>
+   <property name="collision_variant" type="int" value="5"/>
+  </properties>
+  <image width="16" height="16" source="shallow_ramp_right_upper.png"/>
+ </tile>
+ <tile id="13">
+  <properties>
+   <property name="collision_variant" type="int" value="4"/>
+  </properties>
+  <image width="16" height="16" source="shallow_ramp_right_lower.png"/>
+ </tile>
  <tile id="10">
   <properties>
    <property name="collision_variant" type="int" value="6"/>
@@ -66,5 +78,17 @@
    <property name="collision_variant" type="int" value="7"/>
   </properties>
   <image width="16" height="16" source="shallow_ramp_left_upper.png"/>
+ </tile>
+ <tile id="14">
+  <properties>
+   <property name="collision_variant" type="int" value="8"/>
+  </properties>
+  <image width="16" height="16" source="shallow_ramp_up_lower.png"/>
+ </tile>
+ <tile id="15">
+  <properties>
+   <property name="collision_variant" type="int" value="9"/>
+  </properties>
+  <image width="16" height="16" source="shallow_ramp_up_upper.png"/>
  </tile>
 </tileset>

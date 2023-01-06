@@ -10,7 +10,7 @@
         .include "debug.inc"
 
         .segment "PRGRAM"
-MAX_METATILES = 128
+MAX_METATILES = 256
 
 ; Various large working blocks of map data
 MapData: .res 1536

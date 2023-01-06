@@ -36,7 +36,7 @@ FONT_CHR_FILES := $(patsubst $(ARTDIR)/fonts/%.png,$(BUILDDIR)/fonts/%.high.chr,
 DIALOG_PORTRAITS := $(wildcard $(ARTDIR)/dialog_portraits/*.png)
 DIALOG_PORTRAIT_CHR_FILES := $(patsubst $(ARTDIR)/dialog_portraits/%.png,$(BUILDDIR)/dialog_portraits/%.even.chr,$(DIALOG_PORTRAITS))
 
-.PRECIOUS: $(BIN_FILES) $(RAW_CHR_FILES) $(TILESET_CHR_FILES) $(FONT_CHR_FILES) $(DIALOG_PORTRAIT_CHR_FILES)
+.PRECIOUS: $(BIN_FILES) $(RAW_CHR_FILES) $(TILESET_CHR_FILES) $(FONT_CHR_FILES) $(DIALOG_PORTRAIT_CHR_FILES) $(PATTERNSET_CHR_FILES)
 
 all: dir $(ROM_NAME)
 

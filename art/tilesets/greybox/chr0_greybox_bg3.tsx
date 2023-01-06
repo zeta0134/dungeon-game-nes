@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<tileset version="1.8" tiledversion="1.8.2" name="greybox_bg3" tilewidth="16" tileheight="16" tilecount="33" columns="0">
+<tileset version="1.8" tiledversion="1.8.2" name="greybox_bg3" tilewidth="16" tileheight="16" tilecount="49" columns="0">
   <grid orientation="orthagonal" width="1" height="1" />
   <properties>
     <property name="chr0_tileset" type="string" value="greybox_tileset" />
@@ -235,5 +235,117 @@
       <property name="attribute_index" type="int" value="3" />
     </properties>
     <image width="16" height="16" source="chr0_bg3_032_right_ramp_shallow_upper_back.png" />
+  </tile>
+  <tile id="33">
+    <properties>
+      <property name="metatile_index" type="int" value="33" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_033_left_ramp_shallow_upper_front.png" />
+  </tile>
+  <tile id="34">
+    <properties>
+      <property name="metatile_index" type="int" value="34" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_034_left_ramp_shallow_lower_front.png" />
+  </tile>
+  <tile id="35">
+    <properties>
+      <property name="metatile_index" type="int" value="35" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_035_left_ramp_shallow_lower_back.png" />
+  </tile>
+  <tile id="36">
+    <properties>
+      <property name="metatile_index" type="int" value="36" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_036_left_ramp_shallow_upper_back.png" />
+  </tile>
+  <tile id="37">
+    <properties>
+      <property name="metatile_index" type="int" value="37" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_037_right_ramp_backwall.png" />
+  </tile>
+  <tile id="38">
+    <properties>
+      <property name="metatile_index" type="int" value="38" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_038_right_ramp_backwall_edge.png" />
+  </tile>
+  <tile id="39">
+    <properties>
+      <property name="metatile_index" type="int" value="39" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_039_left_ramp_backwall.png" />
+  </tile>
+  <tile id="40">
+    <properties>
+      <property name="metatile_index" type="int" value="40" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_040_left_ramp_backwall_edge.png" />
+  </tile>
+  <tile id="41">
+    <properties>
+      <property name="metatile_index" type="int" value="41" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_041_right_ramp_shallow_lower_backwall.png" />
+  </tile>
+  <tile id="42">
+    <properties>
+      <property name="metatile_index" type="int" value="42" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_042_right_ramp_shallow_lower_backwall_edge.png" />
+  </tile>
+  <tile id="43">
+    <properties>
+      <property name="metatile_index" type="int" value="43" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_043_right_ramp_shallow_upper_backwall.png" />
+  </tile>
+  <tile id="44">
+    <properties>
+      <property name="metatile_index" type="int" value="44" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_044_right_ramp_shallow_upper_backwall_edge.png" />
+  </tile>
+  <tile id="45">
+    <properties>
+      <property name="metatile_index" type="int" value="45" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_045_left_ramp_shallow_lower_backwall.png" />
+  </tile>
+  <tile id="46">
+    <properties>
+      <property name="metatile_index" type="int" value="46" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_046_left_ramp_shallow_lower_backwall_edge.png" />
+  </tile>
+  <tile id="47">
+    <properties>
+      <property name="metatile_index" type="int" value="47" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_047_left_ramp_shallow_upper_backwall.png" />
+  </tile>
+  <tile id="48">
+    <properties>
+      <property name="metatile_index" type="int" value="48" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_048_left_ramp_shallow_upper_backwall_edge.png" />
   </tile>
 </tileset>
