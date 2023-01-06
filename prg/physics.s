@@ -40,6 +40,36 @@ ramp_types_table:
         .word steep_ramp_east_lut
         .word steep_ramp_north_lut
 
+HEIGHT_FUDGE = 2 ; pixels
+HEIGHT_FUDGE_ACTUAL = (HEIGHT_FUDGE << 4) ; subtiles
+
+.proc apply_height_fudge
+        ldx CurrentEntityIndex
+        add16b {entity_table + EntityState::PositionZ, x}, #HEIGHT_FUDGE_ACTUAL
+        rts
+.endproc
+
+.proc remove_height_fudge
+        ldx CurrentEntityIndex
+        sec
+        lda entity_table + EntityState::PositionZ, x
+        sbc #HEIGHT_FUDGE_ACTUAL
+        sta entity_table + EntityState::PositionZ, x
+        lda entity_table + EntityState::PositionZ+1, x
+        sbc #0
+        sta entity_table + EntityState::PositionZ+1, x
+        ; If this brings PositionZ into the negative (which it might, we just
+        ; fudged a collision requirement) then zero it back out
+        lda entity_table + EntityState::PositionZ+1, x
+        bpl done
+        lda #1
+        sta entity_table + EntityState::PositionZ, x
+        lda #0
+        sta entity_table + EntityState::PositionZ+1, x
+done:
+        rts
+.endproc
+
 .proc FAR_apply_standard_entity_speed
 LeftX := R1
 RightX := R2
@@ -81,6 +111,11 @@ OldRightTileY := R18
         lda TileY
         sta OldRightTileY
 
+        ; Apply some wiggle room to upwards collision checks, mostly to make
+        ; ramps behave, but also to make tight-looking jumps and dashes 
+        ; somewhat more forgiving
+        jsr apply_height_fudge
+
         ; apply speed to position for each axis, then check the
         ; tilemap and correct for any tile collisions
         ldx CurrentEntityIndex
@@ -117,6 +152,8 @@ move_up:
         jmp done
 
 done:
+        ; Undo the changes we made to PositionZ, lest we float into the air (!)
+        jsr remove_height_fudge
         apply_bg_priority
 
         ; Check to see if a new ramp was observed this frame
