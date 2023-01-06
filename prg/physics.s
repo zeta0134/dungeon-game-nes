@@ -325,7 +325,7 @@ check_left_sample:
         bne check_right_sample
 
         lda collision_flags, x
-        jsr sample_ramp_height ; clobbers X, Y
+        near_call FAR_sample_ramp_height ; clobbers X, Y
         sta SampledRampHeight
 
 check_right_sample:
@@ -342,7 +342,7 @@ check_right_sample:
         bne keep_left_sample
 
         lda collision_flags, x
-        jsr sample_ramp_height ; clobbers X, Y
+        near_call FAR_sample_ramp_height ; clobbers X, Y
 
         ; Keep this height only if it's higher than the previous sample
         cmp SampledRampHeight
@@ -357,10 +357,10 @@ keep_left_sample:
         rts
 .endproc
 
-; ColFlags byte in A, test point X position in SubtileY
+; ColFlags byte in A, test point X position in SubtileX
 ; Resulting height bonus in A
 ; Clobbers X, Y
-.proc sample_ramp_height
+.proc FAR_sample_ramp_height
 SubtileX := R4
 
         ; First, work out what kind of ramp is here and set the approprite LUT
@@ -380,5 +380,4 @@ SubtileX := R4
         tay
         lda (RampLutPtr), y 
         rts
-
 .endproc

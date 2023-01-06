@@ -2,7 +2,9 @@
         .include "branch_util.inc"
         .include "collision.inc"
         .include "entity.inc"
+        .include "far_call.inc"
         .include "nes.inc"
+        .include "physics.inc"
         .include "scrolling.inc"
         .include "sprites.inc"
         .include "word_util.inc"
@@ -19,7 +21,7 @@ NavMapData: .res 1536
         .zeropage
 NavLutPtrLow: .res 2
 NavLutPtrHigh: .res 2
-ScratchTileAddr: .res 2 ; used by the collision scanning routines
+ScratchWord: .res 2 ; used by a few routines
 
 ; Temporary values used during movement and hit detection
 AccumulatedColFlags: .res 1
@@ -127,6 +129,8 @@ AdjustedGround := R12
 AdjustedHeight := R13
 ColFlags := R14
 ColHeights := R15
+
+RampHeight := ScratchWord
         ; initialize our ground level to match the player's starting height
         ldx CurrentEntityIndex
         lda entity_table + EntityState::GroundLevel, x
@@ -195,9 +199,49 @@ is_valid_move:
         ; For every valid move, merge ColFlags high bits into AccumulatedColFlags; we use this later to
         ; detect ramp adjustments
         lda ColFlags
+        ; TODO: can we branch here for a speedup, to skip some of this flag checking busienss for non-ramps?
         ora AccumulatedColFlags
         sta AccumulatedColFlags
+        ; if this is a ramp, we need to perform additional logic
+        lda ColFlags
+        and #%00111111
+        beq adjust_highest_ground
+check_ramp_height:
+        ; We need to check player PositionZ (which is block+subblock) against AdjustedGround+RampHeight
+        near_call FAR_sample_ramp_height ; ramp height at this SubtileX in A, also clobbers X and Y
+        ; This is in pixels, but we need to be in the movement coordinate system, so do that math here
+        asl
+        asl
+        asl
+        asl ; high bit -> carry
+        sta RampHeight
+        lda #0
+        rol ; carry -> low bit of the high byte, also clears carry for the adc below
+        ; To this, we add the computed ground height
+        adc AdjustedGround
+        ; TODO: and subtract the player's ground height? for a fair comparison
+        sta RampHeight+1
+        ; if PlayerZ clears RampHeight, this is a valid collision
+
+        ldx CurrentEntityIndex
+        lda entity_table + EntityState::PositionZ+1, x
+        clc
+        adc entity_table + EntityState::GroundLevel, x 
+        cmp RampHeight+1
+        bne check_if_below_ramp
+        lda entity_table + EntityState::PositionZ, x
+        cmp RampHeight
+check_if_below_ramp:
+        bcc invalid_move
+
         ; This was a valid move, so correct HighestGround if needed
+adjust_highest_ground:
+        lda HighestGround
+        bpl keep_highest_only
+        lda AdjustedGround
+        sta HighestGround
+        jmp finished
+keep_highest_only:
         lda AdjustedGround
         ; only write if we are higher than the existing value
         cmp HighestGround
@@ -348,7 +392,7 @@ SubtileY := R6
 TileY := R7
 TileAddr := R8
 HighestGround := R10
-        lda #$00
+        lda #$FF
         sta HighestGround
 
         tile_offset LeftX, SubtileX, SubtileY
@@ -370,7 +414,7 @@ SubtileY := R6
 TileY := R7
 TileAddr := R8
 HighestGround := R10
-        lda #$00
+        lda #$FF
         sta HighestGround
 
         tile_offset LeftX, SubtileX, SubtileY
@@ -395,7 +439,7 @@ SubtileY := R6
 TileY := R7
 TileAddr := R8
 HighestGround := R10
-        lda #$00
+        lda #$FF
         sta HighestGround
 
         tile_offset RightX, SubtileX, SubtileY
@@ -417,7 +461,7 @@ SubtileY := R6
 TileY := R7
 TileAddr := R8
 HighestGround := R10
-        lda #$00
+        lda #$FF
         sta HighestGround
 
         tile_offset RightX, SubtileX, SubtileY

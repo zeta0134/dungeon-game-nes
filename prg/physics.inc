@@ -6,6 +6,7 @@
 .global FAR_apply_ramp_height
 .global FAR_compute_ramp_height
 .global FAR_compute_ramp_height_y
+.global FAR_sample_ramp_height
 
 .globalzp RampGroundHeight
 
