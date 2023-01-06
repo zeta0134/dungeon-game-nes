@@ -64,14 +64,14 @@ JUMP_SPEED = 48
 DOUBLE_JUMP_SPEED = 48
 BOUNCE_SPEED = 56
 
-DASH_INITIAL_SPEED = 120
-DASH_DECELERATION = 5
+DASH_INITIAL_SPEED = 30 ; dashes perform 4 steps per frame
+DASH_DECELERATION = 5 ; deceleration is applied once per frame
 DASH_DURATION = 10
 DASH_UPWARD_RISE = 4
 
 COYOTE_TIME = 3
 
-UNDERWATER_DASH_INITIAL_SPEED = 80
+UNDERWATER_DASH_INITIAL_SPEED = 20
 UNDERWATER_DASH_DURATION = 20
 
 
@@ -1751,7 +1751,16 @@ done_dashing:
 update_ourselves:
         ; We are dashing! Ignore player input for a while, and simply move
         ; along the velocity we set when we initiated this state
+
+        ; We dash very quickly, and this somewhat breaks ramps. So dash speed is
+        ; set in quadrants, and each frame we perform four (4) physics steps before
+        ; applying dash friction. This ensures that each individual step is <2px movement total
         far_call FAR_apply_standard_entity_speed
+        far_call FAR_apply_standard_entity_speed
+        far_call FAR_apply_standard_entity_speed
+        far_call FAR_apply_standard_entity_speed
+
+
         ; Apply dash-specific friction on both axis
         apply_friction entity_table + EntityState::SpeedX, ::DASH_DECELERATION
         apply_friction entity_table + EntityState::SpeedY, ::DASH_DECELERATION
