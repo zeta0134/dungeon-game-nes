@@ -144,10 +144,24 @@ OldRightTileY := R18
         lda #0
         sta AccumulatedColFlags
 
+        ; Apply some wiggle room to upwards collision checks, mostly to make
+        ; ramps behave, but also to make tight-looking jumps and dashes 
+        ; somewhat more forgiving
+        jsr apply_height_fudge
+
+        ; apply speed to position for each axis, then check the
+        ; tilemap and correct for any tile collisions
+        ldx CurrentEntityIndex
+        lda entity_table + EntityState::SpeedX, x
+        sta R0
+
+        ; if we aren't moving horizontally, don't perform collision
+        ; in this direction at all
+        jeq done_with_x
+
         ; First, compute the *current* tilex and tiley coordinates for both hitpoints.
         ; We'll use these during collision to bail early, skipping a lot of work and also
         ; avoiding some glitchy ramp behaviors
-        ldx CurrentEntityIndex
         tile_offset LeftX, SubtileX, SubtileY
         lda TileX
         sta OldLeftTileX
@@ -160,19 +174,7 @@ OldRightTileY := R18
         lda TileY
         sta OldRightTileY
 
-        ; Apply some wiggle room to upwards collision checks, mostly to make
-        ; ramps behave, but also to make tight-looking jumps and dashes 
-        ; somewhat more forgiving
-        jsr apply_height_fudge
-
-        ; apply speed to position for each axis, then check the
-        ; tilemap and correct for any tile collisions
-        ldx CurrentEntityIndex
-        lda entity_table + EntityState::SpeedX, x
-        sta R0
-        ; if we aren't moving horizontally, don't perform collision
-        ; in this direction at all
-        beq done_with_x
+        lda R0
         bmi move_left
 move_right:
         sadd16 {entity_table + EntityState::PositionX, x}, R0
@@ -182,6 +184,7 @@ move_left:
         sadd16 {entity_table + EntityState::PositionX, x}, R0
         near_call FAR_collide_left_with_map
 done_with_x:
+
         ldx CurrentEntityIndex
         lda entity_table + EntityState::SpeedY, x
         sta R0
@@ -189,7 +192,23 @@ done_with_x:
         ; in this direction at all.
         ; TODO: if the map changes, do we need to unconditioanlly perform
         ; some basic collision check?
-        beq done
+        jeq done
+
+        ; Because a successful move on the X axis might have changed our tile coordinates,
+        ; we need to again compute the "old" tile position, so that Y collision resolves correctly
+        tile_offset LeftX, SubtileX, SubtileY ; clobbers y
+        lda TileX
+        sta OldLeftTileX
+        lda TileY
+        sta OldLeftTileY
+
+        tile_offset RightX, SubtileX, SubtileY ; clobbers y
+        lda TileX
+        sta OldRightTileX
+        lda TileY
+        sta OldRightTileY
+
+        lda R0
         bmi move_up
 move_down:
         sadd16 {entity_table + EntityState::PositionY, x}, R0
