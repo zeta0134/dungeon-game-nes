@@ -392,14 +392,28 @@ SubtileY := R6
 TileY := R7
 TileAddr := R8
 HighestGround := R10
+
+OldLeftTileX := R16
+OldRightTileX := R17
+OldLeftTileY := R18
+OldRightTileY := R18
+
         lda #$FF
         sta HighestGround
 
         tile_offset LeftX, SubtileX, SubtileY
+        lda TileY
+        cmp OldLeftTileY
+        jeq skip_left
         if_not_valid collision_response_push_down
+skip_left:
 
         tile_offset RightX, SubtileX, SubtileY
+        lda TileY
+        cmp OldRightTileY
+        jeq skip_right
         if_not_valid collision_response_push_down
+skip_right:
 
         fix_height
         rts
@@ -414,14 +428,28 @@ SubtileY := R6
 TileY := R7
 TileAddr := R8
 HighestGround := R10
+
+OldLeftTileX := R16
+OldRightTileX := R17
+OldLeftTileY := R18
+OldRightTileY := R18
+
         lda #$FF
         sta HighestGround
 
         tile_offset LeftX, SubtileX, SubtileY
+        lda TileY
+        cmp OldLeftTileY
+        jeq skip_left
         if_not_valid collision_response_push_up
+skip_left:
 
         tile_offset RightX, SubtileX, SubtileY
+        lda TileY
+        cmp OldRightTileY
+        jeq skip_right
         if_not_valid collision_response_push_up
+skip_right:
 
         fix_height
         rts
@@ -439,15 +467,42 @@ SubtileY := R6
 TileY := R7
 TileAddr := R8
 HighestGround := R10
+
+OldLeftTileX := R16
+OldRightTileX := R17
+OldLeftTileY := R18
+OldRightTileY := R18
+
         lda #$FF
         sta HighestGround
 
-        tile_offset RightX, SubtileX, SubtileY
-        if_not_valid collision_response_push_right
-
         tile_offset LeftX, SubtileX, SubtileY
+        lda TileX
+        cmp OldLeftTileX
+        jeq skip_left
         if_not_valid collision_response_push_right
+skip_left:
 
+        tile_offset RightX, SubtileX, SubtileY
+        lda TileX
+        cmp OldRightTileX
+        jeq skip_right
+        if_not_valid collision_response_push_right
+        jmp done_with_checks
+skip_right:
+        lda HighestGround
+        bmi done_with_checks
+        ; If we got here, then the frontmost check succeeded, and we
+        ; skipped the secondmost one. In this case our "back" foot might
+        ; still be on a higher platform. This affects the HighestGround
+        ; situation, so fix it. (This is a *dirty* hack)
+        ldx CurrentEntityIndex
+        cmp entity_table + EntityState::GroundLevel, x
+        bcs done_with_checks
+        lda entity_table + EntityState::GroundLevel, x
+        sta HighestGround
+
+done_with_checks:
         fix_height
         rts
 .endproc
@@ -461,15 +516,42 @@ SubtileY := R6
 TileY := R7
 TileAddr := R8
 HighestGround := R10
+
+OldLeftTileX := R16
+OldRightTileX := R17
+OldLeftTileY := R18
+OldRightTileY := R18
+
         lda #$FF
         sta HighestGround
 
         tile_offset RightX, SubtileX, SubtileY
+        lda TileX
+        cmp OldRightTileX
+        jeq skip_right
         if_not_valid collision_response_push_left
+skip_right:
 
         tile_offset LeftX, SubtileX, SubtileY
+        lda TileX
+        cmp OldLeftTileX
+        jeq skip_left
         if_not_valid collision_response_push_left
+        jmp done_with_checks
+skip_left:
+        lda HighestGround
+        bmi done_with_checks
+        ; If we got here, then the frontmost check succeeded, and we
+        ; skipped the secondmost one. In this case our "back" foot might
+        ; still be on a higher platform. This affects the HighestGround
+        ; situation, so fix it. (This is a *dirty* hack)
+        ldx CurrentEntityIndex
+        cmp entity_table + EntityState::GroundLevel, x
+        bcs done_with_checks
+        lda entity_table + EntityState::GroundLevel, x
+        sta HighestGround
 
+done_with_checks:
         fix_height
         rts
 .endproc

@@ -115,6 +115,7 @@ done:
 ; on the character's position and current height relative to the ground
 .proc set_3d_metasprite_pos
 MetaSpriteIndex := R0
+RampHeightScratch := R16
         ldy CurrentEntityIndex
 
         ; We'll work on the main sprite first
@@ -200,9 +201,13 @@ standard_shadow_check:
         .endrepeat
 
         ; subtract the ramp height here, which is already in pixels
+        lda entity_table + EntityState::RampHeight, y
+        and #%01111111
+        sta RampHeightScratch
+        
         sec
         lda metasprite_table + MetaSpriteState::PositionY, x
-        sbc entity_table + EntityState::RampHeight, y
+        sbc RampHeightScratch
         sta metasprite_table + MetaSpriteState::PositionY, x
         lda metasprite_table + MetaSpriteState::PositionY+1, x
         sbc #0

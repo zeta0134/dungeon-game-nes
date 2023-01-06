@@ -44,6 +44,17 @@ ramp_types_table:
 LeftX := R1
 RightX := R2
 VerticalOffset := R3
+
+SubtileX := R4
+TileX := R5
+SubtileY := R6
+TileY := R7
+
+OldLeftTileX := R16
+OldRightTileX := R17
+OldLeftTileY := R18
+OldRightTileY := R18
+
         ; left
         lda #(3 << 4)
         sta LeftX
@@ -53,6 +64,22 @@ VerticalOffset := R3
 
         lda #0
         sta AccumulatedColFlags
+
+        ; First, compute the *current* tilex and tiley coordinates for both hitpoints.
+        ; We'll use these during collision to bail early, skipping a lot of work and also
+        ; avoiding some glitchy ramp behaviors
+        ldx CurrentEntityIndex
+        tile_offset LeftX, SubtileX, SubtileY
+        lda TileX
+        sta OldLeftTileX
+        lda TileY
+        sta OldLeftTileY
+
+        tile_offset RightX, SubtileX, SubtileY
+        lda TileX
+        sta OldRightTileX
+        lda TileY
+        sta OldRightTileY
 
         ; apply speed to position for each axis, then check the
         ; tilemap and correct for any tile collisions
@@ -92,22 +119,21 @@ move_up:
 done:
         apply_bg_priority
 
-        lda AccumulatedColFlags
-        ; if we perform collision at all, we should have accumulated visible/hidden surface
-        ; flags. Otherwise this byte will be entirely 0; in that case, do NOT perform any
-        ; height adjustment and exit immediately
-        bne check_ramp_adjustment
-        rts
-check_ramp_adjustment:
-        and #%00111111
-        sta AccumulatedColFlags
-        beq no_ramp_adjustment
-        jsr compute_ramp_height
-        rts
-no_ramp_adjustment:
+        ; Check to see if a new ramp was observed this frame
         ldx CurrentEntityIndex
-        lda #0
+        lda AccumulatedColFlags
+        and #%00111111
+        beq handle_ramp_adjustments
+enable_ramp_mode:
+        lda entity_table + EntityState::RampHeight, x
+        ora #%10000000
         sta entity_table + EntityState::RampHeight, x
+handle_ramp_adjustments:
+        lda entity_table + EntityState::RampHeight, x
+        and #%10000000
+        beq ramps_not_enabled
+        jsr update_ramp_height ; will disable ramps if one is not sampled
+ramps_not_enabled:
         rts
 .endproc
 
@@ -294,7 +320,7 @@ TestTileY := R8
         rts
 .endproc
 
-.proc compute_ramp_height
+.proc update_ramp_height
 SampledRampHeight := R0
 
 LeftX := R1
@@ -309,6 +335,7 @@ TileAddr := R8
         ; At this stage we know that *some* ramp collision has occurred, now we need to work out the specifics.
         lda #0
         sta SampledRampHeight
+        sta AccumulatedColFlags
 
         ; First, sample the left hitpoint and figure out the ramp height at this point
 check_left_sample:
@@ -324,6 +351,10 @@ check_left_sample:
         cmp entity_table + EntityState::GroundLevel, y
         bne check_right_sample
 
+        lda collision_flags, x
+        and #%00111111
+        ora AccumulatedColFlags
+        sta AccumulatedColFlags
         lda collision_flags, x
         near_call FAR_sample_ramp_height ; clobbers X, Y
         sta SampledRampHeight
@@ -342,6 +373,10 @@ check_right_sample:
         bne keep_left_sample
 
         lda collision_flags, x
+        and #%00111111
+        ora AccumulatedColFlags
+        sta AccumulatedColFlags
+        lda collision_flags, x
         near_call FAR_sample_ramp_height ; clobbers X, Y
 
         ; Keep this height only if it's higher than the previous sample
@@ -352,8 +387,15 @@ keep_right_sample:
 keep_left_sample:
         lda SampledRampHeight
         ldx CurrentEntityIndex
+        sta entity_table + EntityState::RampHeight, x ; this disables ramp mode also
+        ; If we sampled anything other than a ground tile, remain
+        ; in ramp mode. Otherwise we're done (exit ramp mode)
+        lda AccumulatedColFlags
+        beq done
+        lda entity_table + EntityState::RampHeight, x
+        ora #%10000000
         sta entity_table + EntityState::RampHeight, x
-
+done:
         rts
 .endproc
 
@@ -373,6 +415,7 @@ SubtileX := R4
         lda ramp_types_table+1, x
         sta RampLutPtr+1
         ; Next work out the pixel position and use that to index the LUT
+        ; TODO: we need to check the ramp type and use X or Y here
         lda SubtileX
         .repeat 4
         lsr
