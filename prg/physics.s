@@ -40,6 +40,18 @@ ramp_types_table:
         .word steep_ramp_east_lut
         .word steep_ramp_north_lut
 
+; For speed reasons these are words, as the code responsible is called in a timing
+; critical loop. We don't even have room in the collision table for more than 256
+; ramp types (even 10 is pushing it honestly) so the high bytes of these words will
+; always be 0. It's fine.
+RAMP_DIRECTION_HORIZONTAL := 0
+RAMP_DIRECTION_VERTICAL := 1
+ramp_direction_table:
+        .word RAMP_DIRECTION_HORIZONTAL ; no ramp, coordinate system doesn't matter
+        .word RAMP_DIRECTION_HORIZONTAL ; steep west
+        .word RAMP_DIRECTION_HORIZONTAL ; steep east
+        .word RAMP_DIRECTION_VERTICAL   ; steep north
+
 HEIGHT_FUDGE = 2 ; pixels
 HEIGHT_FUDGE_ACTUAL = (HEIGHT_FUDGE << 4) ; subtiles
 
@@ -441,6 +453,7 @@ done:
 ; Clobbers X, Y
 .proc FAR_sample_ramp_height
 SubtileX := R4
+SubtileY := R6
 
         ; First, work out what kind of ramp is here and set the approprite LUT
         ; TODO: expand this mask if we add more ramp types
@@ -453,6 +466,18 @@ SubtileX := R4
         sta RampLutPtr+1
         ; Next work out the pixel position and use that to index the LUT
         ; TODO: we need to check the ramp type and use X or Y here
+        lda ramp_direction_table, x
+        beq horizontal
+        ; for speed reasons, avoid jumps/branches, and duplicate code as needed
+vertical:
+        lda SubtileY
+        .repeat 4
+        lsr
+        .endrepeat
+        tay
+        lda (RampLutPtr), y 
+        rts
+horizontal:
         lda SubtileX
         .repeat 4
         lsr
