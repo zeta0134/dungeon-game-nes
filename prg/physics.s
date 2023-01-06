@@ -34,11 +34,41 @@ steep_ramp_north_lut:  ; towards -Y
         ; at px: 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15
         .byte    16, 15, 14, 13, 12, 11, 10,  9,  8,  7,  6,  5,  4,  3,  2,  1
 
+shallow_ramp_east_lower_lut:
+        ; at px: 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15
+        .byte     1,  1,  2,  2,  3,  3,  4,  4,  5,  5,  6,  6,  7,  7,  8,  8
+
+shallow_ramp_east_upper_lut:
+        ; at px: 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15
+        .byte     9,  9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16
+
+shallow_ramp_west_lower_lut:
+shallow_ramp_north_lower_lut:
+        ; at px: 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15
+        .byte     8,  8,  7,  7,  6,  6,  5,  5,  4,  4,  3,  3,  2,  2,  1,  1
+
+shallow_ramp_west_upper_lut:
+shallow_ramp_north_upper_lut:
+        ; at px: 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15
+        .byte    16, 16, 15, 15, 14, 14, 13, 13, 12, 12, 11, 11, 10, 10,  9,  9
+
 ramp_types_table:
         .word no_ramp_lut
         .word steep_ramp_west_lut
         .word steep_ramp_east_lut
         .word steep_ramp_north_lut
+        .word shallow_ramp_west_lower_lut
+        .word shallow_ramp_west_upper_lut
+        .word shallow_ramp_east_lower_lut
+        .word shallow_ramp_east_upper_lut
+        .word shallow_ramp_north_lower_lut
+        .word shallow_ramp_north_upper_lut
+        .word no_ramp_lut
+        .word no_ramp_lut
+        .word no_ramp_lut
+        .word no_ramp_lut
+        .word no_ramp_lut
+        .word no_ramp_lut ; 0xF, just to fill out the table for safety reasons
 
 ; For speed reasons these are words, as the code responsible is called in a timing
 ; critical loop. We don't even have room in the collision table for more than 256
@@ -51,6 +81,13 @@ ramp_direction_table:
         .word RAMP_DIRECTION_HORIZONTAL ; steep west
         .word RAMP_DIRECTION_HORIZONTAL ; steep east
         .word RAMP_DIRECTION_VERTICAL   ; steep north
+        .word RAMP_DIRECTION_HORIZONTAL ; shallow west lower
+        .word RAMP_DIRECTION_HORIZONTAL ; shallow west upper
+        .word RAMP_DIRECTION_HORIZONTAL ; shallow east lower
+        .word RAMP_DIRECTION_HORIZONTAL ; shallow east upper
+        .word RAMP_DIRECTION_VERTICAL ; shallow north lower
+        .word RAMP_DIRECTION_VERTICAL ; shallow north upper
+        ; no need to fill out the rest for safety; the LUT encodes 0px
 
 HEIGHT_FUDGE = 2 ; pixels
 HEIGHT_FUDGE_ACTUAL = (HEIGHT_FUDGE << 4) ; subtiles
@@ -457,7 +494,7 @@ SubtileY := R6
 
         ; First, work out what kind of ramp is here and set the approprite LUT
         ; TODO: expand this mask if we add more ramp types
-        and #%00000011 ; safety
+        and #%00001111 ; safety
         asl
         tax
         lda ramp_types_table, x

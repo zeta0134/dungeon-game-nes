@@ -464,7 +464,7 @@ def generate_collision_tileset():
     # Collision variants are all visible surfaces, we'll never have these "behind" things in a way that would require
     # player occlusion.
     for visible_surface_height in range(0, 16):
-        for collision_variant in range(1, 4):
+        for collision_variant in range(1, 8):
             collision_variant_tile = TiledTile(
                 tiled_index=len(tiles), 
                 ordinal_index=len(tiles), 

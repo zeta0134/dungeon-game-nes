@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<tileset version="1.8" tiledversion="1.8.2" name="greybox_bg3" tilewidth="16" tileheight="16" tilecount="29" columns="0">
+<tileset version="1.8" tiledversion="1.8.2" name="greybox_bg3" tilewidth="16" tileheight="16" tilecount="33" columns="0">
   <grid orientation="orthagonal" width="1" height="1" />
   <properties>
     <property name="chr0_tileset" type="string" value="greybox_tileset" />
@@ -207,5 +207,33 @@
       <property name="attribute_index" type="int" value="3" />
     </properties>
     <image width="16" height="16" source="chr0_bg3_028_left_ramp_back.png" />
+  </tile>
+  <tile id="29">
+    <properties>
+      <property name="metatile_index" type="int" value="29" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_029_right_ramp_shallow_lower_front.png" />
+  </tile>
+  <tile id="30">
+    <properties>
+      <property name="metatile_index" type="int" value="30" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_030_right_ramp_shallow_upper_front.png" />
+  </tile>
+  <tile id="31">
+    <properties>
+      <property name="metatile_index" type="int" value="31" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_031_right_ramp_shallow_lower_back.png" />
+  </tile>
+  <tile id="32">
+    <properties>
+      <property name="metatile_index" type="int" value="32" />
+      <property name="attribute_index" type="int" value="3" />
+    </properties>
+    <image width="16" height="16" source="chr0_bg3_032_right_ramp_shallow_upper_back.png" />
   </tile>
 </tileset>
