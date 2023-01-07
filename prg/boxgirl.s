@@ -1224,9 +1224,9 @@ dive_not_pressed:
         jsr handle_ground_contact
         jsr walking_acceleration
         ; apply physics normally
+        far_call FAR_apply_standard_entity_speed
         far_call FAR_standard_entity_vertical_acceleration
         far_call FAR_apply_ramp_height
-        far_call FAR_apply_standard_entity_speed
         jsr set_3d_metasprite_pos
         jsr pick_walk_animation
         ; check for special ground tiles

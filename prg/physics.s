@@ -295,21 +295,50 @@ height_not_negative:
         rts
 .endproc
 
+RAMP_SNAP_FUDGE = 1 ; pixels
+RAMP_SNAP_FUDGE_ACTUAL = (RAMP_SNAP_FUDGE << 4) ; subtiles
+
 .proc FAR_apply_ramp_height
+TempPosZ := R0
         ; here we check for ramps. If we're nowhere near a ramp then we're done
         lda entity_table + EntityState::RampHeight, x
-        beq done_with_ramps
-        near_call FAR_compute_ramp_height
+        bne handle_ramp_height
+        rts ; bail fast
 
+handle_ramp_height:
+        ; If we are grounded, then we want to "stick" to ramps so that we aren't going
+        ; airbourne just by walking. To do this, we'll detect a small threshold above the
+        ; ramp and pull our position down towards the ramp when this threshold is reached
+        lda entity_table + EntityState::PositionZ, x
+        sec
+        sbc #RAMP_SNAP_FUDGE_ACTUAL
+        sta TempPosZ
+        lda entity_table + EntityState::PositionZ+1, x
+        sbc #0
+        sta TempPosZ+1
+        ; did that make things negative? if so, snap our compared height to #0 to avoid issues
+        bpl perform_comparison
+        lda #0
+        sta TempPosZ
+        sta TempPosZ+1
+
+perform_comparison:
+        near_call FAR_compute_ramp_height
         ; Now compare against the Z coordinate
         lda RampGroundHeight+1
-        cmp entity_table + EntityState::PositionZ+1, x
+        ;cmp entity_table + EntityState::PositionZ+1, x
+        cmp TempPosZ+1
         bne check_if_below_ramp
         lda RampGroundHeight
-        cmp entity_table + EntityState::PositionZ, x
+        ;cmp entity_table + EntityState::PositionZ, x
+        cmp TempPosZ
 check_if_below_ramp:
-        bcc done_with_ramps
-apply_ramp_response:
+        bcc not_below_ramp
+        jmp snap_to_ramp_height
+not_below_ramp:
+        rts
+
+snap_to_ramp_height:
         ; the computed ramp height becomes our new Z coordinate
         lda RampGroundHeight
         sta entity_table + EntityState::PositionZ, x
@@ -319,7 +348,6 @@ apply_ramp_response:
         ; our speed
         lda #0
         sta entity_table + EntityState::SpeedZ, x
-done_with_ramps:
         rts
 .endproc
 
