@@ -436,7 +436,7 @@ dialog_transition_lut:
 .byte 160
 
 .proc dialog_init
-        jsr init_dialog_engine
+        far_call FAR_init_dialog_engine
         lda #(DIALOG_ANIM_LENGTH-1)
         sta AnimTimer
         st16 GameMode, dialog_opening
@@ -480,7 +480,7 @@ continue:
 
 .proc dialog_active
         jsr refresh_palettes_gameloop
-        jsr update_dialog_engine
+        far_call FAR_update_dialog_engine
 
         ; starting IRQ index for the playfield
         lda inactive_irq_index

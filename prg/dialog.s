@@ -19,7 +19,8 @@ CurrentPpuAddr: .res 2
 StateCounter: .res 1 
 CurrentLine: .res 1
 CurrentTimbre: .res 1
-        .segment "PRGFIXED_E000"
+
+        .segment "UTILITIES_A000"
 
 ; commands
 D_LF =    $80
@@ -89,7 +90,7 @@ lorem_ipsum:
 
 ; === External Functions ===
 
-.proc init_dialog_engine
+.proc FAR_init_dialog_engine
         st16 DialogMode, dialog_state_init
         ; debug: manually set a dialog message for testing
         ; later we should not do this, and allow the calling code to set the pointer instead
@@ -107,7 +108,7 @@ lorem_ipsum:
         rts
 .endproc
 
-.proc update_dialog_engine
+.proc FAR_update_dialog_engine
         inc StateCounter
         jmp (DialogMode)
 .endproc

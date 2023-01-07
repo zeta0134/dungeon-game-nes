@@ -1,2 +1,2 @@
-.global init_dialog_engine
-.global update_dialog_engine
+.global FAR_init_dialog_engine
+.global FAR_update_dialog_engine
