@@ -2,9 +2,13 @@
 .global TargetMapAddr, TargetMapBank, TargetMapEntrance, PlayfieldPpuMask
 .global HitstunTimer
 
+; fixed bank for ... y'know, it's tiny
 .global wait_for_next_vblank
-.global run_kernel
 
+
+.global FAR_run_kernel
+
+; kernel states; technically functions, yes, but not far-callable
 .global init_engine
 .global standard_gameplay_loop
 .global hitstun_gameplay_loop

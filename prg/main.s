@@ -53,5 +53,5 @@ start:
         ; hand control over to the kernel, which will manage game mode management
         ; for the rest of runtime
 main_loop:
-        jsr run_kernel
+        far_call FAR_run_kernel
         jmp main_loop

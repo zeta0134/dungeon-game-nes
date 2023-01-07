@@ -51,6 +51,7 @@ ABILITY_ICON_BANK = $14
         rts
 .endproc
 
+; These must be fixed because they access the data bank
 .proc demo_init
 ScratchAddr := R0
 CurrentEntityIndex := R2
@@ -106,6 +107,15 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         rts
 .endproc
 
+.proc load_target_map
+        access_data_bank TargetMapBank
+        jsr load_map
+        restore_previous_bank
+        rts
+.endproc
+
+        .segment "UTILITIES_A000"
+
 .proc demo_obj_palette
         ; grey!
         lda #$20
@@ -142,7 +152,7 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
 .endproc
 
 ; === Kernel Entrypoint ===
-.proc run_kernel
+.proc FAR_run_kernel
         ; whatever game mode we are currently in, run one loop of that and exit
         jmp (GameMode)
         ; the game state function will exit
@@ -191,9 +201,7 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         lda TargetMapAddr+1
         sta R4+1
 
-        access_data_bank TargetMapBank
-        jsr load_map
-        restore_previous_bank
+        jsr load_target_map
         
         far_call FAR_init_map
         far_call FAR_init_camera
@@ -436,7 +444,7 @@ dialog_transition_lut:
 .byte 160
 
 .proc dialog_init
-        far_call FAR_init_dialog_engine
+        near_call FAR_init_dialog_engine
         lda #(DIALOG_ANIM_LENGTH-1)
         sta AnimTimer
         st16 GameMode, dialog_opening
@@ -480,7 +488,7 @@ continue:
 
 .proc dialog_active
         jsr refresh_palettes_gameloop
-        far_call FAR_update_dialog_engine
+        near_call FAR_update_dialog_engine
 
         ; starting IRQ index for the playfield
         lda inactive_irq_index
