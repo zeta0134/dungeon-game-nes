@@ -235,7 +235,7 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         far_call FAR_render_initial_viewport
 
         ; init the statusarea to something not stupid
-        jsr init_statusbar
+        near_call FAR_init_statusbar
 
         ; reset PPUADDR to top-left
         set_ppuaddr #$2000
@@ -294,7 +294,7 @@ time_waste_loop:
         debug_color 0 ; disable debug colors
 
         near_call FAR_refresh_palettes_gameloop
-        jsr update_statusbar
+        near_call FAR_update_statusbar
 
         ; starting IRQ index for the playfield
         lda inactive_irq_index
@@ -340,7 +340,7 @@ still_in_hitstun:
         far_call FAR_scroll_camera
         far_call FAR_draw_metasprites
         near_call FAR_refresh_palettes_gameloop
-        jsr update_statusbar
+        near_call FAR_update_statusbar
 
         ; starting IRQ index for the playfield
         lda inactive_irq_index
@@ -453,7 +453,7 @@ dialog_transition_lut:
 
 .proc dialog_opening
         near_call FAR_refresh_palettes_gameloop
-        jsr write_blank_hud_palette
+        near_call FAR_write_blank_hud_palette
 
         ; starting IRQ index for the playfield
         lda inactive_irq_index
@@ -523,7 +523,7 @@ no_debug:
 
 .proc dialog_closing
         near_call FAR_refresh_palettes_gameloop
-        jsr write_blank_hud_palette
+        near_call FAR_write_blank_hud_palette
 
         ; starting IRQ index for the playfield
         lda inactive_irq_index
@@ -549,7 +549,7 @@ no_debug:
         dec AnimTimer
         bne continue
         st16 GameMode, standard_gameplay_loop
-        jsr init_statusbar
+        near_call FAR_init_statusbar
 continue:
         rts
 .endproc
@@ -581,11 +581,11 @@ done:
 
 .proc _load_subscreen
         ; We are about to clobber the HUD state, so write a blank palette
-        jsr write_blank_hud_palette
+        near_call FAR_write_blank_hud_palette
         ; And reset the HUD to its initial state. (This won't take effect until
         ; we exit the subscreen later, but this will cause the HUD to re-initialize
         ; itself and restore all of its graphics tiles and palette.)
-        jsr init_statusbar
+        near_call FAR_init_statusbar
 
         ; The subscreen does not use the HUD, so stop updating the palette for it
         lda #0

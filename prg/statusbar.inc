@@ -1,4 +1,4 @@
-.global init_statusbar
-.global update_statusbar
-.global write_blank_hud_palette
-.global write_active_hud_palette
+.global FAR_init_statusbar
+.global FAR_update_statusbar
+.global FAR_write_blank_hud_palette
+.global FAR_write_active_hud_palette

@@ -23,7 +23,7 @@ HudStateCounter: .res 1
 ActionDisplayedLeft: .res 1
 ActionDisplayedRight: .res 1
 
-        .segment "PRGFIXED_E000"
+        .segment "UTILITIES_A000"
 
 hud_base_pal:
         .incbin "../art/palettes/hud_base.pal"
@@ -50,12 +50,12 @@ basic_hud:
 
 ; === External Functions ===
 
-.proc init_statusbar
+.proc FAR_init_statusbar
         st16 HudState, hud_state_initial
         rts
 .endproc
 
-.proc update_statusbar
+.proc FAR_update_statusbar
         inc HudStateCounter
         jmp (HudState)
         rts
@@ -64,7 +64,7 @@ basic_hud:
 ; === Various States for HUD updates ===
 
 .proc hud_state_initial
-        jsr write_blank_hud_palette
+        near_call FAR_write_blank_hud_palette
         st16 HudState, hud_cold_draw
         lda #0
         sta HudStateCounter
@@ -208,7 +208,7 @@ attribute_loop_2:
         stx VRAM_TABLE_INDEX
         inc VRAM_TABLE_ENTRIES
 
-        jsr write_active_hud_palette
+        near_call FAR_write_active_hud_palette
         st16 HudState, hud_active
 
         rts
@@ -317,7 +317,7 @@ done_with_actions:
 
 ; === Utility Functions ===
 
-.proc write_blank_hud_palette
+.proc FAR_write_blank_hud_palette
         lda #$0F ; black
         sta HudPaletteBuffer + 0
         ldx #0
@@ -335,7 +335,7 @@ loop:
         rts
 .endproc
 
-.proc write_active_hud_palette
+.proc FAR_write_active_hud_palette
         ; for now, this is a static (and quite ugly) palette for testing
         ; The global background is always black
         lda #$0F

@@ -1,5 +1,6 @@
         .setcpu "6502"
         .include "dialog.inc"
+        .include "far_call.inc"
         .include "input.inc"
         .include "irq_table.inc"
         .include "kernel.inc"
@@ -142,7 +143,7 @@ still_waiting:
         ; In skip mode, we might wish to process several commands at once, though
         ; we'll need to guard that against state changes
         jsr process_one_command
-        jsr write_active_hud_palette
+        near_call FAR_write_active_hud_palette
         rts
 .endproc
 
