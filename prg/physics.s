@@ -27,30 +27,30 @@ no_ramp_lut: ; identity, used to make ramp sampling code simpler and less dumb
 
 steep_ramp_east_lut:   ; towards +X
         ; at px: 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15
-        .byte     1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16
+        .byte     0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
 
 steep_ramp_west_lut:   ; towards -X
 steep_ramp_north_lut:  ; towards -Y
         ; at px: 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15
-        .byte    16, 15, 14, 13, 12, 11, 10,  9,  8,  7,  6,  5,  4,  3,  2,  1
+        .byte    15, 14, 13, 12, 11, 10,  9,  8,  7,  6,  5,  4,  3,  2,  1,  0
 
 shallow_ramp_east_lower_lut:
         ; at px: 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15
-        .byte     1,  1,  2,  2,  3,  3,  4,  4,  5,  5,  6,  6,  7,  7,  8,  8
+        .byte     0,  0,  1,  1,  2,  2,  3,  3,  4,  4,  5,  5,  6,  6,  7,  7
 
 shallow_ramp_east_upper_lut:
         ; at px: 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15
-        .byte     9,  9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16
+        .byte     8,  8,  9,  9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15
 
 shallow_ramp_west_lower_lut:
 shallow_ramp_north_lower_lut:
         ; at px: 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15
-        .byte     8,  8,  7,  7,  6,  6,  5,  5,  4,  4,  3,  3,  2,  2,  1,  1
+        .byte     7,  7,  6,  6,  5,  5,  4,  4,  3,  3,  2,  2,  1,  1,  0,  0
 
 shallow_ramp_west_upper_lut:
 shallow_ramp_north_upper_lut:
         ; at px: 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15
-        .byte    16, 16, 15, 15, 14, 14, 13, 13, 12, 12, 11, 11, 10, 10,  9,  9
+        .byte    15, 15, 14, 14, 13, 13, 12, 12, 11, 11, 10, 10,  9,  9,  8,  8
 
 ramp_types_table:
         .word no_ramp_lut
@@ -111,7 +111,7 @@ HEIGHT_FUDGE_ACTUAL = (HEIGHT_FUDGE << 4) ; subtiles
         ; fudged a collision requirement) then zero it back out
         lda entity_table + EntityState::PositionZ+1, x
         bpl done
-        lda #1
+        lda #0
         sta entity_table + EntityState::PositionZ, x
         lda #0
         sta entity_table + EntityState::PositionZ+1, x
