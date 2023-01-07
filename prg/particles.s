@@ -16,9 +16,9 @@ particle_table:
         .tag ParticleState
         .endrepeat
 
-        .segment "PRGFIXED_E000"
+        .segment "UTILITIES_A000"
 
-.proc update_particles
+.proc FAR_update_particles
 CurrentParticleIndex := R0
 ScratchSpeed := R1
         ldx #0
@@ -65,7 +65,7 @@ done:
         rts
 .endproc
 
-.proc draw_particles
+.proc FAR_draw_particles
 CurrentParticleIndex := R0
 ScratchX := R1
 ScratchY := R3

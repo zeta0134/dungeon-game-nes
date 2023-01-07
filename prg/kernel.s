@@ -289,8 +289,8 @@ time_waste_loop:
         debug_color TINT_R
         far_call FAR_scroll_camera
         debug_color TINT_G
-        jsr update_particles
-        jsr draw_particles
+        near_call FAR_update_particles
+        near_call FAR_draw_particles
         debug_color 0 ; disable debug colors
 
         near_call FAR_refresh_palettes_gameloop

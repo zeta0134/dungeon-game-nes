@@ -1,5 +1,7 @@
 .global NextParticleIndex, particle_table
-.global update_particles, draw_particles
+
+.global FAR_update_particles 
+.global FAR_draw_particles
 
 MAX_PARTICLES = 8
 
