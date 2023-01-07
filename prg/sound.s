@@ -202,6 +202,7 @@ SfxPtr := R0
         sta Pulse1SfxPtr
         lda SfxPtr+1
         sta Pulse1SfxPtr+1
+        access_data_bank #<.bank(sfx_data)
         ldy #0
         lda (Pulse1SfxPtr), y
         sta Pulse1RowCounter
@@ -210,6 +211,7 @@ SfxPtr := R0
         sta Pulse1DelayCounter
         lda #0
         jsr bhop_mute_channel
+        restore_previous_bank
         rts
 .endproc
 
@@ -219,6 +221,7 @@ SfxPtr := R0
         sta Pulse2SfxPtr
         lda SfxPtr+1
         sta Pulse2SfxPtr+1
+        access_data_bank #<.bank(sfx_data)
         ldy #0
         lda (Pulse2SfxPtr), y
         sta Pulse2RowCounter
@@ -227,6 +230,7 @@ SfxPtr := R0
         sta Pulse2DelayCounter
         lda #1
         jsr bhop_mute_channel
+        restore_previous_bank
         rts
 .endproc
 
@@ -236,6 +240,7 @@ SfxPtr := R0
         sta TriangleSfxPtr
         lda SfxPtr+1
         sta TriangleSfxPtr+1
+        access_data_bank #<.bank(sfx_data)
         ldy #0
         lda (TriangleSfxPtr), y
         sta TriangleRowCounter
@@ -244,6 +249,7 @@ SfxPtr := R0
         sta Pulse2DelayCounter
         lda #2
         jsr bhop_mute_channel
+        restore_previous_bank
         rts
 .endproc
 
@@ -253,6 +259,7 @@ SfxPtr := R0
         sta NoiseSfxPtr
         lda SfxPtr+1
         sta NoiseSfxPtr+1
+        access_data_bank #<.bank(sfx_data)
         ldy #0
         lda (NoiseSfxPtr), y
         sta NoiseRowCounter
@@ -261,6 +268,7 @@ SfxPtr := R0
         sta Pulse2DelayCounter
         lda #3
         jsr bhop_mute_channel
+        restore_previous_bank
         rts
 .endproc
 
@@ -452,12 +460,17 @@ done:
 .endproc
 
 .proc update_sfx
+        access_data_bank #<.bank(sfx_data)
         jsr update_pulse1
         jsr update_pulse2
         jsr update_triangle
         jsr update_noise
         jsr update_dpcm
+        restore_previous_bank
         rts
 .endproc
 
-.include "sfx.incs"
+        .segment "SFX_A000"
+
+sfx_data:
+        .include "sfx.incs"
