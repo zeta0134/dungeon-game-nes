@@ -165,7 +165,7 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         sta Brightness
         lda #1
         sta HudPaletteActive
-        jsr init_hud_palette
+        near_call FAR_init_hud_palette
         lda #$1E
         sta PlayfieldPpuMask
 
@@ -293,7 +293,7 @@ time_waste_loop:
         jsr draw_particles
         debug_color 0 ; disable debug colors
 
-        jsr refresh_palettes_gameloop
+        near_call FAR_refresh_palettes_gameloop
         jsr update_statusbar
 
         ; starting IRQ index for the playfield
@@ -339,7 +339,7 @@ still_in_hitstun:
         far_call FAR_update_camera
         far_call FAR_scroll_camera
         far_call FAR_draw_metasprites
-        jsr refresh_palettes_gameloop
+        near_call FAR_refresh_palettes_gameloop
         jsr update_statusbar
 
         ; starting IRQ index for the playfield
@@ -452,7 +452,7 @@ dialog_transition_lut:
 .endproc
 
 .proc dialog_opening
-        jsr refresh_palettes_gameloop
+        near_call FAR_refresh_palettes_gameloop
         jsr write_blank_hud_palette
 
         ; starting IRQ index for the playfield
@@ -487,7 +487,7 @@ continue:
 .endproc
 
 .proc dialog_active
-        jsr refresh_palettes_gameloop
+        near_call FAR_refresh_palettes_gameloop
         near_call FAR_update_dialog_engine
 
         ; starting IRQ index for the playfield
@@ -522,7 +522,7 @@ no_debug:
 .endproc
 
 .proc dialog_closing
-        jsr refresh_palettes_gameloop
+        near_call FAR_refresh_palettes_gameloop
         jsr write_blank_hud_palette
 
         ; starting IRQ index for the playfield

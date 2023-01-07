@@ -22,6 +22,17 @@ HudPaletteActive: .res 1
 
         .segment "PRGFIXED_E000"
 
+; call with desired brightness in a
+.proc set_brightness
+        sta Brightness
+        lda #1
+        sta BgPaletteDirty
+        sta ObjPaletteDirty
+        rts
+.endproc
+
+        .segment "UTILITIES_A000"
+
 white_palette:
         .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
         .byte $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30, $30
@@ -90,7 +101,7 @@ brightness_table:
 hud_base_pal:
         .incbin "../art/palettes/hud_base.pal"
 
-.proc init_hud_palette
+.proc FAR_init_hud_palette
         ; for now, this is a static (and quite ugly) palette for testing
         ; The global background is always black
         lda #$0F
@@ -147,16 +158,7 @@ hud_base_pal:
         rts
 .endproc
 
-; call with desired brightness in a
-.proc set_brightness
-        sta Brightness
-        lda #1
-        sta BgPaletteDirty
-        sta ObjPaletteDirty
-        rts
-.endproc
-
-.proc refresh_palettes
+.proc FAR_refresh_palettes
         lda BgPaletteDirty
         beq check_obj_palettes
         set_ppuaddr #$3F00
@@ -180,7 +182,7 @@ done:
         rts
 .endproc
 
-.proc refresh_palettes_gameloop
+.proc FAR_refresh_palettes_gameloop
 PalAddr := R0
 PalIndex := R2
         lda BgPaletteDirty
@@ -271,7 +273,7 @@ done:
         rts
 .endproc
 
-.proc refresh_palettes_lag_frame
+.proc FAR_refresh_palettes_lag_frame
         lda HudPaletteActive
         beq done
         
@@ -334,13 +336,13 @@ loop:
         rts
 .endproc
 
-.proc queue_arbitrary_bg_palette
+.proc FAR_queue_arbitrary_bg_palette
         ; Now use this table to copy in the palette, from the supplied address
         write_vram_header_imm $3F00, #16, VRAM_INC_1
         jmp _queue_arbitrary_palette ; tail call
 .endproc
 
-.proc queue_arbitrary_obj_palette
+.proc FAR_queue_arbitrary_obj_palette
         ; Now use this table to copy in the palette, from the supplied address
         write_vram_header_imm $3F10, #16, VRAM_INC_1
         jmp _queue_arbitrary_palette ; tail call

@@ -1,5 +1,6 @@
 .include "nes.inc"
 
+.include "far_call.inc"
 .include "irq_table.inc"
 .include "input.inc"
 .include "main.inc"
@@ -81,7 +82,7 @@ lag_frame:
         ; refresh the BG palette directly into palette memory
         ; (otherwise we draw the playfield with the HUD palette, which is
         ; certainly wrong and generates ugly flicker)
-        jsr refresh_palettes_lag_frame
+        far_call FAR_refresh_palettes_lag_frame
 
 all_frames:
         ; ===========================================================
@@ -106,9 +107,9 @@ nmi_soft_disable:
         ; smooth over transitions when loading a new level.
         jsr update_audio
 
-        ; todo: we might wish to update the audio engine here? That way music
-        ; continues to play at the proper speed even if the game lags, ie, we
-        ; trade potentially worse lag for maintaining the tempo
+        ; todo: for safety, we might need to restore the MMC3 shadow bank here, since
+        ; both a lag palette update and a call to the audio engine might have clobbered
+        ; it. This would mostly apply to lag frames?
 
         ; restore registers
         pla

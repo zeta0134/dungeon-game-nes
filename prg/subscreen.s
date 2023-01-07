@@ -44,7 +44,16 @@ ShadowCursorLeft: .res 1
 ShadowCursorRight: .res 1
 ShadowCursorShown: .res 1
 
+; These need to be banked in at the same time as the palette manipulation code. These
+; could strictly live in that bank instead of fixed, but while the project structure is
+; in constant flux, fixed is simpler to maintain. It's just 32 bytes anyway.
 
+        .segment "PRGFIXED_E000"
+
+subscreen_bg_palette:
+        .incbin "art/palettes/subscreen.pal"
+subscreen_obj_palette:
+        .incbin "art/palettes/subscreen_sprites.pal"
 
         .segment "SUBSCREEN_A000"
 
@@ -67,10 +76,6 @@ ABILITY_ICON_BANK = $14
 
 subscreen_base_nametable:
         .incbin "art/raw_nametables/subscreen_base.nam"
-subscreen_bg_palette:
-        .incbin "art/palettes/subscreen.pal"
-subscreen_obj_palette:
-        .incbin "art/palettes/subscreen_sprites.pal"
 
 .struct Layout
         Length .byte ; in regions
@@ -371,9 +376,9 @@ Brightness := R2
         lsr
         sta Brightness
         st16 BasePaletteAddr, subscreen_obj_palette
-        jsr queue_arbitrary_obj_palette
+        far_call FAR_queue_arbitrary_obj_palette
         st16 BasePaletteAddr, subscreen_bg_palette
-        jsr queue_arbitrary_bg_palette
+        far_call FAR_queue_arbitrary_bg_palette
 
         rts
 
@@ -425,9 +430,9 @@ Brightness := R2
         lsr
         sta Brightness
         st16 BasePaletteAddr, subscreen_obj_palette
-        jsr queue_arbitrary_obj_palette
+        far_call FAR_queue_arbitrary_obj_palette
         st16 BasePaletteAddr, subscreen_bg_palette
-        jsr queue_arbitrary_bg_palette
+        far_call FAR_queue_arbitrary_bg_palette
         rts
 
 done_with_fadeout:
