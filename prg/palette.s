@@ -158,30 +158,6 @@ hud_base_pal:
         rts
 .endproc
 
-.proc FAR_refresh_palettes
-        lda BgPaletteDirty
-        beq check_obj_palettes
-        set_ppuaddr #$3F00
-        .repeat 16, i
-        lda BgPaletteBuffer+i
-        sta PPUDATA
-        .endrepeat
-        lda #0
-        sta BgPaletteDirty
-check_obj_palettes:
-        lda ObjPaletteDirty
-        beq done
-        set_ppuaddr #$3F10
-        .repeat 16, i
-        lda ObjPaletteBuffer+i
-        sta PPUDATA
-        .endrepeat
-        lda #0
-        sta BgPaletteDirty
-done:
-        rts
-.endproc
-
 .proc FAR_refresh_palettes_gameloop
 PalAddr := R0
 PalIndex := R2

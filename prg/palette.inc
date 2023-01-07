@@ -10,7 +10,6 @@
 ; These accept parameters in A, and so are in fixed memory. (And also smol)
 .global set_brightness
 
-.global FAR_refresh_palettes
 .global FAR_refresh_palettes_gameloop ; *
 
 .global FAR_init_hud_palette ; *
