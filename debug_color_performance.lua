@@ -16,8 +16,8 @@ color_names = {
 function ppumask_write(address, value)
   local emu_state = emu.getState() 
   local new_emphasis_bits = ((value & 0xE0) >> 5)
-  local duration = emu_state.cpu.cycleCount - last_cycle_count
-  last_cycle_count = emu_state.cpu.cycleCount
+  local duration = emu_state["cpu.cycleCount"] - last_cycle_count
+  last_cycle_count = emu_state["cpu.cycleCount"]
   
   performance_counters[last_color_emphasis] = duration
   last_color_emphasis = new_emphasis_bits
@@ -49,4 +49,4 @@ end
 
 
 emu.addEventCallback(frame_start, emu.eventType.nmi)
-emu.addMemoryCallback(ppumask_write, emu.memCallbackType.cpuWrite, 0x2001)
+emu.addMemoryCallback(ppumask_write, emu.callbackType.write, 0x2001)
