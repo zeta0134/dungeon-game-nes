@@ -23,6 +23,9 @@ TilesetAttributes: .res MAX_METATILES
 ; CHR banks to display the selected tileset(s)
 DynamicChrBank: .byte $00
 StaticChrBank: .byte $00
+; Used for mid-screen tile updates
+InitialMetatileOffsetX: .byte $00
+InitialMetatileOffsetY: .byte $00
         .zeropage
 ; Map dimensions
 MapWidth: .byte $00
@@ -1063,6 +1066,13 @@ attr_undo_loop:
 .proc FAR_init_scroll_position
 StartingTileX := R0
 StartingTileY := R1
+        ; Preserve these coordinates for later, we need them to calculate mid-screen
+        ; tile coordinates since the HW and Map pointers can be desynced
+        lda StartingTileX
+        sta InitialMetatileOffsetX
+        lda StartingTileY
+        sta InitialMetatileOffsetY
+
         ; Sanity check: if our starting position is x,0, we're already done
         lda StartingTileY
         jeq done_with_rows
