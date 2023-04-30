@@ -1,6 +1,8 @@
         .setcpu "6502"
 
+        .include "kernel.inc"
         .include "level_logic.inc"
+        .include "nes.inc"
 
         .segment "PRGRAM"
 maplogic_ptr: .res 2
@@ -20,6 +22,11 @@ maplogic_ptr: .res 2
 .endproc
 
 .proc FAR_run_map_logic
+        ; safety
+        lda maplogic_ptr+1 ; please don't put maplogic functions in zero page
+        bne perform_call
+        rts ; bail
+perform_call:
         jmp (maplogic_ptr)
         ; tail call
 .endproc
@@ -30,7 +37,8 @@ maplogic_ptr: .res 2
 .endproc
 
 .proc maplogic_default
-        
+
+
 
         rts
 .endproc

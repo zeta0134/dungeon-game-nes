@@ -5,6 +5,7 @@
         .include "far_call.inc"
         .include "generators.inc"
         .include "kernel.inc"
+        .include "level_logic.inc"
         .include "map.inc"
         .include "palette.inc"
         .include "scrolling.inc"
@@ -151,6 +152,14 @@ no_music_variant:
         ; then combine it with a standard ppumask for the playfield
         ora #$1E
         sta PlayfieldPpuMask
+
+        ; load up the map's logic function, which will be called once per frame
+        ldy #MapHeader::logic_function
+        lda (MapAddr), y
+        sta maplogic_ptr+0
+        iny
+        lda (MapAddr), y
+        sta maplogic_ptr+1
 
         ; For now that is all.
         rts

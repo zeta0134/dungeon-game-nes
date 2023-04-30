@@ -16,6 +16,7 @@
         music_variant .byte
         distortion_index .byte
         color_emphasis .byte
+        logic_function .word
 .endstruct
 
 .struct ExitTableEntry
