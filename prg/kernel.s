@@ -301,6 +301,8 @@ time_waste_loop:
         near_call FAR_refresh_palettes_gameloop
         near_call FAR_update_statusbar
         far_call FAR_run_map_logic
+        far_call FAR_process_tilebuffer_queue
+
 
 
         ; starting IRQ index for the playfield

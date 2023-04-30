@@ -19,17 +19,17 @@
         .include "word_util.inc"
         .include "zeropage.inc"
         
-.segment "PRGRAM"
-
 MAX_BUFFERED_TILES = 128
 BUFFER_INDEX_MASK = $7F
 
+        .segment "PRGRAM"
 tilebuffer_x: .res MAX_BUFFERED_TILES
 tilebuffer_y: .res MAX_BUFFERED_TILES
+        .segment "RAM"
 tilebuffer_starting_index: .res 1
 tilebuffer_ending_index: .res 1
 
-        .segment "SCROLLING_A000"
+        .segment "PHYSICS_A000"
 
 ; result in A
 .proc FAR_tilebuffer_remaining_capacity
@@ -51,6 +51,10 @@ TilePosY := R1
         sta tilebuffer_x, x
         lda TilePosY
         sta tilebuffer_y, x
+        inc tilebuffer_ending_index
+        lda tilebuffer_ending_index
+        and #BUFFER_INDEX_MASK
+        sta tilebuffer_ending_index
         rts
 .endproc
 
@@ -125,19 +129,19 @@ done_fixing_y:
         ; Now we need to construct the PPU address from the components
         ; First the Y position, which is (TileY << 1) << 5
         lda #0
-        sta TargetPpuAddr+0
+        sta TargetPpuAddr+1
         lda ScreenSpaceTileY
         .repeat 6
         asl
-        rol TargetPpuAddr+0
+        rol TargetPpuAddr+1
         .endrepeat
-        sta TargetPpuAddr+1
+        sta TargetPpuAddr+0
         ; Add to this the X position, which is (TileX << 1) & $1F
         lda ScreenSpaceTileX
         asl
         and #$1F
-        ora TargetPpuAddr+1
-        sta TargetPpuAddr+1
+        ora TargetPpuAddr+0
+        sta TargetPpuAddr+0
         ; Now we add the nametable offset to the high byte, based on bit 5 of TileX
         lda ScreenSpaceTileX
         and #$10
@@ -149,8 +153,8 @@ right_nametable:
         lda #$24
 nametable_converge:
         clc
-        adc TargetPpuAddr+0
-        sta TargetPpuAddr+0
+        adc TargetPpuAddr+1
+        sta TargetPpuAddr+1
         ; This completes the PPUADDR for the top row of this tile, and we can +32 later to get the bottom row.
 
         ; Now we need the graphics tile index from the map data, based on TilePosX and TilePosY
@@ -177,10 +181,10 @@ nametable_converge:
         write_vram_header_ptr TargetPpuAddr, #2, VRAM_INC_1
         ldy VRAM_TABLE_INDEX
         ldx GraphicsTileIndex
-        lda TilesetTopLeft, x
+        lda TilesetBottomLeft, x
         sta VRAM_TABLE_START, y
         iny
-        lda TilesetTopRight, x
+        lda TilesetBottomRight, x
         sta VRAM_TABLE_START, y
         iny
         sty VRAM_TABLE_INDEX
@@ -208,9 +212,11 @@ TilePosY := R1
         sta TilePosX
         lda tilebuffer_y, x
         sta TilePosY
-        inc tilebuffer_starting_index
         jsr queue_single_tile
-
+        inc tilebuffer_starting_index
+        lda tilebuffer_starting_index
+        and #BUFFER_INDEX_MASK
+        sta tilebuffer_starting_index
 done:
         rts
 .endproc

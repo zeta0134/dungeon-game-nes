@@ -1,10 +1,13 @@
         .setcpu "6502"
 
+        .include "far_call.inc"
         .include "kernel.inc"
         .include "level_logic.inc"
         .include "nes.inc"
+        .include "tilebuffer.inc"
+        .include "zeropage.inc"
 
-        .segment "PRGRAM"
+        .segment "RAM"
 maplogic_ptr: .res 2
 
         .segment "MAPS_0_A000"
@@ -37,8 +40,13 @@ perform_call:
 .endproc
 
 .proc maplogic_default
-
-
+TilePosX := R0
+TilePosY := R1
+        lda #5
+        sta TilePosX
+        lda #18
+        sta TilePosY
+        far_call FAR_tilebuffer_queue_tile
 
         rts
 .endproc

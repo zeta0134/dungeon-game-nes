@@ -1,0 +1,3 @@
+.global FAR_tilebuffer_queue_tile
+.global FAR_tilebuffer_remaining_capacity
+.global FAR_process_tilebuffer_queue
