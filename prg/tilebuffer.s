@@ -70,7 +70,9 @@ ScreenSpaceTileY := R3
 TargetPpuAddr := R4
 
 GraphicsTileAddr := R6
+AttributeByteAddr := R6
 GraphicsTileIndex := R8
+AttributeByte := R8
 
         ; prep the 16x16 coordinates of the camera, discarding the half-tile offset
         lda CameraXTileCurrent
@@ -190,8 +192,75 @@ nametable_converge:
         sty VRAM_TABLE_INDEX
         inc VRAM_TABLE_ENTRIES
 
-        ; TODO: queue up the attribute byte here, which requires a totally different PPUADDR but can reuse much of the
-        ; other logic
+        ; Now we just need to queue up the attribute byte
+        ; What could possibly go wrong?
+
+        ; First, divide both the map tile and the screen space coordinates by 2 so that
+        ; we address the 32x32 region that the 16x16 tile belongs to
+        lsr TilePosX
+        lsr TilePosY
+        lsr ScreenSpaceTileX
+        lsr ScreenSpaceTileY
+
+        lda TilePosY
+        sta AttributeByteAddr+0
+        lda #0
+        sta AttributeByteAddr+1
+
+        lda MapWidth ; in 16x16 tiles
+        lsr ; now in 32x32 tiles
+        ; Now multiply the Y coordinate by the effective attribute width
+        lsr ; once more to prime the loop
+attr_mul_loop:
+        asl AttributeByteAddr+0
+        rol AttributeByteAddr+1
+        lsr
+        bcc attr_mul_loop
+        ; Add in the X coord, which cannot carry due to width being a power of 2
+        lda TilePosX
+        clc
+        adc AttributeByteAddr+0
+        sta AttributeByteAddr+0
+        ; Now add this to AttributeData...
+        add16w AttributeByteAddr, #AttributeData
+        ; ... and read
+        ldy #0
+        lda (AttributeByteAddr), y
+        sta AttributeByte
+
+        ; Now we just need to work out the attribute byte in PPU space
+        ; First, target attribute Y * 8
+        lda ScreenSpaceTileY
+        .repeat 3
+        asl
+        .endrepeat
+        sta TargetPpuAddr+0
+        ; + target attribute x & $7 (discarding nametable bit)
+        lda ScreenSpaceTileX
+        and #$07
+        ora TargetPpuAddr+0
+        ; add the low byte of nametable base here, since it does not change
+        ora #$C0
+        sta TargetPpuAddr+0
+        ; now the high nametable byte, based on bit 3 of the computed X in screen space
+        lda ScreenSpaceTileX
+        and #$08
+        bne right_nametable_attr
+left_nametable_attr:
+        lda #$23
+        jmp nametable_converge_attr
+right_nametable_attr:
+        lda #$27
+nametable_converge_attr:
+        sta TargetPpuAddr+1
+
+        ; finally we can queue up the resulting write
+        write_vram_header_ptr TargetPpuAddr, #1, VRAM_INC_1
+        ldy VRAM_TABLE_INDEX
+        lda AttributeByte
+        sta VRAM_TABLE_START, y
+        inc VRAM_TABLE_INDEX
+        inc VRAM_TABLE_ENTRIES
 
 reject_tile:
         rts
