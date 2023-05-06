@@ -62,10 +62,10 @@ beta: dir $(ROM_NAME)
 	/home/zeta0134/Downloads/MesenBeta/Mesen $(ROM_NAME)
 
 debug: dir $(ROM_NAME)
-	mono vendor/Mesen-X-v1.0.0.exe $(ROM_NAME) debug_entity_0.lua
+	/home/zeta0134/Downloads/MesenBeta/Mesen $(ROM_NAME) debug_entity_0.lua
 
 profile: dir $(ROM_NAME)
-	mono vendor/Mesen-X-v1.0.0.exe $(ROM_NAME) debug_color_performance.lua
+	/home/zeta0134/Downloads/MesenBeta/Mesen $(ROM_NAME) debug_color_performance.lua
 
 everdrive: dir $(ROM_NAME)
 	mono vendor/edlink-n8.exe $(ROM_NAME)
