@@ -1,4 +1,5 @@
         .include "levels.inc"
+        .include "level_logic.inc"
 
         ; levels may reference AI states, so include those references here
         .include "blobby.inc"
@@ -17,5 +18,4 @@
         .include "../build/patternsets/grassy_fields_v3.mt"
         .include "../build/patternsets/test_tiles_3d.mt"
         .include "../build/patternsets/greybox.mt"
-
         

@@ -13,6 +13,7 @@
         .include "irq_table.inc"
         .include "kernel.inc"
         .include "levels.inc"
+        .include "level_logic.inc"
         .include "map.inc"
         .include "mmc3.inc"
         .include "nes.inc"
@@ -23,6 +24,7 @@
         .include "sprites.inc"
         .include "statusbar.inc"
         .include "subscreen.inc"
+        .include "tilebuffer.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
 
@@ -195,6 +197,9 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         lda #(VBLANK_NMI)
         sta PPUCTRL
 
+        ; Reset map state to its default
+        far_call FAR_init_maplogic
+
         ; less demo map init
         lda TargetMapAddr
         sta R4
@@ -295,6 +300,10 @@ time_waste_loop:
 
         near_call FAR_refresh_palettes_gameloop
         near_call FAR_update_statusbar
+        far_call FAR_run_map_logic
+        far_call FAR_process_tilebuffer_queue
+
+
 
         ; starting IRQ index for the playfield
         lda inactive_irq_index
