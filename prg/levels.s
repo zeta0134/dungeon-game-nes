@@ -13,6 +13,7 @@
         .include "../build/maps/greybox_test.incs"
         .include "../build/maps/underwater_test.incs"
         .include "../build/maps/ramp_test.incs"
+        .include "../build/maps/overlay_test.incs"
 
         ; Tilesets
         .include "../build/patternsets/grassy_fields_v3.mt"
