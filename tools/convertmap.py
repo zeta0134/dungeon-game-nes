@@ -53,6 +53,9 @@ BLANK_TILE = TiledTile(tiled_index=0, ordinal_index=0, integer_properties={}, bo
 @dataclass
 class Overlay:
     name: str
+    width: int
+    height: int
+    index: int
     tiles: [TiledTile]
 
 @dataclass
@@ -285,14 +288,15 @@ def read_map(map_filename):
 
     # now do it again, this time with any overlay groups in the order that they appear
     overlays = []
+    overlay_index = 0
     group_elements = map_element.findall("group")
     for group_element in group_elements:
         group_properties = read_boolean_properties(group_element)
         if group_properties["is_overlay"]:
             layer_elements = group_element.findall("layer")
             overlay_tiles = read_and_combine_layers(layer_elements, tilesets)
-            overlays.append(Overlay(tiles=overlay_tiles, name=group_element.get("name")))
-            print("[DEBUG] Processed overlay: ", group_element.get("name"))
+            overlays.append(Overlay(tiles=overlay_tiles, name=group_element.get("name"), width=map_width, height=map_height, index=overlay_index))
+            overlay_index = overlay_index + 1
 
     # Read in supplementary structures: entrances, exits, etc
     entrances = read_entrances([], tilesets, map_width, map_height)
@@ -347,6 +351,7 @@ def write_map_header(tilemap, output_file):
     output_file.write("  .byte %s ; distortion index\n" % ca65_byte_literal(tilemap.distortion_index))
     output_file.write("  .byte %s ; color emphasis\n" % ca65_byte_literal(tilemap.color_emphasis))
     output_file.write("  .word %s\n" % tilemap.logic_function)
+    output_file.write("  .word %s_overlays\n" % tilemap.name)
     output_file.write("\n")
 
 def write_palette_data(tilemap, output_file):
@@ -532,6 +537,51 @@ def write_collision_tiles(tilemap, output_file):
     pretty_print_table(compressed_bytes, output_file, tilemap.width)
     output_file.write("\n")
 
+@dataclass
+class OverlayEntry:
+    x: int
+    y: int
+    metatile_index: int
+    navtile_index: int
+    attribute: int
+
+def overlay_label(tilemap, overlay):
+    return tilemap.name + "_overlay_" + str(overlay.index)
+
+def overlay_entries(overlay_map):
+    collision_tiles = generate_collision_tileset()
+    entries = []
+
+    for y in range(0, overlay_map.height):
+        for x in range(0, overlay_map.width):
+            tile = overlay_map.tiles[y*overlay_map.width + x]
+            if "metatile_index" in tile.integer_properties:
+                metatile_index = tile.integer_properties.get("metatile_index")
+                attribute = tile.integer_properties.get("attribute_index", 0) & 0x3
+                navtile_index = find_collision_index(tile, collision_tiles)
+                entries.append(OverlayEntry(x=x, y=y, metatile_index=metatile_index, navtile_index=navtile_index, attribute=attribute))
+    # TODO: if we're going to sort these by order, this is the place to do it
+    return entries
+
+def write_overlay(tilemap, overlay, output_file):
+    tiles_to_write = overlay_entries(overlay)
+    output_file.write(ca65_label(overlay_label(tilemap, overlay)) + "\n")
+    output_file.write("  .byte %s ; length in tiles\n" % ca65_byte_literal(len(tiles_to_write)))
+    output_file.write("  ;       X,   Y,Tile, Nav,Attr\n")
+    for tile in tiles_to_write:
+        tile_raw_bytes = [tile.x, tile.y, tile.metatile_index, tile.navtile_index, tile.attribute]
+        pretty_print_table(tile_raw_bytes, output_file)
+    output_file.write("\n")
+
+def write_overlay_list(tilemap, output_file):
+    output_file.write(ca65_label(tilemap.name + "_overlays") + "\n")
+    output_file.write("  .byte %s ; num overlays\n" % ca65_byte_literal(len(tilemap.overlays)))
+    for overlay in tilemap.overlays:
+        output_file.write("  .word %s\n" % overlay_label(tilemap, overlay))
+    output_file.write("\n")
+    for overlay in tilemap.overlays:
+        write_overlay(tilemap, overlay, output_file)
+
 if __name__ == '__main__':
     # DEBUG TEST THINGS
     if len(sys.argv) != 3:
@@ -551,8 +601,4 @@ if __name__ == '__main__':
         write_graphics_tiles(tilemap, output_file)
         write_collision_tiles(tilemap, output_file)
         write_attributes(tilemap, output_file)
-
-def write_overlay(overlay, output_file):
-    overlay_label = nice_label(overlay.name)
-    output_file.write(ca65_label(overlay_label + "_overlay") + "\n")
-    # TODO: YOU WERE HERE
+        write_overlay_list(tilemap, output_file)
