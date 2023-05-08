@@ -51,11 +51,17 @@ class Entity:
 BLANK_TILE = TiledTile(tiled_index=0, ordinal_index=0, integer_properties={}, boolean_properties={}, string_properties={}, type="")
 
 @dataclass
+class Overlay:
+    name: str
+    tiles: [TiledTile]
+
+@dataclass
 class CombinedMap:
     name: str
     width: int
     height: int
     tiles: [TiledTile]
+    overlays: [Overlay]
     entrances: [Entrance]
     exits: [Exit]
     entities: [Entity]
@@ -237,6 +243,25 @@ def read_global_palette(filename):
         palette_raw = palette_file.read()
         return palette_raw
 
+# Given a list of layer elements, parses the layer contents, then
+# combines common attributes, using the "Graphics" layer as a base.
+def read_and_combine_layers(layer_elements, tilesets):
+    layers = {}
+    for layer_element in layer_elements:
+        layers[layer_element.get("name")] = read_layer(layer_element, tilesets)
+
+    # At this point we should have at least one layer named "Graphics", if we don't
+    # we can't continue and must bail
+    graphics_layer = layers.pop("Graphics")
+    supplementary_layers = layers
+
+    combined_tiles = []
+    for tile_index in range(0, len(graphics_layer)):
+        graphics_tile = graphics_layer[tile_index]
+        supplementary_tiles = [supplementary_layers[layer_name][tile_index] for layer_name in supplementary_layers]
+        combined_tiles.append(combine_tile_properties(graphics_tile, supplementary_tiles))
+    return combined_tiles
+
 def read_map(map_filename):
     map_element = ElementTree.parse(map_filename).getroot()
     map_width = int(map_element.get("width"))
@@ -254,24 +279,20 @@ def read_map(map_filename):
         tileset = read_tileset(tileset_path, first_gid, nice_label(tileset_path))
         tilesets.append(tileset)
     
-    # then read in all map layers. Using the raw index data and the first gids, we can
-    # translate the lists to the actual tiles they reference
-    layers = {}
+    # first read in all the base map layers
     layer_elements = map_element.findall("layer")
-    for layer_element in layer_elements:
-        layers[layer_element.get("name")] = read_layer(layer_element, tilesets)
+    combined_tiles = read_and_combine_layers(layer_elements, tilesets)
 
-    # At this point we should have at least one layer named "Graphics", if we don't
-    # we can't continue and must bail
-    graphics_layer = layers.pop("Graphics")
-    supplementary_layers = layers
-
-    # Now we combine the layers
-    combined_tiles = []
-    for tile_index in range(0, len(graphics_layer)):
-        graphics_tile = graphics_layer[tile_index]
-        supplementary_tiles = [supplementary_layers[layer_name][tile_index] for layer_name in supplementary_layers]
-        combined_tiles.append(combine_tile_properties(graphics_tile, supplementary_tiles))
+    # now do it again, this time with any overlay groups in the order that they appear
+    overlays = []
+    group_elements = map_element.findall("group")
+    for group_element in group_elements:
+        group_properties = read_boolean_properties(group_element)
+        if group_properties["is_overlay"]:
+            layer_elements = group_element.findall("layer")
+            overlay_tiles = read_and_combine_layers(layer_elements, tilesets)
+            overlays.append(Overlay(tiles=overlay_tiles, name=group_element.get("name")))
+            print("[DEBUG] Processed overlay: ", group_element.get("name"))
 
     # Read in supplementary structures: entrances, exits, etc
     entrances = read_entrances([], tilesets, map_width, map_height)
@@ -285,10 +306,8 @@ def read_map(map_filename):
     entrances = read_entrances(objects, tilesets, map_width, map_height)
     exits = read_exits(objects, tilesets)
     entities = read_entities(objects, tilesets)
-    print(entities)
 
     common_tileset_properties = combine_tileset_properties(tilesets)
-    print(common_tileset_properties)
     chr0_label = common_tileset_properties["chr0_tileset"]
     chr1_label = common_tileset_properties.get("chr1_tileset", chr0_label)
     global_palette = read_global_palette(common_tileset_properties["global_palette"])
@@ -305,7 +324,7 @@ def read_map(map_filename):
     (base_filename, _) = os.path.splitext(plain_filename)
     safe_label = re.sub(r'[^A-Za-z0-9\-\_]', '_', base_filename)
 
-    return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles, 
+    return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles, overlays=overlays,
         entrances=entrances, exits=exits, entities=entities, chr0_label=chr0_label, chr1_label=chr1_label, 
         global_palette=global_palette, music_track=music_track, music_variant=music_variant,
         distortion_index=distortion_index, color_emphasis=color_emphasis, logic_function=logic_function)
@@ -532,3 +551,8 @@ if __name__ == '__main__':
         write_graphics_tiles(tilemap, output_file)
         write_collision_tiles(tilemap, output_file)
         write_attributes(tilemap, output_file)
+
+def write_overlay(overlay, output_file):
+    overlay_label = nice_label(overlay.name)
+    output_file.write(ca65_label(overlay_label + "_overlay") + "\n")
+    # TODO: YOU WERE HERE

@@ -142,7 +142,10 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <group id="7" name="Overlay 1">
+ <group id="7" name="[0] Overlay">
+  <properties>
+   <property name="is_overlay" type="bool" value="true"/>
+  </properties>
   <layer id="8" name="Graphics" width="32" height="28">
    <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
