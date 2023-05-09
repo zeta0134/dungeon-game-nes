@@ -26,22 +26,9 @@ ScratchWord: .res 2 ; used by a few routines
 ; Temporary values used during movement and hit detection
 AccumulatedColFlags: .res 1
 
-        .segment "PHYSICS_A000"
+        .segment "PRGFIXED_E000"
 
-.align 256
-
-hidden_surface_height_lut:
-        .repeat 256, i
-        .byte ((i & $F0) >> 4)
-        .endrep
-
-.include "../build/collision_tileset.incs"
-
-hidden_surface_reverse_height_lut:
-        .repeat 16, i
-        .byte (i << 4)
-        .endrep
-
+; lots of other things use these, so put them to fixed memory
 nav_lut_width_128_low:
         .repeat 128, i
         .byte <(NavMapData + (128 * i))
@@ -74,6 +61,22 @@ nav_lut_width_32_high:
 nav_lut_width_16_high:
         .repeat 16, i
         .byte >(NavMapData + (16 * i))
+        .endrep
+
+        .segment "PHYSICS_A000"
+
+.align 256
+
+hidden_surface_height_lut:
+        .repeat 256, i
+        .byte ((i & $F0) >> 4)
+        .endrep
+
+.include "../build/collision_tileset.incs"
+
+hidden_surface_reverse_height_lut:
+        .repeat 16, i
+        .byte (i << 4)
         .endrep
 
 .proc FAR_update_nav_lut_ptr

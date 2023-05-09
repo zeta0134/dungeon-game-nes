@@ -21,6 +21,8 @@
 .global action_b_slot
 .global action_b_id
 
+.global action_flags
+
 ; Action Index IDs
 ACTION_NONE = 0
 ; Implemented

@@ -1,10 +1,14 @@
         .setcpu "6502"
 
+        .include "actions.inc"
         .include "far_call.inc"
+        .include "input.inc"
         .include "kernel.inc"
         .include "level_logic.inc"
         .include "nes.inc"
+        .include "overlays.inc"
         .include "tilebuffer.inc"
+        .include "word_util.inc"
         .include "zeropage.inc"
 
         .segment "RAM"
@@ -42,11 +46,28 @@ perform_call:
 .proc maplogic_default
 TilePosX := R0
 TilePosY := R1
-        lda #5
-        sta TilePosX
-        lda #18
-        sta TilePosY
-        far_call FAR_tilebuffer_queue_tile
+
+        ; DEBUG STUFF
+        lda #KEY_SELECT
+        bit ButtonsHeld
+        beq no_debug
+        lda #KEY_START
+        bit ButtonsDown
+        beq no_debug   
+
+        ; DEBUG KEY PRESSED! Do debug things here
+        
+        ; activate the dialog system!
+        ; st16 GameMode, dialog_init
+
+        ; queue up overlay 0, if this map has one!
+        lda #0
+        jsr apply_overlay
+        
+        ; Un-break the action button state, in case we have just switched modes
+        lda #0
+        sta action_flags
+no_debug:
 
         rts
 .endproc

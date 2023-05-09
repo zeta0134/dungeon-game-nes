@@ -17,6 +17,7 @@
         distortion_index .byte
         color_emphasis .byte
         logic_function .word
+        overlay_list .word
 .endstruct
 
 .struct ExitTableEntry

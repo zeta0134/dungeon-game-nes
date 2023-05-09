@@ -1240,16 +1240,11 @@ dive_not_pressed:
         jsr handle_dash
         jsr update_invulnerability
 
-        ; DEBUG STUFF
-        ;lda #KEY_SELECT
-        ;bit ButtonsDown
-        ;beq no_debug        
-
-        ; activate the dialog system!
-        ;st16 GameMode, dialog_init
-
-no_debug:
         ; SUBSCREEN STUFF
+        ; We can only open the subscreen when no other action buttons are held
+        lda #(KEY_A|KEY_B|KEY_SELECT)
+        bit ButtonsHeld
+        bne no_subscreen
         lda #KEY_START
         bit ButtonsDown
         beq no_subscreen
@@ -1288,16 +1283,11 @@ no_subscreen:
         ; juice: spawn bubbles occasionally
         jsr spawn_underwater_bubble
 
-        ; DEBUG STUFF
-        ;lda #KEY_SELECT
-        ;bit ButtonsDown
-        ;beq no_debug
-
-        ; activate the dialog system!
-        ;st16 GameMode, dialog_init
-
-no_debug:
         ; SUBSCREEN STUFF
+        ; We can only open the subscreen when no other action buttons are held
+        lda #(KEY_A|KEY_B|KEY_SELECT)
+        bit ButtonsHeld
+        bne no_subscreen
         lda #KEY_START
         bit ButtonsDown
         beq no_subscreen

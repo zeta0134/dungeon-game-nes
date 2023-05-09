@@ -29,21 +29,10 @@ tilebuffer_y: .res MAX_BUFFERED_TILES
 tilebuffer_starting_index: .res 1
 tilebuffer_ending_index: .res 1
 
-        .segment "PHYSICS_A000"
-
-; result in A
-.proc FAR_tilebuffer_remaining_capacity
-        lda tilebuffer_starting_index
-        sec
-        sbc #1
-        sec
-        sbc tilebuffer_ending_index
-        and #BUFFER_INDEX_MASK
-        rts
-.endproc
-
-; Note: this is a good candidate for fixed mem
-.proc FAR_tilebuffer_queue_tile
+        .segment "PRGFIXED_E000"
+; This will be called repeatdly by code working with banked map data,
+; so these tiny routines can live in fixed memory for speed
+.proc tilebuffer_queue_tile
 TilePosX := R0
 TilePosY := R1
         ldx tilebuffer_ending_index
@@ -57,6 +46,19 @@ TilePosY := R1
         sta tilebuffer_ending_index
         rts
 .endproc
+
+; result in A
+.proc tilebuffer_remaining_capacity
+        lda tilebuffer_starting_index
+        sec
+        sbc #1
+        sec
+        sbc tilebuffer_ending_index
+        and #BUFFER_INDEX_MASK
+        rts
+.endproc
+
+        .segment "PHYSICS_A000"
 
 .proc queue_single_tile
 TilePosX := R0
