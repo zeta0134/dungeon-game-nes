@@ -198,6 +198,10 @@ invalid_variant:
 
 .proc play_sfx_pulse1
 SfxPtr := R0
+        ; Safety: set the delay counter to nonzero right away. If we are interrupted,
+        ; this prevents the update routine trying to play an incompletely written pointer
+        lda #$FF
+        sta Pulse1DelayCounter
         lda SfxPtr
         sta Pulse1SfxPtr
         lda SfxPtr+1
@@ -208,15 +212,18 @@ SfxPtr := R0
         sta Pulse1RowCounter
         inc16 Pulse1SfxPtr
         lda #0
-        sta Pulse1DelayCounter
-        lda #0
         jsr bhop_mute_channel
         restore_previous_bank
+        ; NOW it is safe to actually play this SFX
+        lda #0
+        sta Pulse1DelayCounter
         rts
 .endproc
 
 .proc play_sfx_pulse2
 SfxPtr := R0
+        lda #$FF
+        sta Pulse2DelayCounter
         lda SfxPtr
         sta Pulse2SfxPtr
         lda SfxPtr+1
@@ -226,16 +233,18 @@ SfxPtr := R0
         lda (Pulse2SfxPtr), y
         sta Pulse2RowCounter
         inc16 Pulse2SfxPtr
-        lda #0
-        sta Pulse2DelayCounter
         lda #1
         jsr bhop_mute_channel
         restore_previous_bank
+        lda #0
+        sta Pulse2DelayCounter
         rts
 .endproc
 
 .proc play_sfx_triangle
 SfxPtr := R0
+        lda #$FF
+        sta TriangleDelayCounter
         lda SfxPtr
         sta TriangleSfxPtr
         lda SfxPtr+1
@@ -245,16 +254,18 @@ SfxPtr := R0
         lda (TriangleSfxPtr), y
         sta TriangleRowCounter
         inc16 TriangleSfxPtr
-        lda #0
-        sta Pulse2DelayCounter
         lda #2
         jsr bhop_mute_channel
         restore_previous_bank
+        lda #0
+        sta TriangleDelayCounter
         rts
 .endproc
 
 .proc play_sfx_noise
 SfxPtr := R0
+        lda #$FF
+        sta NoiseDelayCounter
         lda SfxPtr
         sta NoiseSfxPtr
         lda SfxPtr+1
@@ -264,11 +275,11 @@ SfxPtr := R0
         lda (NoiseSfxPtr), y
         sta NoiseRowCounter
         inc16 NoiseSfxPtr
-        lda #0
-        sta Pulse2DelayCounter
         lda #3
         jsr bhop_mute_channel
         restore_previous_bank
+        lda #0
+        sta NoiseDelayCounter
         rts
 .endproc
 
