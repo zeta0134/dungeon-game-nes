@@ -47,6 +47,10 @@ nmi:
         tya
         pha
 
+        ; preserve the shadow MMC3 bank switching register, which we are about to clobber
+        lda mmc3_bank_select_shadow
+        pha
+
         ; is NMI disabled? if so get outta here fast
         lda NmiSoftDisable
         bne nmi_soft_disable
@@ -107,9 +111,10 @@ nmi_soft_disable:
         ; smooth over transitions when loading a new level.
         jsr update_audio
 
-        ; todo: for safety, we might need to restore the MMC3 shadow bank here, since
-        ; both a lag palette update and a call to the audio engine might have clobbered
-        ; it. This would mostly apply to lag frames?
+        ; preserve the shadow MMC3 bank switching register, which we are about to clobber
+        pla
+        sta mmc3_bank_select_shadow
+        sta MMC3_BANK_SELECT
 
         ; restore registers
         pla
