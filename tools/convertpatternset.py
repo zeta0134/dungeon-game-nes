@@ -13,6 +13,7 @@ supported_tile_types = {
   "HAZARD": 2,
   "SHALLOW_WATER": 3,
   "DEEP_WATER": 4,
+  "BUTTON": 5,
 }
 
 def bits_to_byte(bit_array):

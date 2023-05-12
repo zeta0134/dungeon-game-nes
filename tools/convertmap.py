@@ -111,7 +111,7 @@ def read_tileset(tileset_filename, first_gid=0, name=""):
     for ordinal_index in range(0, len(tile_elements)):
         tile_element = tile_elements[ordinal_index]
         tiled_index = int(tile_element.get("id"))
-        tiled_type = tile_element.get("class")
+        tiled_type = tile_element.get("type")
         boolean_properties = read_boolean_properties(tile_element)
         integer_properties = read_integer_properties(tile_element)
         string_properties = read_string_properties(tile_element)
