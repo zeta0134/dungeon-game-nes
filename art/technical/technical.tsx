@@ -91,10 +91,7 @@
   </properties>
   <image width="16" height="16" source="shallow_ramp_up_upper.png"/>
  </tile>
- <tile id="16">
-  <properties>
-   <property name="is_trigger" type="bool" value="true"/>
-  </properties>
+ <tile id="16" type="trigger">
   <image width="16" height="16" source="trigger.png"/>
  </tile>
 </tileset>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.0" orientation="orthogonal" renderorder="right-down" width="32" height="28" tilewidth="16" tileheight="16" infinite="0" nextlayerid="13" nextobjectid="16">
+<map version="1.10" tiledversion="1.10.0" orientation="orthogonal" renderorder="right-down" width="32" height="28" tilewidth="16" tileheight="16" infinite="0" nextlayerid="13" nextobjectid="19">
  <properties>
   <property name="color_emphasis" type="int" value="0"/>
   <property name="distortion_index" type="int" value="0"/>
@@ -286,6 +286,16 @@
    <properties>
     <property name="destination_doorway" type="int" value="0"/>
     <property name="destination_map" value="debug_hub"/>
+   </properties>
+  </object>
+  <object id="16" gid="320" x="80" y="352" width="16" height="16">
+   <properties>
+    <property name="data0" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="17" gid="320" x="224" y="352" width="16" height="16">
+   <properties>
+    <property name="data0" type="int" value="1"/>
    </properties>
   </object>
  </objectgroup>

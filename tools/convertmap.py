@@ -59,6 +59,12 @@ class Overlay:
     tiles: [TiledTile]
 
 @dataclass
+class Trigger:
+    x: int
+    y: int
+    metadata: [int]
+
+@dataclass
 class CombinedMap:
     name: str
     width: int
@@ -68,6 +74,7 @@ class CombinedMap:
     entrances: [Entrance]
     exits: [Exit]
     entities: [Entity]
+    triggers: [Trigger]
     chr0_label: str
     chr1_label: str
     global_palette: [int]
@@ -241,6 +248,34 @@ def read_entities(object_elements, tilesets):
                 entities.append(Entity(x=entity_tile_x, y=entity_tile_y, initial_state=entity_initial_state))
     return entities
 
+def read_triggers(object_elements, tilesets):
+    triggers = []
+    for object_element in object_elements:
+        if identify_object(object_element) == "tile":
+            tile = tile_from_gid(int(object_element.get("gid")), tilesets)
+            if tile.type == "trigger":
+                trigger_x = math.floor(int(object_element.get("x")) / 16)
+                trigger_y = math.floor((int(object_element.get("y")) - 16) / 16)
+                trigger_metadata = [0] * 6
+
+                properties_element = object_element.find("properties")
+                if properties_element:
+                    for property_element in properties_element.findall("property"):
+                        if property_element.get("name") == "data0":
+                            trigger_metadata[0] = trigger_metadata[0] | int(property_element.get("value"))
+                        if property_element.get("name") == "data1":
+                            trigger_metadata[1] = trigger_metadata[1] | int(property_element.get("value"))
+                        if property_element.get("name") == "data2":
+                            trigger_metadata[2] = trigger_metadata[2] | int(property_element.get("value"))
+                        if property_element.get("name") == "data3":
+                            trigger_metadata[3] = trigger_metadata[3] | int(property_element.get("value"))
+                        if property_element.get("name") == "data4":
+                            trigger_metadata[4] = trigger_metadata[4] | int(property_element.get("value"))
+                        if property_element.get("name") == "data5":
+                            trigger_metadata[5] = trigger_metadata[5] | int(property_element.get("value"))
+                triggers.append(Trigger(x=trigger_x,y=trigger_y,metadata=trigger_metadata))
+    return triggers
+
 def read_global_palette(filename):
     with open(filename, "rb") as palette_file:
         palette_raw = palette_file.read()
@@ -299,10 +334,6 @@ def read_map(map_filename):
             overlay_index = overlay_index + 1
 
     # Read in supplementary structures: entrances, exits, etc
-    entrances = read_entrances([], tilesets, map_width, map_height)
-    exits = []
-    entities = []
-
     objects = []
     for objectgroup in map_element.findall("objectgroup"):
         objects.extend(objectgroup.findall("object"))
@@ -310,6 +341,7 @@ def read_map(map_filename):
     entrances = read_entrances(objects, tilesets, map_width, map_height)
     exits = read_exits(objects, tilesets)
     entities = read_entities(objects, tilesets)
+    triggers = read_triggers(objects, tilesets)
 
     common_tileset_properties = combine_tileset_properties(tilesets)
     chr0_label = common_tileset_properties["chr0_tileset"]
@@ -329,7 +361,7 @@ def read_map(map_filename):
     safe_label = re.sub(r'[^A-Za-z0-9\-\_]', '_', base_filename)
 
     return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles, overlays=overlays,
-        entrances=entrances, exits=exits, entities=entities, chr0_label=chr0_label, chr1_label=chr1_label, 
+        entrances=entrances, exits=exits, entities=entities, triggers=triggers, chr0_label=chr0_label, chr1_label=chr1_label, 
         global_palette=global_palette, music_track=music_track, music_variant=music_variant,
         distortion_index=distortion_index, color_emphasis=color_emphasis, logic_function=logic_function)
 
@@ -352,6 +384,7 @@ def write_map_header(tilemap, output_file):
     output_file.write("  .byte %s ; color emphasis\n" % ca65_byte_literal(tilemap.color_emphasis))
     output_file.write("  .word %s\n" % tilemap.logic_function)
     output_file.write("  .word %s_overlays\n" % tilemap.name)
+    output_file.write("  .word %s_triggers\n" % tilemap.name)
     output_file.write("\n")
 
 def write_palette_data(tilemap, output_file):
@@ -582,6 +615,15 @@ def write_overlay_list(tilemap, output_file):
     for overlay in tilemap.overlays:
         write_overlay(tilemap, overlay, output_file)
 
+def write_triggers(tilemap, output_file):
+    output_file.write(ca65_label(tilemap.name + "_triggers") + "\n")
+    output_file.write("  .byte %s ; num triggers\n" % ca65_byte_literal(len(tilemap.triggers)))
+    output_file.write("  ;       X,   Y, Metadata\n")
+    for trigger in tilemap.triggers:
+        trigger_raw_bytes = [trigger.x, trigger.y] + trigger.metadata
+        pretty_print_table(trigger_raw_bytes, output_file)
+    output_file.write("\n")
+
 if __name__ == '__main__':
     # DEBUG TEST THINGS
     if len(sys.argv) != 3:
@@ -602,3 +644,4 @@ if __name__ == '__main__':
         write_collision_tiles(tilemap, output_file)
         write_attributes(tilemap, output_file)
         write_overlay_list(tilemap, output_file)
+        write_triggers(tilemap, output_file)
