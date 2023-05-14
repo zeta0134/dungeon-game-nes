@@ -18,6 +18,7 @@
         color_emphasis .byte
         logic_function .word
         overlay_list .word
+        trigger_list .word
 .endstruct
 
 .struct ExitTableEntry
@@ -26,4 +27,15 @@
         target_map .word
         target_bank .byte
         target_entrance .byte
+.endstruct
+
+.struct TriggerTableEntry
+        tile_x .byte
+        tile_y .byte
+        data0 .byte
+        data1 .byte
+        data2 .byte
+        data3 .byte
+        data4 .byte
+        data5 .byte
 .endstruct

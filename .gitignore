@@ -4,3 +4,4 @@ build
 *.o
 *.dbg
 *.pyc
+*.dnm.bak

@@ -7,6 +7,7 @@
         .include "collision.inc"
         .include "debug.inc"
         .include "entity.inc"
+        .include "event_queue.inc"
         .include "far_call.inc"
         .include "generators.inc"
         .include "kernel.inc"
@@ -755,6 +756,7 @@ SURFACE_EXIT = 1
 RISING_HAZARD = 2
 SHALLOW_WATER = 3
 DEEP_WATER = 4
+SWITCH_UNPRESSED = 5
 
 .proc handle_ground_tile
 GroundType := R0
@@ -766,18 +768,26 @@ SensedTileY := R8
         sta PlayerLastGroundTile
         jeq safe_tile
 
-check_exit:
-        cmp #(SURFACE_EXIT << 2)
-        bne check_rising_hazard
-        ; surface exits only trigger when we walk on top of them
+        ; special tiles only trigger when we walk on top of them
         ; we need to ignore a match when are not at ground level
-        ; (say, we are walking "behind" this exit)
+        ; (say, we are walking "behind" this tile)
+
+        ; Note: this does mean that we are restricting the engine
+        ; so that we can't have hazards, teleports, or buttons
+        ; "behind" things, hidden from view. I say if we really
+        ; need one of these, we can make it a special behavior
+        ; separate from the standard one.
         
         ldx CurrentEntityIndex
         lda CollisionHeights
         and #$0F
         cmp entity_table + EntityState::GroundLevel, x
         jne safe_tile
+
+        lda GroundType
+check_exit:
+        cmp #(SURFACE_EXIT << 2)
+        bne check_rising_hazard
         
         ; valid tile, valid height, WHOOSH
         jsr handle_teleport_tile
@@ -785,12 +795,14 @@ check_exit:
 check_rising_hazard:
         cmp #(RISING_HAZARD << 2)
         bne check_shallow_water
+        ; TODO: do we want to allow hitting hazards from behind?
         set_update_func CurrentEntityIndex, boxgirl_rising_hazard_init
 
         rts
 check_shallow_water:
         cmp #(SHALLOW_WATER << 2)
         bne check_deep_water
+        ; TODO: should we allow swimming behind things? (this tends to not look good)
         set_update_func CurrentEntityIndex, boxgirl_swimming
         ; force an animation state update
         lda #0
@@ -808,7 +820,8 @@ check_shallow_water:
         rts
 check_deep_water:
         cmp #(DEEP_WATER << 2)
-        bne safe_tile
+        bne check_switch
+        ; TODO: should we allow swimming behind things? (this tends to not look good)
         set_update_func CurrentEntityIndex, boxgirl_swimming
         ; force an animation state update
         lda #0
@@ -823,6 +836,12 @@ check_deep_water:
         sta entity_table + EntityState::SpeedX, x
         sta entity_table + EntityState::SpeedY, x
 
+        rts
+check_switch:
+        cmp #(SWITCH_UNPRESSED << 2)
+        bne safe_tile
+
+        jsr handle_switch_tile
         rts
 safe_tile:
         ; only record a safe tile if we are currently on the ground
@@ -1948,6 +1967,107 @@ finished:
         rts
 .endproc
 
+.proc error_buzz_if_not_already_safe
+TestPosX := R5
+TestTileX := R6
+TestPosY := R7
+TestTileY := R8
+        ; play a buzzer SFX to tell the QA tester that this should have
+        ; worked.
+
+        ldx CurrentEntityIndex
+        lda TestTileX
+        cmp PlayerSafeTileX
+        bne buzzer
+        lda TestTileY
+        cmp PlayerSafeTileY
+        bne buzzer
+        lda entity_table + EntityState::GroundLevel, x
+        cmp PlayerSafeTileGroundLevel
+        bne buzzer
+
+        jmp no_buzzer
+buzzer:
+        st16 R0, sfx_error_buzz
+        jsr play_sfx_noise
+
+no_buzzer:
+        ; this is not a valid teleport, so we will instead flag it as a valid safe tile.
+        ; That won't break anything, and the above logic can use it to determine whether to
+        ; play the error sound
+        ldx CurrentEntityIndex
+        lda TestTileX
+        sta PlayerSafeTileX
+        lda TestTileY
+        sta PlayerSafeTileY
+        lda entity_table + EntityState::GroundLevel, x
+        sta PlayerSafeTileGroundLevel
+        
+        ; all done
+        rts
+.endproc
+
+.proc handle_switch_tile
+GroundType := R0
+
+; used by map functions and the error buzz; don't clobber
+TestPosX := R5
+TestTileX := R6
+TestPosY := R7
+TestTileY := R8
+
+TriggerType := R23
+TriggerPosX := R24
+TriggerPosY := R25
+TriggerData0 := R26
+TriggerData1 := R27
+TriggerData2 := R28
+TriggerData3 := R29
+TriggerData4 := R30
+TriggerData5 := R31
+        ; This permits us to freely clobber R0 in the following routines
+        lda GroundType
+        sta TriggerType
+
+        jsr find_trigger
+        bne trigger_invalid
+
+        ; Queue up the event this switch triggers
+        ; Note: the event should also handle changing the tile
+        ldx event_next
+        lda TriggerType
+        sta events_type, x
+        lda TriggerPosX
+        sta events_pos_x, x
+        lda TriggerPosY
+        sta events_pos_y, x
+        lda TriggerData0
+        sta events_data0, x
+        lda TriggerData1
+        sta events_data1, x
+        lda TriggerData2
+        sta events_data2, x
+        lda TriggerData3
+        sta events_data3, x
+        lda TriggerData4
+        sta events_data4, x
+        lda TriggerData5
+        sta events_data5, x
+        jsr add_event
+        
+        ; Play a "switch pressed" SFX
+        st16 R0, sfx_press_switch_pulse
+        jsr play_sfx_pulse1
+        st16 R0, sfx_press_switch_noise
+        jsr play_sfx_noise
+
+        rts
+trigger_invalid:
+        jsr error_buzz_if_not_already_safe
+
+        rts
+.endproc
+
 .proc handle_teleport_tile
 MapAddr := R0
 TestPosX := R5
@@ -1983,37 +2103,7 @@ MetaSpriteIndex := R11
         rts
 
 teleport_invalid:
-        ; we did NOT find a valid exit. This is fairly unusual and probably
-        ; a bug; play a buzzer SFX to tell the QA tester that this should have
-        ; worked.
-
-        ldx CurrentEntityIndex
-        lda TestTileX
-        cmp PlayerSafeTileX
-        bne buzzer
-        lda TestTileY
-        cmp PlayerSafeTileY
-        bne buzzer
-        lda entity_table + EntityState::GroundLevel, x
-        cmp PlayerSafeTileGroundLevel
-        bne buzzer
-
-        jmp no_buzzer
-buzzer:
-        st16 R0, sfx_error_buzz
-        jsr play_sfx_noise
-
-no_buzzer:
-        ; this is not a valid teleport, so we will instead flag it as a valid safe tile.
-        ; That won't break anything, and the above logic can use it to determine whether to
-        ; play the error sound
-        ldx CurrentEntityIndex
-        lda TestTileX
-        sta PlayerSafeTileX
-        lda TestTileY
-        sta PlayerSafeTileY
-        lda entity_table + EntityState::GroundLevel, x
-        sta PlayerSafeTileGroundLevel
+        jsr error_buzz_if_not_already_safe
         
         ; all done
         rts
@@ -2139,6 +2229,8 @@ loop:
         sta ExitTableAddr+1
         ldy #MapHeader::music_variant
         lda (ExitTableAddr), y
+        ; TODO: instead of playing this here, let's toss it into a variable? It seems weird that
+        ; "find teleport" also "switches music tracks" as a side effect
         jsr play_variant
 
         restore_previous_bank
@@ -2159,5 +2251,99 @@ no_valid_destination:
         rts
 .endproc
 
+; Similar but for triggers instead
+.proc find_trigger
+MapAddr := R0
+TestPosX := R5
+TestTileX := R6
+TestPosY := R7
+TestTileY := R8
+TriggerTableAddr := R9
+
+TriggerPosX := R24
+TriggerPosY := R25
+TriggerData0 := R26
+TriggerData1 := R27
+TriggerData2 := R28
+TriggerData3 := R29
+TriggerData4 := R30
+TriggerData5 := R31
+        ; helpfully our scratch registers are still set from the physics function,
+        ; so we don't need to re-do the lookup here
+
+        ; The target registers are our currently loaded map. Use these to locate the
+        ; map header
+        access_data_bank TargetMapBank
+        lda TargetMapAddr
+        sta MapAddr
+        lda TargetMapAddr+1
+        sta MapAddr+1
+
+        ldy #MapHeader::trigger_list
+        lda (MapAddr), y
+        sta TriggerTableAddr
+        iny
+        lda (MapAddr), y
+        sta TriggerTableAddr+1
+
+        ; loop through all the triggers, stopping if we find a match for our current tile position
+        ldy #0
+        lda (TriggerTableAddr), y ; length byte
+        inc16 TriggerTableAddr
+        beq no_valid_trigger ; sanity check: if this map doesn't have any triggers, bail right now
+        tax ; x is otherwise unused, so it is our counter
+loop:
+        ldy #TriggerTableEntry::tile_x
+        lda (TriggerTableAddr), y
+        cmp TestTileX
+        bne no_match
+        ldy #TriggerTableEntry::tile_y
+        lda (TriggerTableAddr), y
+        cmp TestTileY
+        bne no_match
+
+        ; MATCH FOUND (!!!)
+
+        ; For a trigger, all we need to do is read the metadata into scratch and then return
+        ; The calling function will decide what to do with that data (usually it'll queue up an event)
+        lda TestTileX
+        sta TriggerPosX
+        lda TestTileY
+        sta TriggerPosY
+        ldy #TriggerTableEntry::data0
+        lda (TriggerTableAddr), y
+        sta TriggerData0
+        ldy #TriggerTableEntry::data1
+        lda (TriggerTableAddr), y
+        sta TriggerData0
+        ldy #TriggerTableEntry::data2
+        lda (TriggerTableAddr), y
+        sta TriggerData0
+        ldy #TriggerTableEntry::data3
+        lda (TriggerTableAddr), y
+        sta TriggerData0
+        ldy #TriggerTableEntry::data4
+        lda (TriggerTableAddr), y
+        sta TriggerData0
+        ldy #TriggerTableEntry::data5
+        lda (TriggerTableAddr), y
+        sta TriggerData0
+
+        restore_previous_bank
+
+        lda #0
+        rts
+no_match:
+        add16b TriggerTableAddr, #.sizeof(TriggerTableEntry)
+        dex
+        bne loop
+
+no_valid_trigger:
+        restore_previous_bank
+
+        ; we did NOT find a valid trigger. Signal the error
+        lda #$FF
+        rts
+.endproc
 
 

@@ -606,5 +606,25 @@ sfx_equip_ability_pulse2:
         pulse_cont_duty               $0,      $1,                                        0
 
 
+sfx_press_switch_noise:
+        ; Length in rows
+        .byte 7
+        ;          Mode Period  Vol  Length
+        noise_init    0,    $4,  $C,      1
+        noise_cont    0,    $4,  $6,      1
+        noise_cont    0,    $4,  $2,      1
+        noise_cont    0,    $9,  $F,      1
+        noise_cont    0,    $9,  $8,      1
+        noise_cont    0,    $9,  $4,      1
+        noise_cont    0,    $9,  $1,      1
 
-
+sfx_press_switch_pulse:
+        ; Length in rows
+        .byte 6
+        ;                 pitch,    duty,  volume,                            sweep, length
+        pulse_init_sweep  PITCH_E2,   $0,      $6,         (S_PERIOD_0 | S_SHIFT_4),      0
+        pulse_cont_duty               $0,      $3,                                        0
+        pulse_cont_duty               $0,      $2,                                        0
+        pulse_init_sweep  PITCH_AS2,  $0,      $8, (S_PERIOD_0 | S_SHIFT_4 | S_NEG),      0
+        pulse_cont_duty               $0,      $4,                                        0
+        pulse_cont_duty               $0,      $3,                                        0

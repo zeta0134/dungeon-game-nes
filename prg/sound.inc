@@ -64,6 +64,9 @@
 .global sfx_equip_ability_pulse1
 .global sfx_equip_ability_pulse2
 
+.global sfx_press_switch_pulse
+.global sfx_press_switch_noise
+
 .macro play_dpcm sample_addr, length
 .scope
 SampleAddr := R0
