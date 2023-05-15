@@ -1,12 +1,15 @@
         .setcpu "6502"
 
         .include "actions.inc"
+        .include "event_queue.inc"
         .include "far_call.inc"
         .include "input.inc"
         .include "kernel.inc"
         .include "level_logic.inc"
+        .include "map.inc"
         .include "nes.inc"
         .include "overlays.inc"
+        .include "sound.inc"
         .include "tilebuffer.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
@@ -22,8 +25,9 @@ maplogic_ptr: .res 2
         lda #>do_absolutely_nothing
         sta maplogic_ptr+1
 
-        ; TODO: initialize any room-specific variables to 0 here
-        ; (we don't yet have any)
+        lda #0
+        sta event_next
+        sta event_current
 
         rts
 .endproc
@@ -43,11 +47,7 @@ perform_call:
         rts
 .endproc
 
-.proc maplogic_default
-TilePosX := R0
-TilePosY := R1
-
-        ; DEBUG STUFF
+.proc handle_debug_key
         lda #KEY_SELECT
         bit ButtonsHeld
         beq no_debug
@@ -57,17 +57,48 @@ TilePosY := R1
 
         ; DEBUG KEY PRESSED! Do debug things here
         
-        ; activate the dialog system!
-        ; st16 GameMode, dialog_init
-
-        ; queue up overlay 0, if this map has one!
-        lda #0
-        jsr apply_overlay
+        ;activate the dialog system!
+        st16 GameMode, dialog_init
         
         ; Un-break the action button state, in case we have just switched modes
         lda #0
         sta action_flags
 no_debug:
 
+        rts
+.endproc
+
+.proc maplogic_default
+TilePosX := R0
+TilePosY := R1
+        jsr handle_debug_key
+        
+        ldx event_current
+        cpx event_next
+        beq done_with_events
+event_loop:
+        lda events_type, x
+        cmp #SWITCH_UNPRESSED
+        bne unrecognized_event
+
+        ; For now, when pressing a switch, Data0 indicates the overlay to apply. Do that.
+        lda events_data0, x
+        jsr apply_overlay
+
+        jmp done_dispatching_event
+
+unrecognized_event:
+        ; how did we get here? yay! play an error and panic
+        st16 R0, sfx_error_buzz
+        jsr play_sfx_noise
+
+        ; fall through and continue the loop
+done_dispatching_event:
+        jsr consume_event
+        ldx event_current
+        cpx event_next
+        bne event_loop        
+
+done_with_events:
         rts
 .endproc

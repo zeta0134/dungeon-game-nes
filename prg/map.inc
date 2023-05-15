@@ -39,3 +39,10 @@
         data4 .byte
         data5 .byte
 .endstruct
+
+; block types
+SURFACE_EXIT     = (1 << 2)
+RISING_HAZARD    = (2 << 2)
+SHALLOW_WATER    = (3 << 2)
+DEEP_WATER       = (4 << 2)
+SWITCH_UNPRESSED = (5 << 2)

@@ -752,12 +752,6 @@ dash_not_pressed:
         rts
 .endproc
 
-SURFACE_EXIT = 1
-RISING_HAZARD = 2
-SHALLOW_WATER = 3
-DEEP_WATER = 4
-SWITCH_UNPRESSED = 5
-
 .proc handle_ground_tile
 GroundType := R0
 CollisionFlags := R1
@@ -786,21 +780,21 @@ SensedTileY := R8
 
         lda GroundType
 check_exit:
-        cmp #(SURFACE_EXIT << 2)
+        cmp #SURFACE_EXIT
         bne check_rising_hazard
         
         ; valid tile, valid height, WHOOSH
         jsr handle_teleport_tile
         rts
 check_rising_hazard:
-        cmp #(RISING_HAZARD << 2)
+        cmp #RISING_HAZARD
         bne check_shallow_water
         ; TODO: do we want to allow hitting hazards from behind?
         set_update_func CurrentEntityIndex, boxgirl_rising_hazard_init
 
         rts
 check_shallow_water:
-        cmp #(SHALLOW_WATER << 2)
+        cmp #SHALLOW_WATER
         bne check_deep_water
         ; TODO: should we allow swimming behind things? (this tends to not look good)
         set_update_func CurrentEntityIndex, boxgirl_swimming
@@ -819,7 +813,7 @@ check_shallow_water:
 
         rts
 check_deep_water:
-        cmp #(DEEP_WATER << 2)
+        cmp #DEEP_WATER
         bne check_switch
         ; TODO: should we allow swimming behind things? (this tends to not look good)
         set_update_func CurrentEntityIndex, boxgirl_swimming
@@ -838,7 +832,7 @@ check_deep_water:
 
         rts
 check_switch:
-        cmp #(SWITCH_UNPRESSED << 2)
+        cmp #SWITCH_UNPRESSED
         bne safe_tile
 
         jsr handle_switch_tile
@@ -873,9 +867,9 @@ SensedTileY := R8
         sta PlayerLastGroundTile
 
 check_still_submerged:
-        cmp #(SHALLOW_WATER << 2)
+        cmp #SHALLOW_WATER
         beq still_in_water
-        cmp #(DEEP_WATER << 2)
+        cmp #DEEP_WATER
         beq still_in_water
 
         ; we are no longer in water; emerge to dry ground
@@ -1372,7 +1366,7 @@ done_diving:
         ; If we found a valid destination, trigger the map fade now
         far_call FAR_sense_ground
         lda PlayerLastGroundTile
-        cmp #(DEEP_WATER << 2)
+        cmp #DEEP_WATER
         bne surface
         jsr handle_deep_water_teleport
         rts
@@ -2315,19 +2309,19 @@ loop:
         sta TriggerData0
         ldy #TriggerTableEntry::data1
         lda (TriggerTableAddr), y
-        sta TriggerData0
+        sta TriggerData1
         ldy #TriggerTableEntry::data2
         lda (TriggerTableAddr), y
-        sta TriggerData0
+        sta TriggerData2
         ldy #TriggerTableEntry::data3
         lda (TriggerTableAddr), y
-        sta TriggerData0
+        sta TriggerData3
         ldy #TriggerTableEntry::data4
         lda (TriggerTableAddr), y
-        sta TriggerData0
+        sta TriggerData4
         ldy #TriggerTableEntry::data5
         lda (TriggerTableAddr), y
-        sta TriggerData0
+        sta TriggerData5
 
         restore_previous_bank
 
