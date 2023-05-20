@@ -73,10 +73,6 @@ nmi:
 
         ; Copy buffered PPU bytes into PPU address space, as quickly as possible
         jsr vram_zipper
-        ; Update palette memory if required
-        ;jsr refresh_palettes
-        ; Read controller registers and update button status
-        jsr poll_input
         ; This signals to the gameloop that it may continue
         lda GameloopCounter
         sta LastNmi

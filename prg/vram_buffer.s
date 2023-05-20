@@ -39,12 +39,12 @@ vram_pop_slide:
         pla
         sta PPUDATA
         .endrepeat
-        jmp done_with_transfer
+        jmp vram_done_with_transfer
 
 vram_zipper:
         ; first off, is our table nonzero? if so, bail
         lda VRAM_TABLE_ENTRIES
-        beq all_done
+        beq done_with_vram_zipper
 
         ; setup the high byte of our jump address
         lda #>vram_pop_slide
@@ -57,7 +57,7 @@ vram_zipper:
         ldx #<(VRAM_TABLE_START - 1)
         txs
         lda PPUSTATUS ; reset the PPUADDR latch (throw this byte away)
-section_loop:
+vram_section_loop:
         ; the first two bytes are always the target address
         pla
         sta PPUADDR
@@ -77,9 +77,9 @@ vram_32:
         sta PPUCTRL
 converge:
         jmp (PopSlideAddress)
-done_with_transfer:
+vram_done_with_transfer:
         dec VRAM_TABLE_ENTRIES
-        bne section_loop
+        bne vram_section_loop
         ; restore the original stack pointer from memory
         ldx VRAM_TABLE_INDEX
         txs
@@ -87,7 +87,7 @@ done_with_transfer:
         lda #0
         sta VRAM_TABLE_ENTRIES
         sta VRAM_TABLE_INDEX
-all_done:
+done_with_vram_zipper:
         rts
 
 ; similar to above, but without disabling NMI and without

@@ -155,6 +155,8 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
 
 ; === Kernel Entrypoint ===
 .proc FAR_run_kernel
+        ; Read controller registers and update button status
+        jsr poll_input
         ; whatever game mode we are currently in, run one loop of that and exit
         jmp (GameMode)
         ; the game state function will exit
