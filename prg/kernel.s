@@ -284,6 +284,10 @@ time_waste_loop:
         dex
         bne time_waste_loop
         .endif
+
+        lda #MAX_TILE_BUDGET
+        sta tile_budget
+
         far_call FAR_update_action_buttons
         debug_color LIGHTGRAY
         far_call FAR_update_camera

@@ -8,6 +8,7 @@
         .include "nes.inc"
         .include "palette.inc"
         .include "ppu.inc"
+        .include "tilebuffer.inc"
         .include "word_util.inc"
         .include "vram_buffer.inc"
         .include "zeropage.inc"
@@ -74,6 +75,11 @@ basic_hud:
 .endproc
 
 .proc hud_cold_draw
+        ; TODO: we really need to break this up into several states, so we aren't
+        ; trying to draw the *entire* HUD in a single frame. That's not just lag frame
+        ; dangerous, that's "might smash the stack" dangerous
+        lda #0
+        sta tile_budget
 top_border:
         lda HudStateCounter
         cmp #1
@@ -232,6 +238,7 @@ check_health:
         jeq done_with_health_change
         bcs health_increase
 health_decrease:
+        dec tile_budget
         dec HealthDisplayed
         lda HealthDisplayed
         lsr
@@ -259,6 +266,7 @@ write_heart_decrease:
         sta HealthCooldown
         jmp done_with_health_change
 health_increase:
+        dec tile_budget
         lda HealthDisplayed
         lsr
         clc
@@ -286,11 +294,12 @@ write_heart_increase:
         ; fall through
 done_with_health_change:
         ; check to see if any of our abilities need to be redrawn
-        ; TODO: workout the actually equipped action, don't just use actionset A
 check_left_action:
         lda action_b_id
         cmp ActionDisplayedLeft
         beq check_right_action
+
+        dec tile_budget
 
         sta ActionDisplayedLeft
         sta R1 ; ability index
@@ -304,6 +313,8 @@ check_right_action:
         lda action_a_id
         cmp ActionDisplayedRight
         beq done_with_actions
+
+        dec tile_budget
 
         sta ActionDisplayedRight
         sta R1 ; ability index

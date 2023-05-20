@@ -4,6 +4,7 @@
         .include "nes.inc"
         .include "palette.inc"
         .include "ppu.inc"
+        .include "tilebuffer.inc"
         .include "vram_buffer.inc"
         .include "zeropage.inc"
 
@@ -211,6 +212,8 @@ bg_loop:
 check_obj_palette:
         lda ObjPaletteDirty
         beq done
+
+        dec tile_budget
 
         write_vram_header_imm $3F10, #16, VRAM_INC_1
         lda #0

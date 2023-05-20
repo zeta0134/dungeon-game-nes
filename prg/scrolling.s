@@ -4,6 +4,7 @@
         .include "mmc3.inc"
         .include "ppu.inc"
         .include "scrolling.inc"
+        .include "tilebuffer.inc"
         .include "vram_buffer.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
@@ -1397,19 +1398,31 @@ scroll_down:
         ; note - We intentionally prioritize vertical scroll and let horizontal lag by
         ; a frame or two; it's fine
         jsr scroll_tiles_down
+        .repeat 2
+        dec tile_budget
+        .endrepeat
         lda CameraYTileCurrent
         and #$03
         bne done_scrolling
         jsr scroll_attributes_down
+        .repeat 3
+        dec tile_budget
+        .endrepeat
         jmp done_scrolling
 scroll_up:
         ; (Here too, see above)
         jsr scroll_tiles_up
+        .repeat 2
+        dec tile_budget
+        .endrepeat
         lda CameraYTileCurrent
         and #$03
         cmp #$03
         bne done_scrolling
         jsr scroll_attributes_up
+        .repeat 3
+        dec tile_budget
+        .endrepeat
         jmp done_scrolling
 no_vertical_scroll:
         ; did we move left or right?
@@ -1423,18 +1436,30 @@ horizontal_scroll:
         bcs scroll_left
 scroll_right:
         jsr scroll_tiles_right
+        .repeat 2
+        dec tile_budget
+        .endrepeat
         lda CameraXTileCurrent
         and #$03
         bne done_scrolling
         jsr scroll_attributes_right
+        .repeat 3
+        dec tile_budget
+        .endrepeat
         jmp done_scrolling
 scroll_left:
         jsr scroll_tiles_left
+        .repeat 2
+        dec tile_budget
+        .endrepeat
         lda CameraXTileCurrent
         and #$03
         cmp #$03
         bne done_scrolling
         jsr scroll_attributes_left
+        .repeat 3
+        dec tile_budget
+        .endrepeat
 done_scrolling:
         ; Always copy in the new sub-tile scroll position
         ; (this visually hides the fact that we alternately may delay a row / column)

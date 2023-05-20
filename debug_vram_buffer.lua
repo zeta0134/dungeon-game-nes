@@ -133,7 +133,7 @@ function vram_processing_done()
 	nmi_danger_zone_cycle = emu.getState()["masterClock"] - nmi_start_cycle
 	-- draw this stupid thing :D
 	draw_vram_timings_graph()
-	draw_vram_table_text()
+	-- draw_vram_table_text()
 end
 
 emu.addMemoryCallback(nmi_routine_entered, emu.callbackType.exec, nmi_vector_addr)

@@ -25,6 +25,7 @@ BUFFER_INDEX_MASK = $7F
         .segment "PRGRAM"
 tilebuffer_x: .res MAX_BUFFERED_TILES
 tilebuffer_y: .res MAX_BUFFERED_TILES
+tile_budget: .res 1
         .segment "RAM"
 tilebuffer_starting_index: .res 1
 tilebuffer_ending_index: .res 1
@@ -275,10 +276,19 @@ reject_tile:
 TilePosX := R0
 TilePosY := R1
 ; note: R2 - R8 will be clobbered
+
+        ; initial sanity check: bail if our tile_budget is 0 or negative
+        lda tile_budget
+        beq done
+        bmi done
+
+loop:
+        ; per-loop sanity check: bail if the list is empty
         ldx tilebuffer_starting_index
         cpx tilebuffer_ending_index
         beq done
 
+        ; draw one tile
         lda tilebuffer_x, x
         sta TilePosX
         lda tilebuffer_y, x
@@ -288,6 +298,10 @@ TilePosY := R1
         lda tilebuffer_starting_index
         and #BUFFER_INDEX_MASK
         sta tilebuffer_starting_index
+
+        ; continue drawing tiles until we run out of budget
+        dec tile_budget
+        bne loop
 done:
         rts
 .endproc
