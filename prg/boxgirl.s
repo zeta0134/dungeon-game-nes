@@ -2010,15 +2010,15 @@ TestTileX := R6
 TestPosY := R7
 TestTileY := R8
 
-TriggerType := R23
-TriggerPosX := R24
-TriggerPosY := R25
-TriggerData0 := R26
-TriggerData1 := R27
-TriggerData2 := R28
-TriggerData3 := R29
-TriggerData4 := R30
-TriggerData5 := R31
+TriggerType  := R23
+TriggerPosX  := R24
+TriggerPosY  := R25
+TriggerId    := R26
+TriggerData0 := R27
+TriggerData1 := R28
+TriggerData2 := R29
+TriggerData3 := R30
+TriggerData4 := R31
         ; This permits us to freely clobber R0 in the following routines
         lda GroundType
         sta TriggerType
@@ -2035,6 +2035,8 @@ TriggerData5 := R31
         sta events_pos_x, x
         lda TriggerPosY
         sta events_pos_y, x
+        lda TriggerId
+        sta events_id, x
         lda TriggerData0
         sta events_data0, x
         lda TriggerData1
@@ -2045,8 +2047,6 @@ TriggerData5 := R31
         sta events_data3, x
         lda TriggerData4
         sta events_data4, x
-        lda TriggerData5
-        sta events_data5, x
         jsr add_event
         
         ; Play a "switch pressed" SFX
@@ -2254,14 +2254,14 @@ TestPosY := R7
 TestTileY := R8
 TriggerTableAddr := R9
 
-TriggerPosX := R24
-TriggerPosY := R25
-TriggerData0 := R26
-TriggerData1 := R27
-TriggerData2 := R28
-TriggerData3 := R29
-TriggerData4 := R30
-TriggerData5 := R31
+TriggerPosX  := R24
+TriggerPosY  := R25
+TriggerId    := R26
+TriggerData0 := R27
+TriggerData1 := R28
+TriggerData2 := R29
+TriggerData3 := R30
+TriggerData4 := R31
         ; helpfully our scratch registers are still set from the physics function,
         ; so we don't need to re-do the lookup here
 
@@ -2304,6 +2304,9 @@ loop:
         sta TriggerPosX
         lda TestTileY
         sta TriggerPosY
+        ldy #TriggerTableEntry::id
+        lda (TriggerTableAddr), y
+        sta TriggerId
         ldy #TriggerTableEntry::data0
         lda (TriggerTableAddr), y
         sta TriggerData0
@@ -2319,9 +2322,6 @@ loop:
         ldy #TriggerTableEntry::data4
         lda (TriggerTableAddr), y
         sta TriggerData4
-        ldy #TriggerTableEntry::data5
-        lda (TriggerTableAddr), y
-        sta TriggerData5
 
         restore_previous_bank
 

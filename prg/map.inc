@@ -32,12 +32,12 @@
 .struct TriggerTableEntry
         tile_x .byte
         tile_y .byte
+        id .byte
         data0 .byte
         data1 .byte
         data2 .byte
         data3 .byte
         data4 .byte
-        data5 .byte
 .endstruct
 
 ; block types

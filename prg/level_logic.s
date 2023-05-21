@@ -81,10 +81,22 @@ event_loop:
         cmp #SWITCH_UNPRESSED
         bne unrecognized_event
 
-        ; For now, when pressing a switch, Data0 indicates the overlay to apply. Do that.
+        ; For now, when pressing a switch, Data0 indicates whether this is a SET or an UNSET
         lda events_data0, x
-        jsr apply_overlay
-
+        beq switch_unset
+switch_set:
+        lda events_id, x
+        jsr find_overlay_to_set ; result in A, which will be $FF on error
+        cmp #0
+        bmi unrecognized_event
+        jmp apply_overlay
+switch_unset:
+        lda events_id, x
+        jsr find_overlay_to_unset ; result in A, which will be $FF on error
+        cmp #0
+        bmi unrecognized_event
+apply_overlay:
+        jsr apply_overlay_by_index
         jmp done_dispatching_event
 
 unrecognized_event:

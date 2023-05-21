@@ -19,16 +19,11 @@
 ; data in. Thus, it can't easily be moved out of fixed memory. Use caution!
         .segment "PRGFIXED_E000"
 
-
-; overlay index in the A register
-; clobbers a bunch of stuff
-.proc apply_overlay
-OverlayIndex := R0
+; This is in precious fixed memory, so we'll eat some cycles to avoid
+; duplicating a bunch of setup code
+.proc _global_setup
 MapAddr := R2
-OverlayAddr := R2 ; by the time we write here we're done with the map header
-OverlayListAddr := R4
-        sta OverlayIndex
-        access_data_bank TargetMapBank
+OverlayListAddr := R4  
         lda TargetMapAddr
         sta MapAddr
         lda TargetMapAddr+1
@@ -41,16 +36,141 @@ OverlayListAddr := R4
         lda (MapAddr), y
         sta OverlayListAddr + 1
 
+        rts
+.endproc
+
+; event_id in A
+; clobbers a bunch of stuff
+; returns overlay index in A, metadata in X
+; on failure, A is set to $FF
+.proc _find_overlay
+EventId := R0
+MapAddr := R2
+OverlayListAddr := R4
+Length := R6
+OverlayIndex := R7
+OverlayMetadata := R8
+MetadataMatch := R9
+MetadataMask := R10
+        access_data_bank TargetMapBank
+        jsr _global_setup
+
+        ldy #0
+        sty OverlayIndex
+        lda (OverlayListAddr), y
+        sta Length
+        iny
+loop:
+        ; skip past the overlay pointer
+        iny
+        iny
+        ; is this the event ID we seek?
+        lda (OverlayListAddr), y
+        cmp EventId
+        bne event_mismatch
+        ; does this match the conditions we asked for?
+        iny
+        lda (OverlayListAddr), y
+        and MetadataMask
+        cmp MetadataMatch
+        bne metadata_mismatch
+        ; we've found our overlay! Gather the data and return it
+        sta OverlayMetadata
+        jmp finish_and_return
+event_mismatch:
+        ; skip over the event ID
+        iny
+metadata_mismatch:
+        ; skip over the metadata byte
+        iny
+        ; move on to the next overlay
+        inc OverlayIndex
+        dec Length
+        bne loop
+no_overlay_found:
+        ; play an error buzz, as this is almost certianly a level design bug and not the fault of the player
+        st16 R0, sfx_error_buzz
+        jsr play_sfx_noise
+        ; load $FF into all variables and fall through to the exit
+        lda #$FF
+        sta OverlayIndex
+        sta OverlayMetadata
+        ; fall through
+finish_and_return:
+        restore_previous_bank
+        rts
+.endproc
+
+; event_id in A
+; clobbers a bunch of stuff
+; returns overlay index in A, metadata in X
+; on failure, A is set to $FF
+.proc find_overlay_to_set
+EventId := R0
+MapAddr := R2
+OverlayListAddr := R4
+Length := R6
+OverlayIndex := R7
+OverlayMetadata := R8
+MetadataMatch := R9
+MetadataMask := R10
+        sta EventId
+        lda #%10000000
+        sta MetadataMask
+        lda #%10000000
+        sta MetadataMatch
+        jsr _find_overlay
+        lda OverlayIndex
+        ldx OverlayMetadata
+        rts
+.endproc
+
+; event_id in A
+; clobbers a bunch of stuff
+; returns overlay index in A, metadata in X
+; on failure, A is set to $FF
+.proc find_overlay_to_unset
+EventId := R0
+MapAddr := R2
+OverlayListAddr := R4
+Length := R6
+OverlayIndex := R7
+OverlayMetadata := R8
+MetadataMatch := R9
+MetadataMask := R10
+        sta EventId
+        lda #%10000000
+        sta MetadataMask
+        lda #0
+        sta MetadataMatch
+        jsr _find_overlay
+        lda OverlayIndex
+        ldx OverlayMetadata
+        rts
+.endproc
+
+; overlay index in the A register
+; clobbers a bunch of stuff
+.proc apply_overlay_by_index
+OverlayIndex := R0
+MapAddr := R2
+OverlayAddr := R2 ; by the time we write here we're done with the map header
+OverlayListAddr := R4
+        sta OverlayIndex
+        access_data_bank TargetMapBank
+        jsr _global_setup
+
         ldy #0
         ; The first byte of the overlay list is the number of entries
         ; Sanity check: does the requested overlay actually exist?
         lda OverlayIndex
         cmp (OverlayListAddr), y
         bcs fail_and_bail
-        ; The remainder of the list is comprised of 2-byte words, and we
-        ; will NEVER have more than 128 overlays in a single room. That's insane.
+        ; The remainder of the list is comprised of 4-byte overlay entries. We
+        ; will NEVER have more than 64 overlays in a single room. That's insane.
         ; Convert accordingly
         asl ; * 2
+        asl ; * 4
         tay
         iny ; + 1 to move past the length byte
         lda (OverlayListAddr), y

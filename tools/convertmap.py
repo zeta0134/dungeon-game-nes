@@ -295,8 +295,8 @@ def read_and_combine_layers(layer_elements, tilesets):
 def compose_overlay_metadata(boolean_properties, integer_properties, string_properties):
     # note: very simple for now, we'll be expanding this later for sure
     if string_properties.get("when_event_is") == "SET":
-        return 1
-    return 0
+        return 0x80
+    return 0x00
 
 def compose_trigger_metadata(boolean_properties, integer_properties, string_properties):
     trigger_metadata = [0] * 6
