@@ -71,7 +71,7 @@ vram_section_loop:
 vram_1:
         lda #$00
         sta PPUCTRL
-        jmp converge
+        jmp (PopSlideAddress)
 vram_32:
         lda #VRAM_DOWN
         sta PPUCTRL
