@@ -55,6 +55,8 @@ class Overlay:
     name: str
     width: int
     height: int
+    event_id: int
+    metadata: int
     index: int
     tiles: [TiledTile]
 
@@ -256,23 +258,13 @@ def read_triggers(object_elements, tilesets):
             if tile.type == "trigger":
                 trigger_x = math.floor(int(object_element.get("x")) / 16)
                 trigger_y = math.floor((int(object_element.get("y")) - 16) / 16)
-                trigger_metadata = [0] * 6
 
-                properties_element = object_element.find("properties")
-                if properties_element:
-                    for property_element in properties_element.findall("property"):
-                        if property_element.get("name") == "data0":
-                            trigger_metadata[0] = trigger_metadata[0] | int(property_element.get("value"))
-                        if property_element.get("name") == "data1":
-                            trigger_metadata[1] = trigger_metadata[1] | int(property_element.get("value"))
-                        if property_element.get("name") == "data2":
-                            trigger_metadata[2] = trigger_metadata[2] | int(property_element.get("value"))
-                        if property_element.get("name") == "data3":
-                            trigger_metadata[3] = trigger_metadata[3] | int(property_element.get("value"))
-                        if property_element.get("name") == "data4":
-                            trigger_metadata[4] = trigger_metadata[4] | int(property_element.get("value"))
-                        if property_element.get("name") == "data5":
-                            trigger_metadata[5] = trigger_metadata[5] | int(property_element.get("value"))
+                trigger_boolean_properties = read_boolean_properties(object_element)
+                trigger_integer_properties = read_integer_properties(object_element)
+                trigger_string_properties = read_string_properties(object_element)
+
+                trigger_metadata = compose_trigger_metadata(trigger_boolean_properties, trigger_integer_properties, trigger_string_properties)
+
                 triggers.append(Trigger(x=trigger_x,y=trigger_y,metadata=trigger_metadata))
     return triggers
 
@@ -300,6 +292,37 @@ def read_and_combine_layers(layer_elements, tilesets):
         combined_tiles.append(combine_tile_properties(graphics_tile, supplementary_tiles))
     return combined_tiles
 
+def compose_overlay_metadata(boolean_properties, integer_properties, string_properties):
+    # note: very simple for now, we'll be expanding this later for sure
+    if string_properties.get("when_event_is") == "SET":
+        return 1
+    return 0
+
+def compose_trigger_metadata(boolean_properties, integer_properties, string_properties):
+    trigger_metadata = [0] * 6
+
+    if "event_id" in integer_properties:
+        trigger_metadata[0] = integer_properties["event_id"]
+
+    if "with_event" in string_properties:
+        if string_properties["with_event"] == "SET":
+            trigger_metadata[1] = 1
+        if string_properties["with_event"] == "UNSET":
+            trigger_metadata[1] = 0
+
+    if "data0" in integer_properties:
+        trigger_metadata[1] = integer_properties["data0"]
+    if "data1" in integer_properties:
+        trigger_metadata[2] = integer_properties["data1"]
+    if "data2" in integer_properties:
+        trigger_metadata[3] = integer_properties["data2"]
+    if "data3" in integer_properties:
+        trigger_metadata[4] = integer_properties["data3"]
+    if "data4" in integer_properties:
+        trigger_metadata[5] = integer_properties["data4"]
+
+    return trigger_metadata
+
 def read_map(map_filename):
     map_element = ElementTree.parse(map_filename).getroot()
     map_width = int(map_element.get("width"))
@@ -326,11 +349,15 @@ def read_map(map_filename):
     overlay_index = 0
     group_elements = map_element.findall("group")
     for group_element in group_elements:
-        group_properties = read_boolean_properties(group_element)
-        if group_properties["is_overlay"]:
+        group_boolean_properties = read_boolean_properties(group_element)
+        group_integer_properties = read_integer_properties(group_element)
+        group_string_properties = read_string_properties(group_element)
+        if group_element.get("class") == "overlay":
             layer_elements = group_element.findall("layer")
             overlay_tiles = read_and_combine_layers(layer_elements, tilesets)
-            overlays.append(Overlay(tiles=overlay_tiles, name=group_element.get("name"), width=map_width, height=map_height, index=overlay_index))
+            event_id = group_integer_properties["event_id"]
+            metadata = compose_overlay_metadata(group_boolean_properties, group_integer_properties, group_string_properties)
+            overlays.append(Overlay(tiles=overlay_tiles, name=group_element.get("name"), width=map_width, height=map_height, event_id=event_id, metadata=metadata, index=overlay_index))
             overlay_index = overlay_index + 1
 
     # Read in supplementary structures: entrances, exits, etc
@@ -611,6 +638,7 @@ def write_overlay_list(tilemap, output_file):
     output_file.write("  .byte %s ; num overlays\n" % ca65_byte_literal(len(tilemap.overlays)))
     for overlay in tilemap.overlays:
         output_file.write("  .word %s\n" % overlay_label(tilemap, overlay))
+        output_file.write("  .byte %s, %s ; event_id, metadata \n" % (overlay.event_id, overlay.metadata))
     output_file.write("\n")
     for overlay in tilemap.overlays:
         write_overlay(tilemap, overlay, output_file)

@@ -142,9 +142,10 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <group id="7" name="[0] Reveal Spike Pit">
+ <group id="7" name="[0] Reveal Spike Pit" class="overlay">
   <properties>
-   <property name="is_overlay" type="bool" value="true"/>
+   <property name="event_id" type="int" value="0"/>
+   <property name="when_event_is" value="SET"/>
   </properties>
   <layer id="8" name="Graphics" width="32" height="28">
    <data encoding="csv">
@@ -211,9 +212,10 @@
 </data>
   </layer>
  </group>
- <group id="10" name="[1] Hide Spike Pit">
+ <group id="10" name="[1] Hide Spike Pit" class="overlay">
   <properties>
-   <property name="is_overlay" type="bool" value="true"/>
+   <property name="event_id" type="int" value="0"/>
+   <property name="when_event_is" value="UNSET"/>
   </properties>
   <layer id="11" name="Graphics" width="32" height="28">
    <data encoding="csv">
@@ -290,12 +292,14 @@
   </object>
   <object id="16" gid="320" x="80" y="352" width="16" height="16">
    <properties>
-    <property name="data0" type="int" value="0"/>
+    <property name="event_id" type="int" value="0"/>
+    <property name="with_event" value="SET"/>
    </properties>
   </object>
   <object id="17" gid="320" x="224" y="352" width="16" height="16">
    <properties>
-    <property name="data0" type="int" value="1"/>
+    <property name="event_id" type="int" value="0"/>
+    <property name="with_event" value="UNSET"/>
    </properties>
   </object>
  </objectgroup>
