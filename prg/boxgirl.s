@@ -82,16 +82,10 @@ UNDERWATER_DASH_DURATION = 20
 ; (other musings, etc)
 DATA_FLAGS = 0
 
-FLAG_IDLE_FACING = %00000011
-FLAG_JUMP =        %00000100
-FLAG_DOUBLE_JUMP = %00001000
-FLAG_DASH =        %00010000
-FLAG_DOUBLE_DASH = %00100000
-
-FACING_NORTH = %00000000
-FACING_EAST  = %00000001
-FACING_SOUTH = %00000010
-FACING_WEST  = %00000011
+FLAG_JUMP =        %00000001
+FLAG_DOUBLE_JUMP = %00000010
+FLAG_DASH =        %00000100
+FLAG_DOUBLE_DASH = %00001000
 
 .segment "ENTITIES_A000"
 
@@ -133,8 +127,6 @@ MetaSpriteIndex := R0
 
         ; default to east-facing for now
         ; (todo: pick a direction based on how we entered the map)
-        ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_IDLE_FACING, FACING_EAST
         lda #KEY_RIGHT
         sta PlayerLastFacing
 
@@ -336,8 +328,6 @@ old_direction_no_longer_held:
         lda #KEY_RIGHT
         sta PlayerPrimaryDirection
         sta PlayerLastFacing
-        ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_IDLE_FACING, FACING_EAST
         rts
 right_not_held:       
         lda #KEY_LEFT
@@ -348,8 +338,6 @@ right_not_held:
         lda #KEY_LEFT
         sta PlayerPrimaryDirection
         sta PlayerLastFacing
-        ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_IDLE_FACING, FACING_WEST
         rts
 left_not_held:
         lda #KEY_UP
@@ -360,8 +348,6 @@ left_not_held:
         lda #KEY_UP
         sta PlayerPrimaryDirection
         sta PlayerLastFacing
-        ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_IDLE_FACING, FACING_NORTH
         rts
 up_not_held:
         lda #KEY_DOWN
@@ -372,8 +358,6 @@ up_not_held:
         lda #KEY_DOWN
         sta PlayerPrimaryDirection
         sta PlayerLastFacing
-        ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_IDLE_FACING, FACING_SOUTH
         rts
 down_not_held:
         lda #0 ; for idle, sure
@@ -381,22 +365,21 @@ down_not_held:
         ;  note: do NOT clear PlayerLastFacing
 
         ; pick an idle animation based on our most recent walking direction
-        ldy CurrentEntityIndex
-        entity_check_flag_y FLAG_IDLE_FACING
+        lda PlayerLastFacing
 check_north:
-        cmp #FACING_NORTH
+        cmp #KEY_UP
         bne check_east
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_idle_up
         rts
 
 check_east:
-        cmp #FACING_EAST
+        cmp #KEY_RIGHT
         bne check_south
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_idle_right
         rts
 
 check_south:
-        cmp #FACING_SOUTH
+        cmp #KEY_DOWN
         bne must_be_west
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_idle_down
         rts
@@ -426,8 +409,6 @@ old_direction_no_longer_held:
         lda #KEY_RIGHT
         sta PlayerPrimaryDirection
         sta PlayerLastFacing
-        ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_IDLE_FACING, FACING_EAST
         rts
 right_not_held:       
         lda #KEY_LEFT
@@ -438,8 +419,6 @@ right_not_held:
         lda #KEY_LEFT
         sta PlayerPrimaryDirection
         sta PlayerLastFacing
-        ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_IDLE_FACING, FACING_WEST
         rts
 left_not_held:
         lda #KEY_UP
@@ -450,8 +429,6 @@ left_not_held:
         lda #KEY_UP
         sta PlayerPrimaryDirection
         sta PlayerLastFacing
-        ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_IDLE_FACING, FACING_NORTH
         rts
 up_not_held:
         lda #KEY_DOWN
@@ -462,8 +439,6 @@ up_not_held:
         lda #KEY_DOWN
         sta PlayerPrimaryDirection
         sta PlayerLastFacing
-        ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_IDLE_FACING, FACING_SOUTH
         rts
 down_not_held:
         lda #0 ; for idle, sure
@@ -471,22 +446,21 @@ down_not_held:
         ;  note: do NOT clear PlayerLastFacing
 
         ; pick an idle animation based on our most recent swimming direction
-        ldy CurrentEntityIndex
-        entity_check_flag_y FLAG_IDLE_FACING
+        lda PlayerLastFacing
 check_north:
-        cmp #FACING_NORTH
+        cmp #KEY_UP
         bne check_east
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_swim_up
         rts
 
 check_east:
-        cmp #FACING_EAST
+        cmp #KEY_RIGHT
         bne check_south
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_swim_right
         rts
 
 check_south:
-        cmp #FACING_SOUTH
+        cmp #KEY_DOWN
         bne must_be_west
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_swim_down
         rts
@@ -516,8 +490,6 @@ old_direction_no_longer_held:
         lda #KEY_RIGHT
         sta PlayerPrimaryDirection
         sta PlayerLastFacing
-        ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_IDLE_FACING, FACING_EAST
         rts
 right_not_held:       
         lda #KEY_LEFT
@@ -528,8 +500,6 @@ right_not_held:
         lda #KEY_LEFT
         sta PlayerPrimaryDirection
         sta PlayerLastFacing
-        ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_IDLE_FACING, FACING_WEST
         rts
 left_not_held:
         lda #KEY_UP
@@ -540,8 +510,6 @@ left_not_held:
         lda #KEY_UP
         sta PlayerPrimaryDirection
         sta PlayerLastFacing
-        ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_IDLE_FACING, FACING_NORTH
         rts
 up_not_held:
         lda #KEY_DOWN
@@ -552,8 +520,6 @@ up_not_held:
         lda #KEY_DOWN
         sta PlayerPrimaryDirection
         sta PlayerLastFacing
-        ldy CurrentEntityIndex
-        entity_set_flag_y FLAG_IDLE_FACING, FACING_SOUTH
         rts
 down_not_held:
         lda #0 ; for idle, sure
@@ -561,22 +527,21 @@ down_not_held:
         ;  note: do NOT clear PlayerLastFacing
 
         ; pick an idle animation based on our most recent swimming direction
-        ldy CurrentEntityIndex
-        entity_check_flag_y FLAG_IDLE_FACING
+        lda PlayerLastFacing
 check_north:
-        cmp #FACING_NORTH
+        cmp #KEY_UP
         bne check_east
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_underwater_up
         rts
 
 check_east:
-        cmp #FACING_EAST
+        cmp #KEY_RIGHT
         bne check_south
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_underwater_right
         rts
 
 check_south:
-        cmp #FACING_SOUTH
+        cmp #KEY_DOWN
         bne must_be_west
         set_metasprite_animation MetaSpriteIndex, boxgirl_anim_underwater_down
         rts
