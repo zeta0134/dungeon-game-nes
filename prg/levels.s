@@ -1,5 +1,6 @@
         .include "levels.inc"
         .include "level_logic.inc"
+        .include "text.inc"
 
         ; levels may reference AI states, so include those references here
         .include "blobby.inc"

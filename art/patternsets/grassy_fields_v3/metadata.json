@@ -18,5 +18,8 @@
   ],
   "BUTTON": [
     "084_button.png"
+  ],
+  "INTERACT": [
+    "086_wall_sign.png"
   ]
 }

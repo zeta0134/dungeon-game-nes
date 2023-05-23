@@ -64,7 +64,9 @@ class Overlay:
 class Trigger:
     x: int
     y: int
-    metadata: [int]
+    integer_properties: Dict[str, int]
+    boolean_properties: Dict[str, bool]
+    string_properties: Dict[str, str]
 
 @dataclass
 class CombinedMap:
@@ -259,13 +261,11 @@ def read_triggers(object_elements, tilesets):
                 trigger_x = math.floor(int(object_element.get("x")) / 16)
                 trigger_y = math.floor((int(object_element.get("y")) - 16) / 16)
 
-                trigger_boolean_properties = read_boolean_properties(object_element)
-                trigger_integer_properties = read_integer_properties(object_element)
-                trigger_string_properties = read_string_properties(object_element)
+                boolean_properties = read_boolean_properties(object_element)
+                integer_properties = read_integer_properties(object_element)
+                string_properties = read_string_properties(object_element)
 
-                trigger_metadata = compose_trigger_metadata(trigger_boolean_properties, trigger_integer_properties, trigger_string_properties)
-
-                triggers.append(Trigger(x=trigger_x,y=trigger_y,metadata=trigger_metadata))
+                triggers.append(Trigger(x=trigger_x,y=trigger_y,boolean_properties=boolean_properties, integer_properties=integer_properties, string_properties=string_properties))
     return triggers
 
 def read_global_palette(filename):
@@ -297,31 +297,6 @@ def compose_overlay_metadata(boolean_properties, integer_properties, string_prop
     if string_properties.get("when_event_is") == "SET":
         return 0x80
     return 0x00
-
-def compose_trigger_metadata(boolean_properties, integer_properties, string_properties):
-    trigger_metadata = [0] * 6
-
-    if "event_id" in integer_properties:
-        trigger_metadata[0] = integer_properties["event_id"]
-
-    if "with_event" in string_properties:
-        if string_properties["with_event"] == "SET":
-            trigger_metadata[1] = 1
-        if string_properties["with_event"] == "UNSET":
-            trigger_metadata[1] = 0
-
-    if "data0" in integer_properties:
-        trigger_metadata[1] = integer_properties["data0"]
-    if "data1" in integer_properties:
-        trigger_metadata[2] = integer_properties["data1"]
-    if "data2" in integer_properties:
-        trigger_metadata[3] = integer_properties["data2"]
-    if "data3" in integer_properties:
-        trigger_metadata[4] = integer_properties["data3"]
-    if "data4" in integer_properties:
-        trigger_metadata[5] = integer_properties["data4"]
-
-    return trigger_metadata
 
 def read_map(map_filename):
     map_element = ElementTree.parse(map_filename).getroot()
@@ -643,13 +618,45 @@ def write_overlay_list(tilemap, output_file):
     for overlay in tilemap.overlays:
         write_overlay(tilemap, overlay, output_file)
 
+def write_trigger_metadata(t, output_file):
+    output_file.write("  ;-----------------------\n")
+    output_file.write("  .byte %s, %s ; (X, Y)\n" % (t.x, t.y))
+
+    lines = [".byte $0 ; unused"] * 6
+
+    if "event_id" in t.integer_properties:
+        lines[0] = ".byte %s ; event_id" % t.integer_properties["event_id"]
+
+    if "with_event" in t.string_properties:
+        if t.string_properties["with_event"] == "SET":
+            lines[1] = ".byte 1 ; SET"
+        if t.string_properties["with_event"] == "UNSET":
+            lines[1] = ".byte 0 ; UNSET"
+
+    if "dialog" in t.string_properties:
+        lines[3] = ".byte <.bank(%s) ; dialog bank" % t.string_properties["dialog"]
+        lines[4] = ".word %s ; dialog label" % t.string_properties["dialog"]
+        lines[5] = ""
+
+    if "data0" in t.integer_properties:
+        lines[1] = ".byte %s ; data0" % t.integer_properties["data0"]
+    if "data1" in t.integer_properties:
+        lines[2] = ".byte %s ; data1" % t.integer_properties["data1"]
+    if "data2" in t.integer_properties:
+        lines[3] = ".byte %s ; data2" % t.integer_properties["data2"]
+    if "data3" in t.integer_properties:
+        lines[4] = ".byte %s ; data3" % t.integer_properties["data3"]
+    if "data4" in t.integer_properties:
+        lines[5] = ".byte %s ; data4" % t.integer_properties["data4"]
+
+    for line in lines:
+        output_file.write("  %s\n" % line)
+
 def write_triggers(tilemap, output_file):
     output_file.write(ca65_label(tilemap.name + "_triggers") + "\n")
     output_file.write("  .byte %s ; num triggers\n" % ca65_byte_literal(len(tilemap.triggers)))
-    output_file.write("  ;       X,   Y, Metadata\n")
     for trigger in tilemap.triggers:
-        trigger_raw_bytes = [trigger.x, trigger.y] + trigger.metadata
-        pretty_print_table(trigger_raw_bytes, output_file)
+        write_trigger_metadata(trigger, output_file)
     output_file.write("\n")
 
 if __name__ == '__main__':
