@@ -1,6 +1,7 @@
         .setcpu "6502"
 
         .include "actions.inc"
+        .include "dialog.inc"
         .include "event_queue.inc"
         .include "far_call.inc"
         .include "input.inc"
@@ -10,6 +11,7 @@
         .include "nes.inc"
         .include "overlays.inc"
         .include "sound.inc"
+        .include "text.inc"
         .include "tilebuffer.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
@@ -58,6 +60,7 @@ perform_call:
         ; DEBUG KEY PRESSED! Do debug things here
         
         ;activate the dialog system!
+        st16 TextPtr, lorem_ipsum
         st16 GameMode, dialog_init
         
         ; Un-break the action button state, in case we have just switched modes
@@ -78,11 +81,12 @@ TilePosY := R1
         beq done_with_events
 event_loop:
         lda events_type, x
+check_unpressed_switch:
         cmp #SWITCH_UNPRESSED
-        bne unrecognized_event
+        bne check_interactable
 
         ; For now, when pressing a switch, Data0 indicates whether this is a SET or an UNSET
-        lda events_data0, x
+        lda events_data1, x
         beq switch_unset
 switch_set:
         lda events_id, x
@@ -97,6 +101,18 @@ switch_unset:
         bmi unrecognized_event
 apply_overlay:
         jsr apply_overlay_by_index
+        jmp done_dispatching_event
+
+check_interactable:
+        cmp #INTERACTABLE
+        bne unrecognized_event
+        
+        lda events_data4, x
+        sta TextPtr
+        lda events_data5, x
+        sta TextPtr+1
+        st16 GameMode, dialog_init
+
         jmp done_dispatching_event
 
 unrecognized_event:

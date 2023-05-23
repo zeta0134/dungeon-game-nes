@@ -639,15 +639,15 @@ def write_trigger_metadata(t, output_file):
         lines[5] = ""
 
     if "data0" in t.integer_properties:
-        lines[1] = ".byte %s ; data0" % t.integer_properties["data0"]
+        lines[1] = ".byte %s ; data1" % t.integer_properties["data1"]
     if "data1" in t.integer_properties:
-        lines[2] = ".byte %s ; data1" % t.integer_properties["data1"]
+        lines[2] = ".byte %s ; data2" % t.integer_properties["data2"]
     if "data2" in t.integer_properties:
-        lines[3] = ".byte %s ; data2" % t.integer_properties["data2"]
+        lines[3] = ".byte %s ; data3" % t.integer_properties["data3"]
     if "data3" in t.integer_properties:
-        lines[4] = ".byte %s ; data3" % t.integer_properties["data3"]
+        lines[4] = ".byte %s ; data4" % t.integer_properties["data4"]
     if "data4" in t.integer_properties:
-        lines[5] = ".byte %s ; data4" % t.integer_properties["data4"]
+        lines[5] = ".byte %s ; data5" % t.integer_properties["data5"]
 
     for line in lines:
         output_file.write("  %s\n" % line)

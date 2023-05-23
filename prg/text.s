@@ -53,7 +53,7 @@ sign_test_dialog:
         ;     |     safe width       |
         ;     |----------------------|
         .byte D_PORTRAIT, 16, 0
-        .byte D_TIMBRE, $1
+        .byte D_TIMBRE, $0
         .byte "This sign has some", D_LF
         .byte "text on it. Isn't that", D_LF
         .byte "neat?"

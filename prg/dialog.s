@@ -28,9 +28,6 @@ CurrentTimbre: .res 1
 
 .proc FAR_init_dialog_engine
         st16 DialogMode, dialog_state_init
-        ; debug: manually set a dialog message for testing
-        ; later we should not do this, and allow the calling code to set the pointer instead
-        st16 TextPtr, lorem_ipsum
         ; debug: manually set up a dialog portrait's bank numbers
         ; later, this should be part of a command, I think, or maybe part
         ; of the message header or something

@@ -17,11 +17,11 @@ events_type:  .res ::MAX_EVENTS
 events_pos_x: .res ::MAX_EVENTS
 events_pos_y: .res ::MAX_EVENTS
 events_id:    .res ::MAX_EVENTS
-events_data0: .res ::MAX_EVENTS
 events_data1: .res ::MAX_EVENTS
 events_data2: .res ::MAX_EVENTS
 events_data3: .res ::MAX_EVENTS
 events_data4: .res ::MAX_EVENTS
+events_data5: .res ::MAX_EVENTS
 
 
         .segment "PRGFIXED_8000"

@@ -35,6 +35,8 @@ action_b_low_mask: .res 1
 action_b_high_mask: .res 1
 total_action_slots: .res 1
 
+action_a_button_suppressed: .res 1
+
 ; used to manage state for action switching
 action_flags: .res 1
 desync_counter: .res 1
@@ -82,6 +84,7 @@ ability_icons_tiles:
         lda #0
         sta action_flags
         sta desync_counter
+        sta action_a_button_suppressed
         lda #3
         sta total_action_slots
 
@@ -246,7 +249,10 @@ done_with_loop_b:
         ; If we are currently mid-switch, suppress all action behavior
         lda #SWITCH_INITIATED
         and action_flags
-        bne done
+        jne done
+
+        lda action_a_button_suppressed
+        bne check_button_b_down
 
 check_button_a_down:
         lda #KEY_A

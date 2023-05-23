@@ -22,6 +22,7 @@
 .global action_b_id
 
 .global action_flags
+.global action_a_button_suppressed
 
 ; Action Index IDs
 ACTION_NONE = 0

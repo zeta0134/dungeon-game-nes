@@ -1,6 +1,8 @@
 .global FAR_init_dialog_engine
 .global FAR_update_dialog_engine
 
+.globalzp TextPtr
+
 ; commands
 D_LF =    $80
 D_WAIT =  $81

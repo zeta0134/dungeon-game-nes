@@ -46,7 +46,7 @@
         adc TileX
         sta DestAddr
         ; TODO: Aren't we forgetting to deal with low -> high carry here!? This might break maps
-        ; with a non-power-of-2 width...
+        ; with a non-power-of-2 width... ... which can't exist due to the LUT arrangement, so... yay?
 .endmacro
 
 ; clobbers a and y

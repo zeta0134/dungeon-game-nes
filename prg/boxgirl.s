@@ -308,6 +308,10 @@ done:
         rts
 .endproc
 
+; TODO: We have this pattern repeated at least 3 times, and will almost certainly
+; be doing it more. Can we work this into a common function and pass in a pointer
+; to a table, for selecting the animation from? That way any time we need a cardinal
+; variant of some state, we've got it covered
 .proc pick_walk_animation
 MetaSpriteIndex := R0
         lda PlayerPrimaryDirection
@@ -909,6 +913,77 @@ still_in_water:
         rts
 .endproc
 
+.proc handle_interactables
+GroundType := R0
+TileAddr := R3
+SensedTileX := R6
+SensedTileY := R8
+        ; Note: meant to be called after FAR_sense_ground, as it uses those results as a basis
+        lda PlayerLastFacing
+check_north:
+        cmp #KEY_UP
+        bne check_east
+        dec SensedTileY
+         ; safety: if we're < 0, we are out of bounds
+        bmi no_interactable
+        jmp done_with_direction
+check_east:
+        cmp #KEY_RIGHT
+        bne check_south
+        inc SensedTileX
+        ; safety: if we are >= MapWidth, we are out of bounds
+        lda SensedTileX
+        cmp MapWidth
+        bcs no_interactable
+        jmp done_with_direction
+check_south:
+        cmp #KEY_DOWN
+        bne must_be_west
+        inc SensedTileY
+         ; safety: if we're >= MapHeight, we are out of bounds
+        lda SensedTileY
+        cmp MapHeight
+        bcs no_interactable
+        jmp done_with_direction
+must_be_west:
+        dec SensedTileX
+        ; safety: if we're < 0, we are out of bounds
+        bmi no_interactable
+done_with_direction:
+        graphics_map_index SensedTileX, SensedTileY, TileAddr
+        ldy #0
+        lda (TileAddr), y
+        tay
+        lda TilesetAttributes, y ; a now contains combined attribute byte
+        and #%11111100 ; strip off the palette
+        beq no_interactable ; booooring
+        sta GroundType
+
+check_interactable:
+        cmp #INTERACTABLE
+        bne no_interactable ; currently we ignore anything else we are facing
+
+        ; At this point we're definitely *facing* the interactable element, so
+        ; set that flag. This will tell the action system that it should suppress
+        ; all inputs for the A button
+        lda #1
+        sta action_a_button_suppressed
+        
+        ; Now, if we happen to have just pressed the A button, fire off the appropriate trigger
+        lda #KEY_A
+        and ButtonsDown
+        beq done
+        jsr handle_interactable_tile
+done:
+        rts
+
+
+no_interactable:
+        lda #0
+        sta action_a_button_suppressed
+        rts
+.endproc
+
 .proc handle_bounce
 TargetEntity := R0
         ; Tell the entity we bounced on it
@@ -1260,6 +1335,7 @@ dive_not_pressed:
         ; check for special ground tiles
         far_call FAR_sense_ground
         jsr handle_ground_tile
+        jsr handle_interactables
         debug_color TINT_R | TINT_B
         jsr collide_with_entities
         debug_color TINT_R | TINT_G
@@ -2016,7 +2092,7 @@ no_buzzer:
         rts
 .endproc
 
-.proc handle_switch_tile
+.proc _handle_trigger
 GroundType := R0
 
 ; used by map functions and the error buzz; don't clobber
@@ -2029,15 +2105,12 @@ TriggerType  := R23
 TriggerPosX  := R24
 TriggerPosY  := R25
 TriggerId    := R26
-TriggerData0 := R27
-TriggerData1 := R28
-TriggerData2 := R29
-TriggerData3 := R30
-TriggerData4 := R31
-        ; This permits us to freely clobber R0 in the following routines
-        lda GroundType
-        sta TriggerType
 
+TriggerData1 := R27
+TriggerData2 := R28
+TriggerData3 := R29
+TriggerData4 := R30
+TriggerData5 := R31
         jsr find_trigger
         bne trigger_invalid
 
@@ -2052,8 +2125,6 @@ TriggerData4 := R31
         sta events_pos_y, x
         lda TriggerId
         sta events_id, x
-        lda TriggerData0
-        sta events_data0, x
         lda TriggerData1
         sta events_data1, x
         lda TriggerData2
@@ -2062,18 +2133,39 @@ TriggerData4 := R31
         sta events_data3, x
         lda TriggerData4
         sta events_data4, x
+        lda TriggerData5
+        sta events_data5, x
         jsr add_event
-        
+        rts
+trigger_invalid:
+        jsr error_buzz_if_not_already_safe
+        rts
+.endproc
+
+.proc handle_switch_tile 
+GroundType := R0
+TriggerType  := R23
+        ; This permits us to freely clobber R0 in the following routines
+        lda GroundType
+        sta TriggerType
         ; Play a "switch pressed" SFX
         st16 R0, sfx_press_switch_pulse
         jsr play_sfx_pulse1
         st16 R0, sfx_press_switch_noise
         jsr play_sfx_noise
 
+        jsr _handle_trigger
         rts
-trigger_invalid:
-        jsr error_buzz_if_not_already_safe
+.endproc
 
+.proc handle_interactable_tile
+GroundType := R0
+TriggerType  := R23
+        ; This permits us to freely clobber R0 in the following routines
+        lda GroundType
+        sta TriggerType
+
+        jsr _handle_trigger
         rts
 .endproc
 
@@ -2272,11 +2364,11 @@ TriggerTableAddr := R9
 TriggerPosX  := R24
 TriggerPosY  := R25
 TriggerId    := R26
-TriggerData0 := R27
-TriggerData1 := R28
-TriggerData2 := R29
-TriggerData3 := R30
-TriggerData4 := R31
+TriggerData1 := R27
+TriggerData2 := R28
+TriggerData3 := R29
+TriggerData4 := R30
+TriggerData5 := R31
         ; helpfully our scratch registers are still set from the physics function,
         ; so we don't need to re-do the lookup here
 
@@ -2322,9 +2414,6 @@ loop:
         ldy #TriggerTableEntry::id
         lda (TriggerTableAddr), y
         sta TriggerId
-        ldy #TriggerTableEntry::data0
-        lda (TriggerTableAddr), y
-        sta TriggerData0
         ldy #TriggerTableEntry::data1
         lda (TriggerTableAddr), y
         sta TriggerData1
@@ -2337,6 +2426,9 @@ loop:
         ldy #TriggerTableEntry::data4
         lda (TriggerTableAddr), y
         sta TriggerData4
+        ldy #TriggerTableEntry::data5
+        lda (TriggerTableAddr), y
+        sta TriggerData5
 
         restore_previous_bank
 
