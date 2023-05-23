@@ -33,6 +33,8 @@ ACTION_DASH = 2
 ACTION_FEATHER = 3
 ACTION_FIRE = 4
 ACTION_HAMMER = 5
+; Dummy Action, used for interactables
+ACTION_INTERACTABLE = 6
 
 .macro if_action_held ACTION_ID
 .scope

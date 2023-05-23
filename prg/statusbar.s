@@ -310,7 +310,13 @@ check_left_action:
         ; TODO: jump away?
         ; for now, fall through
 check_right_action:
+        lda action_a_button_suppressed
+        beq normal_right_action
+        lda #ACTION_INTERACTABLE
+        jmp right_action_converge
+normal_right_action:
         lda action_a_id
+right_action_converge:
         cmp ActionDisplayedRight
         beq done_with_actions
 
