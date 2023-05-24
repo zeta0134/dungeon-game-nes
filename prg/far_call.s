@@ -14,11 +14,11 @@ JumpTarget: .word $0000
         ; preserve the current bank
         lda CurrentBank
         pha
-
-        mmc3_select_bank 7, TargetBank
-
+        ; Update the new current bank to our target
         lda TargetBank
         sta CurrentBank
+        ; ... and THEN perform the bank switch
+        mmc3_select_bank 7, TargetBank
         
         ; setup indirect jump to the far call address
         lda #>(return_from_indirect-1)

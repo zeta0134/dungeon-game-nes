@@ -27,9 +27,9 @@
 .macro access_data_bank TargetBank
         lda CurrentBank
         pha
-        mmc3_select_bank 7, TargetBank
         lda TargetBank
         sta CurrentBank
+        mmc3_select_bank 7, TargetBank
 .endmacro
 
 .macro restore_previous_bank
