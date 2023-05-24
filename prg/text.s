@@ -59,3 +59,57 @@ sign_test_dialog:
         .byte "neat?"
         .byte D_WAIT, D_EXIT
 
+debughub_blue_sign_1:
+        ;     |0123456789012345678901|
+        ;     |     safe width       |
+        ;     |----------------------|
+        .byte D_PORTRAIT, 16, 0
+        .byte D_TIMBRE, $0
+        .byte "Blue 01:", D_LF
+        .byte "Grass, slimes, and a", D_LF
+        .byte "diving pool"
+        .byte D_WAIT, D_EXIT
+
+debughub_blue_sign_2:
+        ;     |0123456789012345678901|
+        ;     |     safe width       |
+        ;     |----------------------|
+        .byte D_PORTRAIT, 16, 0
+        .byte D_TIMBRE, $0
+        .byte "Blue 02:", D_LF
+        .byte "Ramp Test Chamber"
+        .byte D_WAIT, D_EXIT
+
+debughub_blue_sign_3:
+        ;     |0123456789012345678901|
+        ;     |     safe width       |
+        ;     |----------------------|
+        .byte D_PORTRAIT, 16, 0
+        .byte D_TIMBRE, $0
+        .byte "Blue 03:", D_LF
+        .byte "Switches, overlays and", D_LF
+        .byte "interactable tests"
+        .byte D_WAIT, D_EXIT
+
+debughub_orange_sign_1:
+        ;     |0123456789012345678901|
+        ;     |     safe width       |
+        ;     |----------------------|
+        .byte D_PORTRAIT, 16, 0
+        .byte D_TIMBRE, $0
+        .byte "Orange 01:", D_LF
+        .byte "Basic platform tests,", D_LF
+        .byte "minimal tileset"
+        .byte D_WAIT, D_EXIT
+
+debughub_green_sign_1:
+        ;     |0123456789012345678901|
+        ;     |     safe width       |
+        ;     |----------------------|
+        .byte D_PORTRAIT, 16, 0
+        .byte D_TIMBRE, $0
+        .byte "Green 01:", D_LF
+        .byte "Tall Platforming Tests", D_LF
+        .byte "(slightly broken)"
+        .byte D_WAIT, D_EXIT
+
