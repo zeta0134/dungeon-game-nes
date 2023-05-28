@@ -1,0 +1,39 @@
+.struct SaveFile
+	; State specific to the player
+	PlayerHealthMax .byte
+	PlayerHealthCurrent .byte
+	ActionSetA .byte 2
+	ActionSetB .byte 2
+	ActionSetC .byte 2
+	ActionInventory .byte 12
+	ActionSlotA .byte 1
+	ActionSlotB .byte 1
+	; Event flags, used to store all *sorts* of state in specific rooms
+	; Global flags are always loaded; tweak this (decrease, probably) once
+	; we have a better idea of what state truly needs to persist between areas
+	GlobalEventFlags .byte 32
+	; Area flags are a big pool. A small number of these bytes (up to 14) is
+	; allocated to each major area (dungeons, towns, caves, etc) and each map
+	; specifies which area's flags to load into memory. This can be as large as
+	; we need, technically, but try not to go overboard here. Ideally prefer
+	; temporary flags wherever possible.
+	AreaEventFlags .byte 64
+	; CRC32 checksum of all previous bytes. Checksum must match for a saved file to
+	; be considered valid. (Ignore this for the working save, until just before writing
+	; it to one of the real save slots)
+	Checksum .byte 4
+.endstruct
+
+; Friendly names for the areas. Reference these directly in level data as necessary
+; (also pick better names as necessary, but ignore that for now)
+AREA_DEBUG_HUB = 0
+AREA_OVERWORLD = 1
+AREA_CAVES =     2
+AREA_DUNGEON_0 = 3
+AREA_DUNGEON_1 = 4
+AREA_DUNGEON_2 = 5
+AREA_DUNGEON_3 = 6
+AREA_DUNGEON_4 = 7
+
+.global working_save
+.global current_save_slot
