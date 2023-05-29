@@ -433,11 +433,9 @@ bitfield_masks:
 	.endrepeat
 	tax ; and we'll use this to index the working area flags
 	lda working_events, x
-	; here we need to clear the flag, not set it, but our table only has set entries
-	; so get fancy
-	eor #$FF ; invert it, if the flag was set it will now be 0
-	ora bitfield_masks, y ; force only that flag  to 1
-	eor #$FF ; invert it again, now the other flags are unchanged, and our target is 0
+	; here we need to clear the flag with a table that has only that flag's bit set. So...
+	ora bitfield_masks, y ; force that flag  to 1, then
+	eor bitfield_masks, y ; invert the flag, forcing it to 0
 	sta working_events, x
 	rts
 .endproc
@@ -450,12 +448,11 @@ bitfield_masks:
 	jsr check_area_flag
 	; now: X is the byte we need to work with
 	; Y is the index into the bitmask table
-	; Z is the old state of the flag, but we don't care
+	; Z is the old state of the flag, but we're about to clobber that
 	lda working_events, x
 	eor bitfield_masks, y
 	sta working_events, x
-	; unfortunately we just clobbered Z, so perform the mask again
-	; to set it for convenience
+	; Perform the mask again to set Z to the new state of the flag
 	and bitfield_masks, y
 	rts
 .endproc
