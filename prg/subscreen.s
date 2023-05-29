@@ -211,9 +211,21 @@ inventory_screen_regions:
 
         ; [ID 18] - Quest Region (absolutely gigantic)
         ; POS:   Top  Bottom  Left  Right
-        .byte     18,     27,    4,    29
+        .byte     18,     23,    4,    29
         ; EXITS:  Up    Down  Left  Right 
-        .byte      4,    $FF,  $FF,   $FF        
+        .byte      4,     19,  $FF,   $FF        
+
+        ; [ID 19] - Save Game
+        ; POS:   Top  Bottom  Left  Right
+        .byte     27,     27,    4,    14
+        ; EXITS:  Up    Down  Left  Right 
+        .byte     18,    $FF,  $FF,    20   
+
+        ; [ID 20] - Quit Game
+        ; POS:   Top  Bottom  Left  Right
+        .byte     27,     27,   19,    29
+        ; EXITS:  Up    Down  Left  Right 
+        .byte     18,    $FF,   19,   $FF     
 
 inventory_screen_behaviors:
         ; Equip Slots
@@ -225,6 +237,10 @@ inventory_screen_behaviors:
         .word click_ability_slot
         .endrepeat
         ; Silly and temporary quest screen
+        .word click_unimplemented_slot
+        ; Save Game (unimplemented)
+        .word click_unimplemented_slot
+        ; Quit Game (also unimplemented)
         .word click_unimplemented_slot
 
 ; === External Functions ===
