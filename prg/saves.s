@@ -18,8 +18,31 @@ backup_save_slots:
 	.tag SaveFile
 	.endrepeat
 current_save_slot: .res 1
+working_events: .res 64
+current_area: .res 1
 
 	.segment "UTILITIES_A000"
+
+area_save_position_table:
+	.byte  0 ;AREA_DEBUG_HUB
+	.byte  8 ;AREA_OVERWORLD
+	.byte 16 ;AREA_CAVES
+	.byte 24 ;AREA_DUNGEON_0
+	.byte 32 ;AREA_DUNGEON_1
+	.byte 40 ;AREA_DUNGEON_2
+	.byte 48 ;AREA_DUNGEON_3
+	.byte 56 ;AREA_DUNGEON_4
+
+area_save_length_table:
+	.byte 8 ;AREA_DEBUG_HUB
+	.byte 8 ;AREA_OVERWORLD
+	.byte 8 ;AREA_CAVES
+	.byte 8 ;AREA_DUNGEON_0
+	.byte 8 ;AREA_DUNGEON_1
+	.byte 8 ;AREA_DUNGEON_2
+	.byte 8 ;AREA_DUNGEON_3
+	.byte 8 ;AREA_DUNGEON_4
+
 
 ; Create a brand new save file, suitable for starting a new game
 .proc initialize_save
@@ -258,5 +281,181 @@ write_working_save_loop:
 	bne write_working_save_loop
 	; and done! At this point the active slot should be valid, and will be loaded
 	; the next time the save routine is run.
+	rts
+.endproc
+
+.proc initialize_area_flags
+	; generally we should call this right after loading a new save file
+	lda #0
+	ldx #64
+clear_loop:
+	dex
+	sta working_events, x
+	bne clear_loop
+
+	; load in the global event flags from the currently selected save
+	ldx #32
+global_event_loop:
+	dex
+	lda working_save + SaveFile::GlobalEventFlags, x
+	sta working_events
+	cpx #0
+	bne global_event_loop
+
+	; reset the currently loaded area to 0, and load in those flags
+	; (this way when we change areas later we have a consistent starting state)
+	lda #0
+	sta current_area
+	jsr load_area_flags
+	rts
+.endproc
+
+; put the area you want to load into current_area first
+.proc load_area_flags
+Length := R0
+	; first, mostly for safety, clear out all 14 area flag bytes
+	; in working memory. This is meant to make it harder to carry
+	; event state from one room to another. In theory the extra bytes
+	; aren't used by anything, but when Zeta is lacking in coffee, this
+	; is not a guarantee :P
+	ldx #14
+	lda #0
+clear_loop:
+	dex
+	sta working_events + 2, x
+	bne clear_loop
+
+	; Now, from the working save, load the bytes that correspond to the current
+	; area, which we have in a table. (Not all areas uses all 14 bytes, many areas
+	; might use far less)
+	ldx current_area
+	lda area_save_length_table, x
+	sta Length
+	lda area_save_position_table, x
+	tax
+	ldy #0
+	; now X contains the starting position within the save file
+	; and Y contains the offset into the working memory set
+load_loop:
+	lda working_save + SaveFile::AreaEventFlags, x
+	sta working_events + 2, y
+	inx
+	iny
+	; we could cpy here, but speed isn't important. I'm choosing to use the
+	; same basic style of loop for this entire module, makes it easier to debug.
+	dec Length 
+	bne load_loop
+done:
+	rts
+.endproc
+
+; writes out the area specified by current_area, so ensure this is
+; still valid before calling
+.proc save_area_flags
+Length := R0
+	; Here we need to write the current area flags to the appropriate
+	; place in the save file, so set up all of that state
+	ldx current_area
+	lda area_save_length_table, x
+	sta Length
+	lda area_save_position_table, x
+	tax
+	ldy #0
+	; now X contains the starting position within the save file
+	; and Y contains the offset into the working memory set
+	; same thing as above, but the other way around
+save_loop:
+	lda working_events + 2, y
+	sta working_save + SaveFile::AreaEventFlags, x
+	inx
+	iny
+	; we could cpy here, but speed isn't important. I'm choosing to use the
+	; same basic style of loop for this entire module, makes it easier to debug.
+	dec Length 
+	bne save_loop
+done:
+	rts
+.endproc
+
+bitfield_masks:
+	.byte %00000001
+	.byte %00000010
+	.byte %00000100
+	.byte %00001000
+	.byte %00010000
+	.byte %00100000
+	.byte %01000000
+	.byte %10000000
+
+; Event we want to inspect in A, result in Z, clobbers X and Y
+; Usage note:
+; - Events 0-15 are temporary, and will typically be reset to 0 when a new map is loaded
+; - Events 16 - 127 are area specific
+; - Events 128 - 255 are global (specific to the entire save file)
+.proc check_area_flag
+	tax ; preserve
+	and #%00000111 ; isolate lower 3 bits
+	tay ; which we'll use to index the bitmask LUT
+	txa ; un-preserve
+	.repeat 3
+	lsr ; divide by 8
+	.endrepeat
+	tax ; and we'll use this to index the working area flags
+	lda working_events, x
+	and bitfield_masks, y
+	rts
+.endproc
+
+; Same as above, sets the flag ignoring its original value
+.proc set_area_flag
+	tax ; preserve
+	and #%00000111 ; isolate lower 3 bits
+	tay ; which we'll use to index the bitmask LUT
+	txa ; un-preserve
+	.repeat 3
+	lsr ; divide by 8
+	.endrepeat
+	tax ; and we'll use this to index the working area flags
+	lda working_events, x
+	ora bitfield_masks, y
+	sta working_events, x
+	rts
+.endproc
+
+; Same as above, sets the flag ignoring its original value
+.proc clear_area_flag
+	tax ; preserve
+	and #%00000111 ; isolate lower 3 bits
+	tay ; which we'll use to index the bitmask LUT
+	txa ; un-preserve
+	.repeat 3
+	lsr ; divide by 8
+	.endrepeat
+	tax ; and we'll use this to index the working area flags
+	lda working_events, x
+	; here we need to clear the flag, not set it, but our table only has set entries
+	; so get fancy
+	eor #$FF ; invert it, if the flag was set it will now be 0
+	ora bitfield_masks, y ; force only that flag  to 1
+	eor #$FF ; invert it again, now the other flags are unchanged, and our target is 0
+	sta working_events, x
+	rts
+.endproc
+
+; convenience: whatever this flag was before, flip it
+; flag to toggle in A, returns new state of the flag in Z
+.proc toggle_area_flag
+	; reuse the check area flag logic, as it handles some common setup for us
+	; in a non-destructive way
+	jsr check_area_flag
+	; now: X is the byte we need to work with
+	; Y is the index into the bitmask table
+	; Z is the old state of the flag, but we don't care
+	lda working_events, x
+	eor bitfield_masks, y
+	sta working_events, x
+	; unfortunately we just clobbered Z, so perform the mask again
+	; to set it for convenience
+	and bitfield_masks, y
 	rts
 .endproc
