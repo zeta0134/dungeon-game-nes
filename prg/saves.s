@@ -225,7 +225,7 @@ invalid_backup_slot:
 	; fall through and use the remainder of the valid save loading logic
 load_valid_save:
 	st16 Length, .sizeof(SaveFile)
-	mov16 WorkingPtr, working_save
+	st16 WorkingPtr, working_save
 	ldy #0
 loop:
 	lda (SavePtr), y
