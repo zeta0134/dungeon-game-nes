@@ -24,6 +24,8 @@
 .global action_flags
 .global action_a_button_suppressed
 
+ABILITY_ICON_BANK = $14
+
 ; Action Index IDs
 ACTION_NONE = 0
 ; Implemented

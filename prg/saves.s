@@ -284,6 +284,30 @@ write_working_save_loop:
 	rts
 .endproc
 
+; Input: set current_save_slot before calling
+; Result in R0, since flags/A are clobbered by far_call
+.proc FAR_is_valid_save
+SavePtr := R0
+BackupSavePtr := R2
+	jsr _save_slot_ptr
+    jsr _compute_checksum
+    jsr _verify_checksum
+    beq valid
+    jsr _backup_save_slot_ptr
+    mov16 SavePtr, BackupSavePtr
+    jsr _compute_checksum
+    jsr _verify_checksum
+    beq valid
+invalid:
+	lda #$FF
+	sta R0
+	rts
+valid:
+	lda #0
+	sta R0
+	rts 
+.endproc
+
 .proc initialize_area_flags
 	; generally we should call this right after loading a new save file
 	lda #0

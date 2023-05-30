@@ -21,6 +21,9 @@
 	; CRC32 checksum of all previous bytes. Checksum must match for a saved file to
 	; be considered valid. (Ignore this for the working save, until just before writing
 	; it to one of the real save slots)
+	CurrentMapPtr .word
+	CurrentMapBank .byte
+	CurrentArea .byte
 	Checksum .byte 4
 .endstruct
 
@@ -37,3 +40,15 @@ AREA_DUNGEON_4 = 7
 
 .global working_save
 .global current_save_slot
+.global current_area
+
+; for all of these, set current_save_slot first!
+.global FAR_is_valid_save
+.global FAR_save_game
+.global FAR_load_game
+
+; after loading a new game, call this before initializing the first map
+.global FAR_initialize_area_flags
+; every time we switch to a new map (including the first map after loading), set
+; current_area, then call this
+.global FAR_load_area_flags

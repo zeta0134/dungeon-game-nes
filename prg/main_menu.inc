@@ -1,0 +1,2 @@
+.global FAR_init_main_menu
+.global FAR_update_main_menu

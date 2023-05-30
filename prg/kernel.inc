@@ -18,3 +18,4 @@
 .global dialog_closing
 .global subscreen_init
 .global return_from_subscreen
+.global init_main_menu

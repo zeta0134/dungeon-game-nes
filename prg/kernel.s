@@ -14,6 +14,7 @@
         .include "kernel.inc"
         .include "levels.inc"
         .include "level_logic.inc"
+        .include "main_menu.inc"
         .include "map.inc"
         .include "mmc3.inc"
         .include "nes.inc"
@@ -40,8 +41,6 @@ AnimTimer: .res 1
 PlayfieldPpuMask: .res 1
 
         .segment "PRGFIXED_E000"
-
-ABILITY_ICON_BANK = $14
 
 ; === Utility Functions ===
 .proc wait_for_next_vblank
@@ -664,3 +663,41 @@ done:
 done:
         rts
 .endproc
+
+.proc init_main_menu
+        ; The main menu does not use the HUD, so make sure we don't update the palette for it
+        ; (otherwise NMI will screw with our nametable updates)
+        lda #0
+        sta HudPaletteActive
+
+        ; Initialize the subscreen state machine
+        far_call FAR_init_main_menu
+        
+        st16 GameMode, _main_menu_active
+
+        rts
+.endproc
+
+.proc _main_menu_active
+        far_call FAR_update_main_menu
+
+        ; starting IRQ index for the subscreen
+        lda inactive_irq_index
+        sta R0
+
+        ; CHR bank to use for BG graphics
+        debug_color TINT_R | TINT_B
+        far_call FAR_generate_subscreen
+        debug_color 0 ; disable debug colors
+
+        jsr swap_irq_buffers
+        jsr wait_for_next_vblank
+
+        ; refresh the animation timer (... repeatedly) so that it starts in the right spot
+        ; when we close the subscreen
+        lda #20
+        sta FadeTimer
+
+        rts
+.endproc
+

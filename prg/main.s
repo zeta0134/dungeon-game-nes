@@ -48,7 +48,8 @@ start:
         sta seed
 
         ; Setup our initial kernel state
-        st16 GameMode, init_engine
+        ;st16 GameMode, init_engine
+        st16 GameMode, init_main_menu
 
         ; hand control over to the kernel, which will manage game mode management
         ; for the rest of runtime
