@@ -176,7 +176,7 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         st16 TargetMapAddr, (debug_hub)
         lda #<.bank(debug_hub)
         sta TargetMapBank
-        st16 GameMode, load_new_map
+        st16 GameMode, _blackout_load_new_map
 
         ; Initialize some bits of global state here
         far_call FAR_initialize_actions

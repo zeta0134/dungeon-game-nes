@@ -197,7 +197,7 @@ SavePtr := R0
 .endproc
 
 ; put the desired save slot in current_save_slot first!
-.proc load_game
+.proc FAR_load_game
 SavePtr := R0
 BackupSavePtr := R2
 WorkingPtr := R2 ; by the time we need this, we're done with backup save logic
@@ -240,7 +240,7 @@ done:
 .endproc
 
 ; put the desired save slot in current_save_slot first!
-.proc save_game
+.proc FAR_save_game
 SavePtr := R0
 BackupSavePtr := R2
 WorkingPtr := R2 ; by the time we need this, we're done with backup save logic
@@ -308,7 +308,7 @@ valid:
 	rts 
 .endproc
 
-.proc initialize_area_flags
+.proc FAR_initialize_area_flags
 	; generally we should call this right after loading a new save file
 	lda #0
 	ldx #64

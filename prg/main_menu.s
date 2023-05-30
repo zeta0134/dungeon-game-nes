@@ -122,11 +122,11 @@ copy_erase_screen_regions:
 
 file_select_screen_behaviors:
         ; Load File 1
-        .word click_unimplemented_slot
+        .word click_file_slot
         ; Load File 2
-        .word click_unimplemented_slot
+        .word click_file_slot
         ; Load File 3
-        .word click_unimplemented_slot
+        .word click_file_slot
         ; Options
         .word click_unimplemented_slot
         ; Copy File
@@ -489,6 +489,44 @@ done_with_fadein:
         jsr draw_cursor
         jsr draw_shadow_cursor
 
+        rts
+.endproc
+
+.proc file_select_fade_out
+; parameters to the palette set functions
+BasePaletteAddr := R0
+Brightness := R2
+        dec FadeCounter
+        beq done_with_fadeout
+
+        lda FadeCounter
+        lsr
+        sta Brightness
+        st16 BasePaletteAddr, main_menu_obj_palette
+        far_call FAR_queue_arbitrary_obj_palette
+        st16 BasePaletteAddr, main_menu_bg_palette
+        far_call FAR_queue_arbitrary_bg_palette
+        rts
+
+done_with_fadeout:
+        st16 MainMenuState, file_select_terminal
+        rts
+.endproc
+
+.proc file_select_terminal
+        ; Signal to the kernel that we should begin main gameplay
+        st16 GameMode, init_engine
+        rts
+.endproc
+
+; === File Select Behaviors ===
+
+.proc click_file_slot
+        lda CurrentRegionIndex
+        sta current_save_slot
+        far_call FAR_load_game
+
+        st16 MainMenuState, file_select_fade_out
         rts
 .endproc
 
