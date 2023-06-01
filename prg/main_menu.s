@@ -17,6 +17,7 @@
 
         .zeropage
 MainMenuState: .res 2
+CancelBehavior: .res 2
 
         .segment "RAM"
 FadeCounter: .res 1
@@ -32,6 +33,12 @@ main_menu_obj_palette:
 
 main_menu_base_nametable:
         .incbin "art/raw_nametables/file_select_base.nam"
+
+file_select_str: .asciiz           "    SELECT FILE     "
+erase_str: .asciiz            " ERASE WHICH FILE?  "
+erase_confirm_string: .asciiz "  ARE YOU SURE!?    "
+copy_str: .asciiz             "  COPY WHICH FILE?  "
+copy_overwrite_str: .asciiz   " REALLY OVERWRITE!? "
 
 new_file_str: .asciiz "New File"
 filename_1_str: .asciiz "File #1"
@@ -132,7 +139,7 @@ file_select_screen_behaviors:
         ; Copy File
         .word click_unimplemented_slot
         ; Erase File
-        .word click_unimplemented_slot
+        .word activate_erase_mode
 
 copy_file_behaviors:
         ; Click File 1
@@ -142,13 +149,21 @@ copy_file_behaviors:
         ; Click File 3
         .word click_unimplemented_slot
 
-erase_select_screen_behaviors:
+erase_select_behaviors:
         ; Click File 1
-        .word click_unimplemented_slot
+        .word activate_erase_confirm_mode
         ; Click File 2
-        .word click_unimplemented_slot
+        .word activate_erase_confirm_mode
         ; Click File 3
-        .word click_unimplemented_slot
+        .word activate_erase_confirm_mode
+
+erase_confirm_behaviors:
+        ; Click File 1
+        .word perform_erase
+        ; Click File 2
+        .word perform_erase
+        ; Click File 3
+        .word perform_erase
 
 ; === External Functions ===
 
@@ -163,6 +178,11 @@ erase_select_screen_behaviors:
 .endproc
 
 ; === Main Menu States ===
+
+.proc do_nothing
+        ; Does what it says on the tin
+        rts
+.endproc
 
 .proc file_select_state_initial
 NametableAddr := R0
@@ -214,12 +234,12 @@ right_nametable_loop:
         ; Hide all game sprites
         far_call FAR_hide_all_sprites
 
-        ; FOR NOW, we'll start with the inventory screen, so initialize that 
-        ; particular layout
-        lda #<file_select_screen_regions
-        sta LayoutPtr
-        lda #>file_select_screen_regions
-        sta LayoutPtr+1
+        ; Set up the initial layout/behavior pointers for the file select screen
+        st16 LayoutPtr, file_select_screen_regions
+        st16 BehaviorPtr, file_select_screen_behaviors
+        ; Set the initial cancel behavior to nothing at all. (We'll stay in the main
+        ; menu for now once it's entered, since we don't yet have a title/logo sequence)
+        st16 CancelBehavior, do_nothing
 
         lda #<file_select_screen_behaviors
         sta BehaviorPtr
@@ -481,14 +501,114 @@ done_with_fadein:
 .endproc
 
 .proc file_select_active
-
         ; update all active cursors
         jsr handle_move_cursor
         jsr lerp_cursor_position
         jsr handle_click
+        jsr handle_cancel
         jsr draw_cursor
         jsr draw_shadow_cursor
 
+        rts
+.endproc
+
+.proc confirm_choice_active
+        ; this state locks the cursor in place, so don't
+        ; attempt to move the cursor at all
+        jsr lerp_cursor_position
+        jsr handle_click
+        jsr handle_cancel
+        jsr draw_cursor
+        jsr draw_shadow_cursor
+
+        rts
+.endproc
+
+.proc activate_erase_mode
+DestPpuAddr := R0
+StringPtr := R2
+        ; Draw the erase header
+        st16 DestPpuAddr, $2086
+        st16 StringPtr, erase_str
+        jsr draw_basic_string
+        ; Switch the layout pointers to use the file-restricted list, and erase confirm behaviors
+        ; Set up the initial layout/behavior pointers for the file select screen
+        st16 LayoutPtr, copy_erase_screen_regions
+        st16 BehaviorPtr, erase_select_behaviors
+        st16 CancelBehavior, return_to_file_select_mode
+        ; Re-initialize the current index to point to the first file slot
+        lda #0
+        sta CurrentRegionIndex
+        jsr initialize_cursor_pos
+        ; return to file_select_active, whose logic is general enough to drive the rest
+        st16 MainMenuState, file_select_active
+        rts
+.endproc
+
+.proc activate_erase_confirm_mode
+DestPpuAddr := R0
+StringPtr := R2
+        ; Draw the erase confirm header
+        st16 DestPpuAddr, $2086
+        st16 StringPtr, erase_confirm_string
+        jsr draw_basic_string
+        ; Switch the layout pointers to use the file-restricted list, and erase commit behaviors
+        st16 LayoutPtr, copy_erase_screen_regions
+        st16 BehaviorPtr, erase_confirm_behaviors
+        st16 CancelBehavior, activate_erase_mode
+        ; move to confirm_choice_active, which locks our cursor in place
+        st16 MainMenuState, confirm_choice_active
+        rts
+.endproc
+
+.proc perform_erase
+        lda CurrentRegionIndex
+        sta current_save_slot
+        far_call FAR_erase_game
+        ; TODO: SFX? fancy animation?
+        jmp return_to_file_select_mode
+        ; tail call
+.endproc
+
+.proc activate_copy_mode
+        rts
+.endproc
+
+.proc activate_copy_confirm_mode
+        rts
+.endproc
+
+.proc return_to_file_select_mode
+DestPpuAddr := R0
+StringPtr := R2
+        ; Draw the file select header
+        st16 DestPpuAddr, $2086
+        st16 StringPtr, file_select_str
+        jsr draw_basic_string
+        ; Switch layout pointers to the initial file select mode
+        ; Set up the initial layout/behavior pointers for the file select screen
+        st16 LayoutPtr, file_select_screen_regions
+        st16 BehaviorPtr, file_select_screen_behaviors
+        st16 CancelBehavior, do_nothing
+        ; Redraw (slowly) all three save files, just to be safe
+        lda #0
+        sta current_save_slot
+        jsr draw_save_file
+        jsr wait_for_next_vblank
+
+        inc current_save_slot
+        jsr draw_save_file
+        jsr wait_for_next_vblank
+
+        inc current_save_slot
+        jsr draw_save_file
+        jsr wait_for_next_vblank
+        ; Re-initialize the current index to point to the first file slot
+        lda #0
+        sta CurrentRegionIndex
+        jsr initialize_cursor_pos
+        ; switch to file_select_active
+        st16 MainMenuState, file_select_active
         rts
 .endproc
 
@@ -520,6 +640,16 @@ done_with_fadeout:
 .endproc
 
 ; === File Select Behaviors ===
+
+.proc handle_cancel
+        lda #KEY_B
+        and ButtonsDown
+        bne has_clicked
+        rts
+has_clicked:
+        jmp (CancelBehavior)
+        ; tail call
+.endproc
 
 .proc click_file_slot
         lda CurrentRegionIndex

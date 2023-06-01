@@ -1,5 +1,6 @@
 	.include "actions.inc"
 	.include "crc.inc"
+	.include "levels.inc"
 	.include "saves.inc"
 	.include "word_util.inc"
 	.include "zeropage.inc"
@@ -74,6 +75,7 @@ loop:
 	sta (SavePtr), y
 	ldy #SaveFile::PlayerHealthCurrent
 	sta (SavePtr), y
+
 	; For now, player starts with Jump and Dash abilities slotted,
 	; and all the other abilities in their inventory already. (we will
 	; certainly be fixing this as soon as ability pickup is implemented; we can
@@ -94,6 +96,23 @@ loop:
 	sta (SavePtr), y
 	lda #ACTION_HAMMER
     ldy #SaveFile::ActionInventory+2
+	sta (SavePtr), y
+
+	; Also in the "just for now" category, let's start the player in the grassy test room, with
+	; most of the interesting mechanics. This way we can test the debug key, which should port any
+	; save file to the debug room instead
+
+	ldy #SaveFile::CurrentMapPtr
+	lda #<grassy_test_v3
+	sta (SavePtr), y
+	iny
+	lda #>grassy_test_v3
+	sta (SavePtr), y
+	ldy #SaveFile::CurrentMapBank
+	lda #<.bank(grassy_test_v3)
+	sta (SavePtr), y
+	ldy #SaveFile::CurrentArea
+	lda #AREA_OVERWORLD
 	sta (SavePtr), y
 
 	; Just for completeness, compute a checksum of this file, this allows us to use this function
@@ -193,6 +212,40 @@ SavePtr := R0
 	ldy #SaveFile::Checksum+3
 	lda testcrc+3
 	sta (SavePtr), y
+	rts
+.endproc
+
+; put the desired save slot in current_save_slot first!
+; obviously this DELETES the save file, please be careful
+.proc FAR_erase_game
+SavePtr := R0
+BackupSavePtr := R2
+Length := R4
+	; We'll write #0 to every byte in the save file, including the
+	; checksum byte. This results in an invalid checksum, which is
+	; treated as an empty save slot by the menuing routines.
+	jsr _save_slot_ptr
+	lda #.sizeof(SaveFile)
+	sta Length
+	lda #0
+	ldy #0
+primary_loop:
+	sta (SavePtr), y
+	inc16 SavePtr
+	dec Length
+	bne primary_loop
+
+	jsr _backup_save_slot_ptr
+	lda #.sizeof(SaveFile)
+	sta Length
+	lda #0
+	ldy #0
+backup_loop:
+	sta (BackupSavePtr), y
+	inc16 BackupSavePtr
+	dec Length
+	bne backup_loop
+
 	rts
 .endproc
 
