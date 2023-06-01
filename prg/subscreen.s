@@ -207,7 +207,7 @@ inventory_screen_behaviors:
         ; Silly and temporary quest screen
         .word click_unimplemented_slot
         ; Save Game (unimplemented)
-        .word click_unimplemented_slot
+        .word click_save_game
         ; Quit Game (also unimplemented)
         .word click_unimplemented_slot
 
@@ -1198,5 +1198,11 @@ PpuAddrScratch := R2
 RegionAddr := R14
         jsr region_tile_addr
         near_call FAR_draw_ability_icon_buffered
+        rts
+.endproc
+
+.proc click_save_game
+        ; Our current_save_slot should already be set? So... just do the thing!?
+        far_call FAR_save_game
         rts
 .endproc

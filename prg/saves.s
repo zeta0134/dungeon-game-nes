@@ -359,12 +359,13 @@ copy_backup_loop:
 	; we just finished copying can be loaded instead
 	jsr _save_slot_ptr
 	st16 WorkingPtr, working_save
+	st16 Length, .sizeof(SaveFile)
 	ldy #0
 write_working_save_loop:
-	lda (SavePtr), y
-	sta (BackupSavePtr), y
+	lda (WorkingPtr), y
+	sta (SavePtr), y
+	inc16 WorkingPtr
 	inc16 SavePtr
-	inc16 BackupSavePtr
 	dec16 Length
 	cmp16 Length, #0
 	bne write_working_save_loop
