@@ -56,9 +56,9 @@ Length := R4
 	sta Length
 	lda #>.sizeof(SaveFile)
 	sta Length+1
-	lda #0
 	ldy #0
 loop:
+	lda #0
 	sta (WorkingPtr), y
 	inc16 WorkingPtr
 	dec16 Length
@@ -82,10 +82,10 @@ loop:
 	; make a debug room with all the abilities for rapid testing)
 
 	lda #ACTION_DASH
-	ldy #SaveFile::ActionSetA+0
+	ldy #SaveFile::ActionSetMemory+0
 	sta (SavePtr), y
 	lda #ACTION_JUMP
-	ldy #SaveFile::ActionSetA+1
+	ldy #SaveFile::ActionSetMemory+1
 	sta (SavePtr), y
 
     lda #ACTION_FEATHER

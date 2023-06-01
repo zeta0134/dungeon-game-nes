@@ -3,12 +3,6 @@
 .global FAR_draw_ability_icon_buffered_top_row, FAR_draw_ability_icon_buffered_bottom_row
 .global FAR_update_action_masks, FAR_update_action_buttons
 
-.global action_memory
-.global actionset_a
-.global actionset_b
-.global actionset_c
-.global action_inventory
-
 .global actions_down_low
 .global actions_down_high
 .global actions_held_low

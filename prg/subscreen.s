@@ -7,6 +7,7 @@
         .include "nes.inc"
         .include "palette.inc"
         .include "ppu.inc"
+        .include "saves.inc"
         .include "scrolling.inc"
         .include "sound.inc"
         .include "sprites.inc"
@@ -971,7 +972,7 @@ AbilityCounter := R6
         sta AbilityCounter
 actionset_loop:
         ldx AbilityCounter
-        lda actionset_a, x
+        lda working_save + SaveFile::ActionSetMemory, x
         sta AbilityIndex
         jsr draw_ability_region_immediate
         inc RegionIndex
@@ -1125,7 +1126,7 @@ ScratchByte := R0
 
 first_click:
         ldy CurrentRegionIndex
-        lda action_memory, y
+        lda working_save + SaveFile::ActionSetMemory, y
         beq done ; if there is nothing in this slot, take no action
         sty ShadowRegionIndex
         jsr activate_shadow_cursor
@@ -1142,23 +1143,23 @@ second_click:
         ; Otherwise, swap these abilities
         ldx CurrentRegionIndex
         ldy ShadowRegionIndex
-        lda action_memory, x
+        lda working_save + SaveFile::ActionSetMemory, x
         sta ScratchByte
-        lda action_memory, y
-        sta action_memory, x
+        lda working_save + SaveFile::ActionSetMemory, y
+        sta working_save + SaveFile::ActionSetMemory, x
         lda ScratchByte
-        sta action_memory, y
+        sta working_save + SaveFile::ActionSetMemory, y
 
         ; Now we need to redraw both ability slots
         ldx CurrentRegionIndex
         stx R0
-        lda action_memory, x 
+        lda working_save + SaveFile::ActionSetMemory, x 
         sta R1
         jsr draw_ability_region_buffered
 
         ldx ShadowRegionIndex
         stx R0
-        lda action_memory, x 
+        lda working_save + SaveFile::ActionSetMemory, x 
         sta R1
         jsr draw_ability_region_buffered
 

@@ -5,19 +5,13 @@
         .include "input.inc"
         .include "nes.inc"
         .include "ppu.inc"
+        .include "saves.inc"
         .include "sound.inc"
         .include "vram_buffer.inc"
         .include "word_util.inc"
         .include "zeropage.inc"
 
         .segment "RAM"
-; Ability memory, TODO: move this somewhere more shared
-action_memory:
-actionset_a: .res 2
-actionset_b: .res 2
-actionset_c: .res 2
-action_inventory: .res 12
-
 actions_down_low: .res 1
 actions_down_high: .res 1
 actions_held_low: .res 1
@@ -57,30 +51,6 @@ ability_icons_tiles:
         .byte 148, 149, 150, 151
 
 .proc FAR_initialize_actions
-        ; TODO: Once we know the player's starting inventory set, we should
-        ; initialize that here. For now, this contains the DEBUG set, for
-        ; rapid testing of game mechanics.
-        lda #ACTION_DASH
-        sta actionset_a + 0
-        lda #ACTION_JUMP
-        sta actionset_a + 1
-        lda #0
-        sta actionset_b + 0
-        sta actionset_b + 1
-        sta actionset_c + 0
-        sta actionset_c + 1
-
-        lda #ACTION_FEATHER
-        sta action_inventory + 0
-        lda #ACTION_FIRE
-        sta action_inventory + 1
-        lda #ACTION_HAMMER
-        sta action_inventory + 2
-        lda #0
-        .repeat 9, i
-        sta action_inventory + 6 + i
-        .endrepeat
-
         lda #0
         sta action_flags
         sta desync_counter
@@ -194,13 +164,13 @@ ScratchWord := R0
         lda action_a_slot
         asl
         tax
-        lda action_memory + 1, x
+        lda working_save + SaveFile::ActionSetMemory + 1, x
         sta action_a_id
 
         lda action_b_slot
         asl
         tax
-        lda action_memory + 0, x
+        lda working_save + SaveFile::ActionSetMemory + 0, x
         sta action_b_id
 
         st16 ScratchWord, $0000

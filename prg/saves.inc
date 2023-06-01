@@ -1,10 +1,8 @@
 .struct SaveFile
 	; State specific to the player
-	PlayerHealthMax .byte
-	PlayerHealthCurrent .byte
-	ActionSetA .byte 2
-	ActionSetB .byte 2
-	ActionSetC .byte 2
+	PlayerHealthMax .byte ; * 
+	PlayerHealthCurrent .byte ; *
+	ActionSetMemory .byte 6
 	ActionInventory .byte 12
 	ActionSlotA .byte 1
 	ActionSlotB .byte 1
