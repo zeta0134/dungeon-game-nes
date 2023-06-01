@@ -111,9 +111,6 @@ loop:
 	ldy #SaveFile::CurrentMapBank
 	lda #<.bank(grassy_test_v3)
 	sta (SavePtr), y
-	ldy #SaveFile::CurrentArea
-	lda #AREA_OVERWORLD
-	sta (SavePtr), y
 
 	; Just for completeness, compute a checksum of this file, this allows us to use this function
 	; to initialize a real save slot if we want. (We're currently unsure of the final save game

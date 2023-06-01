@@ -2,8 +2,8 @@
 	; State specific to the player
 	PlayerHealthMax .byte ; * 
 	PlayerHealthCurrent .byte ; *
-	ActionSetMemory .byte 6
-	ActionInventory .byte 12
+	ActionSetMemory .byte 6   ; *
+	ActionInventory .byte 12  ; *
 	ActionSlotA .byte 1
 	ActionSlotB .byte 1
 	; Event flags, used to store all *sorts* of state in specific rooms
@@ -21,7 +21,6 @@
 	; it to one of the real save slots)
 	CurrentMapPtr .word
 	CurrentMapBank .byte
-	CurrentArea .byte
 	Checksum .byte 4
 .endstruct
 

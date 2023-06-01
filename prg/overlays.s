@@ -9,6 +9,7 @@
         .include "nes.inc"
         .include "overlays.inc"
         .include "ppu.inc"
+        .include "saves.inc"
         .include "scrolling.inc"
         .include "sound.inc"
         .include "tilebuffer.inc"
@@ -24,9 +25,9 @@
 .proc _global_setup
 MapAddr := R2
 OverlayListAddr := R4  
-        lda TargetMapAddr
+        lda working_save + SaveFile::CurrentMapPtr
         sta MapAddr
-        lda TargetMapAddr+1
+        lda working_save + SaveFile::CurrentMapPtr+1
         sta MapAddr+1
 
         ldy #MapHeader::overlay_list
@@ -52,7 +53,7 @@ OverlayIndex := R7
 OverlayMetadata := R8
 MetadataMatch := R9
 MetadataMask := R10
-        access_data_bank TargetMapBank
+        access_data_bank working_save+SaveFile::CurrentMapBank
         jsr _global_setup
 
         ldy #0
@@ -157,7 +158,7 @@ MapAddr := R2
 OverlayAddr := R2 ; by the time we write here we're done with the map header
 OverlayListAddr := R4
         sta OverlayIndex
-        access_data_bank TargetMapBank
+        access_data_bank working_save+SaveFile::CurrentMapBank
         jsr _global_setup
 
         ldy #0

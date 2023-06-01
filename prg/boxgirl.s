@@ -2276,10 +2276,10 @@ MetaSpriteIndex := R11
 
         ; The target registers are our currently loaded map. Use these to locate the
         ; map header
-        access_data_bank TargetMapBank
-        lda TargetMapAddr
+        access_data_bank working_save+SaveFile::CurrentMapBank
+        lda working_save + SaveFile::CurrentMapPtr
         sta MapAddr
-        lda TargetMapAddr+1
+        lda working_save + SaveFile::CurrentMapPtr+1
         sta MapAddr+1
 
         ldy #MapHeader::exit_table_ptr
@@ -2311,22 +2311,26 @@ loop:
         ; Set these map details as our new target map
         ldy #ExitTableEntry::target_map
         lda (ExitTableAddr), y
-        sta TargetMapAddr
+        sta working_save + SaveFile::CurrentMapPtr
         ldy #ExitTableEntry::target_map+1
         lda (ExitTableAddr), y
-        sta TargetMapAddr+1
+        sta working_save + SaveFile::CurrentMapPtr+1
         ldy #ExitTableEntry::target_bank
         lda (ExitTableAddr), y
-        sta TargetMapBank
+        sta working_save + SaveFile::CurrentMapBank
         ldy #ExitTableEntry::target_entrance
         lda (ExitTableAddr), y
         sta TargetMapEntrance
 
+        restore_previous_bank
+        access_data_bank working_save+SaveFile::CurrentMapBank
+
         ; We are definitely about to teleport to this map, so read the entry and queue up the new music
         ; variation (if any) early
-        lda TargetMapAddr
+
+        lda working_save + SaveFile::CurrentMapPtr
         sta ExitTableAddr ; we're done with this ptr, so reuse it here
-        lda TargetMapAddr+1
+        lda working_save + SaveFile::CurrentMapPtr+1
         sta ExitTableAddr+1
         ldy #MapHeader::music_variant
         lda (ExitTableAddr), y
@@ -2374,10 +2378,10 @@ TriggerData5 := R31
 
         ; The target registers are our currently loaded map. Use these to locate the
         ; map header
-        access_data_bank TargetMapBank
-        lda TargetMapAddr
+        access_data_bank working_save+SaveFile::CurrentMapBank
+        lda working_save + SaveFile::CurrentMapPtr
         sta MapAddr
-        lda TargetMapAddr+1
+        lda working_save + SaveFile::CurrentMapPtr+1
         sta MapAddr+1
 
         ldy #MapHeader::trigger_list

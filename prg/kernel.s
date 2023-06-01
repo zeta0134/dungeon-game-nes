@@ -21,6 +21,7 @@
         .include "palette.inc"
         .include "particles.inc"
         .include "ppu.inc"
+        .include "saves.inc"
         .include "scrolling.inc"
         .include "sprites.inc"
         .include "statusbar.inc"
@@ -32,8 +33,6 @@
         .zeropage
 GameMode: .res 2
         .segment "RAM"
-TargetMapAddr: .res 2
-TargetMapBank: .res 1
 TargetMapEntrance: .res 1
 FadeTimer: .res 1
 HitstunTimer: .res 1
@@ -65,11 +64,11 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         ; y now contains the entity index; preserve it
         sty CurrentEntityIndex
 
-        access_data_bank TargetMapBank
+        access_data_bank working_save+SaveFile::CurrentMapBank
         ; load the coordinates from this map's entrance, and teleport boxgirl there
-        lda TargetMapAddr
+        lda working_save + SaveFile::CurrentMapPtr
         sta MapAddr
-        lda TargetMapAddr+1
+        lda working_save + SaveFile::CurrentMapPtr+1
         sta MapAddr+1
 
         ldy #MapHeader::entrance_table_ptr
@@ -109,7 +108,7 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
 .endproc
 
 .proc load_target_map
-        access_data_bank TargetMapBank
+        access_data_bank working_save+SaveFile::CurrentMapBank
         jsr load_map
         restore_previous_bank
         rts
@@ -172,10 +171,8 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         lda #$1E
         sta PlayfieldPpuMask
 
-        ; Begin by loading a debug test map
-        st16 TargetMapAddr, (debug_hub)
-        lda #<.bank(debug_hub)
-        sta TargetMapBank
+        ; The map to load here is specified by the save file that we
+        ; (hopefully) just loaded
         st16 GameMode, _blackout_load_new_map
 
         ; Initialize some bits of global state here
@@ -202,9 +199,9 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         far_call FAR_init_maplogic
 
         ; less demo map init
-        lda TargetMapAddr
+        lda working_save + SaveFile::CurrentMapPtr
         sta R4
-        lda TargetMapAddr+1
+        lda working_save + SaveFile::CurrentMapPtr+1
         sta R4+1
 
         jsr load_target_map

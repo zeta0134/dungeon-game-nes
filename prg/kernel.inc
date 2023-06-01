@@ -1,5 +1,5 @@
 .globalzp GameMode
-.global TargetMapAddr, TargetMapBank, TargetMapEntrance, PlayfieldPpuMask
+.global TargetMapEntrance, PlayfieldPpuMask
 .global HitstunTimer
 
 ; fixed bank for ... y'know, it's tiny
