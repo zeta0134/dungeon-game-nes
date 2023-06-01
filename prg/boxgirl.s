@@ -15,6 +15,7 @@
         .include "mmc3.inc"
         .include "nes.inc"
         .include "input.inc"
+        .include "saves.inc"
         .include "scrolling.inc"
         .include "sound.inc"
         .include "sprites.inc"
@@ -26,7 +27,6 @@
         .include "zeropage.inc"
 
         .segment "RAM"
-PlayerHealth: .res 1
 PlayerInvulnerability: .res 1
 PlayerStunTimer: .res 1
 PlayerDashTimer: .res 1
@@ -115,8 +115,8 @@ MetaSpriteIndex := R0
         ; player init stuff
         ; TODO: if we don't want health maxed when loading into a new
         ; room, we need to not do that here
-        lda #10
-        sta PlayerHealth
+        lda working_save + SaveFile::PlayerHealthMax
+        sta working_save + SaveFile::PlayerHealthCurrent
         lda #0
         sta PlayerInvulnerability
         sta PlayerPrimaryDirection
@@ -1112,7 +1112,7 @@ no_x_fix:
 TargetEntity := R0
         ; weak hits do 6 damage, 3 hearts (for testing)
         .repeat 6
-        dec PlayerHealth
+        dec working_save + SaveFile::PlayerHealthCurrent
         jeq already_on_charons_boat
         .endrepeat
         ; was this a strong hit?
@@ -1122,7 +1122,7 @@ TargetEntity := R0
         beq weak_hit
         ; strong hits to 6 MORE damage, for 6 hearts total
         .repeat 6
-        dec PlayerHealth
+        dec working_save + SaveFile::PlayerHealthCurrent
         jeq already_on_charons_boat
         .endrepeat
 weak_hit:
@@ -1180,7 +1180,7 @@ already_on_charons_boat:
 .proc handle_arbitrary_damage
 IncomingDamage := R0
 damage_loop:
-        dec PlayerHealth
+        dec working_save + SaveFile::PlayerHealthCurrent
         beq already_on_charons_boat
         dec IncomingDamage
         bne damage_loop

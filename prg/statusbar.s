@@ -8,6 +8,7 @@
         .include "nes.inc"
         .include "palette.inc"
         .include "ppu.inc"
+        .include "saves.inc"
         .include "tilebuffer.inc"
         .include "word_util.inc"
         .include "vram_buffer.inc"
@@ -42,6 +43,7 @@ BORDER_TR = $61
 
 HEART_FULL = $64
 HEART_HALF = $65
+HEART_CONTAINER = $67
 
 HEALTH_DISP_BASE = $23A4
 HEALTH_UPDATE_COOLDOWN = 2
@@ -124,10 +126,10 @@ first_side_border_loop:
         tax
         ldy #0
 health_update_loop:
-        cpy PlayerHealth
+        cpy working_save + SaveFile::PlayerHealthCurrent
         bcs empty_heart
         iny
-        cpy PlayerHealth
+        cpy working_save + SaveFile::PlayerHealthCurrent
         beq half_heart
 full_heart:
         lda #HEART_FULL
@@ -140,6 +142,14 @@ half_heart:
         iny
         jmp health_converge
 empty_heart:
+        cpy working_save + SaveFile::PlayerHealthMax
+        bcs no_heart
+        lda #HEART_CONTAINER
+        sta VRAM_TABLE_START, x
+        iny
+        iny
+        jmp health_converge
+no_heart:
         iny
         iny
 health_converge:
@@ -147,7 +157,7 @@ health_converge:
         cpy #20
         bne health_update_loop
 
-        lda PlayerHealth
+        lda working_save + SaveFile::PlayerHealthCurrent
         sta HealthDisplayed
         
         rts
@@ -233,7 +243,7 @@ TileAddr := R0
         dec HealthCooldown
         jmp done_with_health_change
 check_health:
-        lda PlayerHealth
+        lda working_save + SaveFile::PlayerHealthCurrent
         cmp HealthDisplayed
         jeq done_with_health_change
         bcs health_increase
@@ -253,7 +263,7 @@ health_decrease:
         eor #%00000001
         beq decrease_half_heart
 decrease_empty_heart:
-        lda #BLANK
+        lda #HEART_CONTAINER
         jmp write_heart_decrease
 decrease_half_heart:
         lda #HEART_HALF
