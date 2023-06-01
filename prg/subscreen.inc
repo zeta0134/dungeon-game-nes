@@ -42,8 +42,8 @@ CURSOR_BR_TILE = 89
 .global handle_click
 .global handle_move_cursor
 .global lerp_cursor_position
-
-
+.global activate_shadow_cursor
+.global hide_shadow_cursor
 
 .global LayoutPtr
 .global BehaviorPtr

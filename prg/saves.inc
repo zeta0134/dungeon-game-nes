@@ -47,6 +47,7 @@ AREA_DUNGEON_4 = 7
 .global FAR_save_game
 .global FAR_load_game
 .global FAR_erase_game
+.global FAR_copy_game
 
 ; after loading a new game, call this before initializing the first map
 .global FAR_initialize_area_flags

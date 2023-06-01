@@ -225,27 +225,66 @@ Length := R4
 	; checksum byte. This results in an invalid checksum, which is
 	; treated as an empty save slot by the menuing routines.
 	jsr _save_slot_ptr
-	lda #.sizeof(SaveFile)
-	sta Length
-	lda #0
-	ldy #0
-primary_loop:
-	sta (SavePtr), y
-	inc16 SavePtr
-	dec Length
-	bne primary_loop
-
 	jsr _backup_save_slot_ptr
 	lda #.sizeof(SaveFile)
 	sta Length
 	lda #0
 	ldy #0
-backup_loop:
+loop:
+	sta (SavePtr), y
 	sta (BackupSavePtr), y
-	inc16 BackupSavePtr
+	inc16 SavePtr
 	dec Length
-	bne backup_loop
+	bne loop
 
+	rts
+.endproc
+
+; put the SOURCE save slot in current_save_slot
+; put the DESTINATION save slot in R9
+; obviously this OVERWRITES the destination file, please be careful
+.proc FAR_copy_game
+; What our helper functions write to
+SavePtr := R0
+BackupSavePtr := R2
+
+; What we'll use during the copy to not be extra confused
+DestinationPrimaryPtr := R0
+DestinationBackupPtr := R2
+SourcePrimaryPtr := R4
+SourceBackupPtr := R6
+Length := R8 ; clobbered by the utility functions, so effectively scratch
+DestinationSlot := R9
+	; grab the source pointers using current_save_slot
+	jsr _save_slot_ptr
+	mov16 SourcePrimaryPtr, SavePtr
+	jsr _backup_save_slot_ptr
+	mov16 SourceBackupPtr, BackupSavePtr
+
+	; now grab the destination pointers using the argument provided in DestinationSlot
+	lda DestinationSlot
+	sta current_save_slot
+	jsr _save_slot_ptr
+	mov16 DestinationPrimaryPtr, SavePtr
+	jsr _backup_save_slot_ptr
+	mov16 DestinationBackupPtr, BackupSavePtr
+
+	; now we can perform the copy without too much trouble
+	lda #.sizeof(SaveFile)
+	sta Length
+	ldy #0
+loop:
+	lda (SourcePrimaryPtr), y
+	sta (DestinationPrimaryPtr), y
+	lda (SourceBackupPtr), y
+	sta (DestinationBackupPtr), y
+	inc16 SourcePrimaryPtr
+	inc16 DestinationPrimaryPtr
+	inc16 SourceBackupPtr
+	inc16 DestinationBackupPtr
+	dec Length
+	bne loop
+	
 	rts
 .endproc
 

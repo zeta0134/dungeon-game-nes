@@ -34,10 +34,11 @@ main_menu_obj_palette:
 main_menu_base_nametable:
         .incbin "art/raw_nametables/file_select_base.nam"
 
-file_select_str: .asciiz           "    SELECT FILE     "
+file_select_str: .asciiz      "    SELECT FILE     "
 erase_str: .asciiz            " ERASE WHICH FILE?  "
 erase_confirm_string: .asciiz "  ARE YOU SURE!?    "
-copy_str: .asciiz             "  COPY WHICH FILE?  "
+copy_source_str: .asciiz      "  COPY WHICH FILE?  "
+copy_dest_str: .asciiz        "COPY TO WHICH SLOT? "
 copy_overwrite_str: .asciiz   " REALLY OVERWRITE!? "
 
 new_file_str: .asciiz "New File"
@@ -137,17 +138,33 @@ file_select_screen_behaviors:
         ; Options
         .word click_unimplemented_slot
         ; Copy File
-        .word click_unimplemented_slot
+        .word activate_copy_source_mode
         ; Erase File
         .word activate_erase_mode
 
-copy_file_behaviors:
+copy_source_behaviors:
         ; Click File 1
-        .word click_unimplemented_slot
+        .word activate_copy_destination_mode
         ; Click File 2
-        .word click_unimplemented_slot
+        .word activate_copy_destination_mode
         ; Click File 3
-        .word click_unimplemented_slot
+        .word activate_copy_destination_mode
+
+copy_destination_behaviors:
+        ; Click File 1
+        .word activate_copy_confirm_mode
+        ; Click File 2
+        .word activate_copy_confirm_mode
+        ; Click File 3
+        .word activate_copy_confirm_mode
+
+copy_confirm_behaviors:
+        ; Click File 1
+        .word perform_copy
+        ; Click File 2
+        .word perform_copy
+        ; Click File 3
+        .word perform_copy
 
 erase_select_behaviors:
         ; Click File 1
@@ -570,17 +587,116 @@ StringPtr := R2
         ; tail call
 .endproc
 
-.proc activate_copy_mode
+.proc activate_copy_source_mode
+DestPpuAddr := R0
+StringPtr := R2
+        jsr hide_shadow_cursor
+        ; Draw the copy source header
+        st16 DestPpuAddr, $2086
+        st16 StringPtr, copy_source_str
+        jsr draw_basic_string
+        ; Switch the layout pointers to use the file-restricted list, and copy source behaviors
+        ; Set up the initial layout/behavior pointers for the file select screen
+        st16 LayoutPtr, copy_erase_screen_regions
+        st16 BehaviorPtr, copy_source_behaviors
+        st16 CancelBehavior, return_to_file_select_mode
+        ; Re-initialize the current index to point to the first file slot
+        lda #0
+        sta CurrentRegionIndex
+        jsr initialize_cursor_pos
+        ; return to file_select_active, whose logic is general enough to drive the rest
+        st16 MainMenuState, file_select_active
         rts
 .endproc
 
-.proc activate_copy_confirm_mode
+.proc activate_copy_destination_mode
+ValidSaveResult := R0
+DestPpuAddr := R0
+StringPtr := R2
+        ; Sanity Check: is the source file we clicked on empty? If so, cancel the copy
+check_empty_source:
+        ; Firstly, if our destination slot is not a valid save file, we may perform the copy immediately
+        lda CurrentRegionIndex
+        sta current_save_slot
+        far_call FAR_is_valid_save
+        lda ValidSaveResult
+        bne no_valid_save
+
+        ; Firstly, take our region index and draw the shadow cursor here
+        ldy CurrentRegionIndex
+        sty ShadowRegionIndex
+        jsr activate_shadow_cursor
+        ; Draw the copy destination header
+        st16 DestPpuAddr, $2086
+        st16 StringPtr, copy_dest_str
+        jsr draw_basic_string
+        ; Switch the layout pointers to use the file-restricted list, and erase confirm behaviors
+        ; Set up the initial layout/behavior pointers for the file select screen
+        st16 LayoutPtr, copy_erase_screen_regions
+        st16 BehaviorPtr, copy_destination_behaviors
+        st16 CancelBehavior, activate_copy_source_mode
+        ; continue in file_select_active
+        st16 MainMenuState, file_select_active
         rts
+
+no_valid_save:
+        jmp return_to_file_select_mode
+        ; tail call
+.endproc
+
+.proc activate_copy_confirm_mode
+ValidSaveResult := R0
+DestPpuAddr := R0
+StringPtr := R2
+        ; Sanity check: if our current slot and our destination slot are the same, take
+        ; no action and cancel the copy
+        lda CurrentRegionIndex
+        cmp ShadowRegionIndex
+        bne check_empty_destinaiton
+        jmp return_to_file_select_mode
+
+check_empty_destinaiton:
+        ; Firstly, if our destination slot is not a valid save file, we may perform the copy immediately
+        lda CurrentRegionIndex
+        sta current_save_slot
+        far_call FAR_is_valid_save
+        lda ValidSaveResult
+        bne no_valid_save
+
+        ; Otherwise we confirm the overwrite
+
+        ; Draw the copy overwrite confirm header
+        st16 DestPpuAddr, $2086
+        st16 StringPtr, copy_overwrite_str
+        jsr draw_basic_string
+        ; Switch the layout pointers to use the file-restricted list, and erase commit behaviors
+        st16 LayoutPtr, copy_erase_screen_regions
+        st16 BehaviorPtr, copy_confirm_behaviors
+        st16 CancelBehavior, activate_copy_source_mode
+        ; move to confirm_choice_active, which locks our cursor in place
+        st16 MainMenuState, confirm_choice_active
+        rts
+
+no_valid_save:
+        jmp perform_copy
+        ; tail call
+.endproc
+
+.proc perform_copy
+DestinationSlot := R9
+        lda ShadowRegionIndex
+        sta current_save_slot
+        lda CurrentRegionIndex
+        sta DestinationSlot
+        far_call FAR_copy_game
+        ; TODO: SFX? fancy animation?
+        jmp return_to_file_select_mode
 .endproc
 
 .proc return_to_file_select_mode
 DestPpuAddr := R0
 StringPtr := R2
+        jsr hide_shadow_cursor
         ; Draw the file select header
         st16 DestPpuAddr, $2086
         st16 StringPtr, file_select_str

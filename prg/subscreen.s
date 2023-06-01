@@ -998,6 +998,15 @@ actionset_loop:
         rts
 .endproc
 
+.proc hide_shadow_cursor
+        lda #$FF
+        sta ShadowRegionIndex
+        lda #0
+        sta ShadowCursorShown
+done:
+        rts
+.endproc
+
 .proc draw_shadow_cursor
 INNER_OFFSET = 2
         lda ShadowCursorShown
