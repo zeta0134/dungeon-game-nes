@@ -416,7 +416,7 @@ clear_loop:
 global_event_loop:
 	dex
 	lda working_save + SaveFile::GlobalEventFlags, x
-	sta working_events
+	sta working_events + 32, x
 	cpx #0
 	bne global_event_loop
 
@@ -491,6 +491,15 @@ save_loop:
 	; same basic style of loop for this entire module, makes it easier to debug.
 	dec Length 
 	bne save_loop
+	; while we're here, also write out the global event flags
+	; (we have to do this at *some* point, and this is as good an opportunity as any)
+	ldx #32
+global_event_loop:
+	dex
+	lda working_events + 32, x
+	sta working_save + SaveFile::GlobalEventFlags, x
+	cpx #0
+	bne global_event_loop
 done:
 	rts
 .endproc
