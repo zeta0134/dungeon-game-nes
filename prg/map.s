@@ -8,6 +8,7 @@
         .include "level_logic.inc"
         .include "map.inc"
         .include "palette.inc"
+        .include "saves.inc"
         .include "scrolling.inc"
         .include "sound.inc"
         .include "word_util.inc"
@@ -31,6 +32,14 @@ MapAddr := R4
 TilesetAddress := R6
 MetatileCount := R8
 TilesetChrBank := R9
+        ; Save the original map's area flags, since we are about to update current_area
+        far_call FAR_save_area_flags
+        ; Now do just that
+        ldy #MapHeader::area_id
+        lda (MapAddr), y
+        sta current_area
+        far_call FAR_load_area_flags
+
         ; First read in the map's dimensions in tiles, and store them. The scrolling engine and
         ; several other game mechanics rely on these values
         ldy #MapHeader::width

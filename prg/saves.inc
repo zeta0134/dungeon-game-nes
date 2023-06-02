@@ -49,5 +49,6 @@ AREA_DUNGEON_4 = 7
 ; after loading a new game, call this before initializing the first map
 .global FAR_initialize_area_flags
 ; every time we switch to a new map (including the first map after loading), set
-; current_area, then call this
+; current_area, then call these
 .global FAR_load_area_flags
+.global FAR_save_area_flags

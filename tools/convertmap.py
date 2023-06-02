@@ -87,6 +87,7 @@ class CombinedMap:
     distortion_index: int
     color_emphasis: int
     logic_function: str
+    area_id: int
 
 def read_boolean_properties(tile_element):
     boolean_properties = {}
@@ -350,12 +351,14 @@ def read_map(map_filename):
     chr1_label = common_tileset_properties.get("chr1_tileset", chr0_label)
     global_palette = read_global_palette(common_tileset_properties["global_palette"])
 
-    map_properties = read_integer_properties(map_element)
-    music_track = map_properties.get("music_track", 0xFF)
-    music_variant = map_properties.get("music_variant", 0xFF)
-    distortion_index = map_properties.get("distortion_index", 0)
-    color_emphasis = map_properties.get("color_emphasis", 0)
-    logic_function = map_properties.get("logic_function", "maplogic_default")
+    map_integer_properties = read_integer_properties(map_element)
+    music_track = map_integer_properties.get("music_track", 0xFF)
+    music_variant = map_integer_properties.get("music_variant", 0xFF)
+    distortion_index = map_integer_properties.get("distortion_index", 0)
+    color_emphasis = map_integer_properties.get("color_emphasis", 0)
+    map_string_properties = read_string_properties(map_element)
+    logic_function = map_string_properties.get("logic_function", "maplogic_default")
+    area_id = map_string_properties.get("area_id", "AREA_DEBUG_HUB")
 
     # finally let's make the name something useful
     (_, plain_filename) = os.path.split(map_filename)
@@ -365,7 +368,7 @@ def read_map(map_filename):
     return CombinedMap(name=safe_label, width=map_width, height=map_height, tiles=combined_tiles, overlays=overlays,
         entrances=entrances, exits=exits, entities=entities, triggers=triggers, chr0_label=chr0_label, chr1_label=chr1_label, 
         global_palette=global_palette, music_track=music_track, music_variant=music_variant,
-        distortion_index=distortion_index, color_emphasis=color_emphasis, logic_function=logic_function)
+        distortion_index=distortion_index, color_emphasis=color_emphasis, logic_function=logic_function, area_id=area_id)
 
 def write_map_header(tilemap, output_file):
     output_file.write(ca65_label(tilemap.name) + "\n")
@@ -387,6 +390,7 @@ def write_map_header(tilemap, output_file):
     output_file.write("  .word %s\n" % tilemap.logic_function)
     output_file.write("  .word %s_overlays\n" % tilemap.name)
     output_file.write("  .word %s_triggers\n" % tilemap.name)
+    output_file.write("  .byte %s ; area_id\n" % tilemap.area_id)
     output_file.write("\n")
 
 def write_palette_data(tilemap, output_file):

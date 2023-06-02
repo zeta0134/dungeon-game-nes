@@ -1,5 +1,6 @@
 	.include "actions.inc"
 	.include "crc.inc"
+	.include "far_call.inc"
 	.include "levels.inc"
 	.include "saves.inc"
 	.include "word_util.inc"
@@ -324,7 +325,8 @@ loop:
 	dec16 Length
 	cmp16 Length, #0
 	bne loop
-done:
+setup_initial_state:
+	near_call FAR_initialize_area_flags
 	rts
 .endproc
 
@@ -334,6 +336,8 @@ SavePtr := R0
 BackupSavePtr := R2
 WorkingPtr := R2 ; by the time we need this, we're done with backup save logic
 Length := R4
+	; sanity: ensure our area flags are stored in the working save, otherwise we'll lose them
+	near_call FAR_save_area_flags
 	; first, compute the checksum for the working save, which may very well
 	; be stale at this point
 	st16 SavePtr, working_save
@@ -420,12 +424,12 @@ global_event_loop:
 	; (this way when we change areas later we have a consistent starting state)
 	lda #0
 	sta current_area
-	jsr load_area_flags
+	near_call FAR_load_area_flags
 	rts
 .endproc
 
 ; put the area you want to load into current_area first
-.proc load_area_flags
+.proc FAR_load_area_flags
 Length := R0
 	; first, mostly for safety, clear out all 14 area flag bytes
 	; in working memory. This is meant to make it harder to carry
@@ -465,7 +469,7 @@ done:
 
 ; writes out the area specified by current_area, so ensure this is
 ; still valid before calling
-.proc save_area_flags
+.proc FAR_save_area_flags
 Length := R0
 	; Here we need to write the current area flags to the appropriate
 	; place in the save file, so set up all of that state

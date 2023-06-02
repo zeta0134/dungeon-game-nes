@@ -19,6 +19,7 @@
         logic_function .word
         overlay_list .word
         trigger_list .word
+        area_id .byte
 .endstruct
 
 .struct ExitTableEntry
