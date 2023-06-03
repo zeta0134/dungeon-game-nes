@@ -18,6 +18,7 @@
         .include "map.inc"
         .include "mmc3.inc"
         .include "nes.inc"
+        .include "overlays.inc"
         .include "palette.inc"
         .include "particles.inc"
         .include "ppu.inc"
@@ -205,6 +206,7 @@ MapAddr := R4 ; load_entities requires that MapAddr be R4
         sta R4+1
 
         jsr load_target_map
+        jsr pre_apply_all_map_overlays
         
         far_call FAR_init_map
         far_call FAR_init_camera

@@ -9,7 +9,7 @@
 	; Event flags, used to store all *sorts* of state in specific rooms
 	; Global flags are always loaded; tweak this (decrease, probably) once
 	; we have a better idea of what state truly needs to persist between areas
-	GlobalEventFlags .byte 32
+	GlobalEventFlags .byte 16
 	; Area flags are a big pool. A small number of these bytes (up to 14) is
 	; allocated to each major area (dungeons, towns, caves, etc) and each map
 	; specifies which area's flags to load into memory. This can be as large as

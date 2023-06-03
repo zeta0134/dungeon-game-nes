@@ -31,6 +31,14 @@ tilebuffer_starting_index: .res 1
 tilebuffer_ending_index: .res 1
 
         .segment "PRGFIXED_E000"
+
+.proc tilebuffer_init
+        lda #0
+        sta tilebuffer_starting_index
+        sta tilebuffer_ending_index
+        rts
+.endproc
+
 ; This will be called repeatdly by code working with banked map data,
 ; so these tiny routines can live in fixed memory for speed
 .proc tilebuffer_queue_tile

@@ -355,3 +355,73 @@ attr_mul_loop:
 
         rts
 .endproc
+
+; Call this right after loading a map, and BEFORE rendering the initial viewport
+; Scans through all of this map's overlay data and applies any overlays that have
+; a matching event_id SET. In practice this should ignore temporary IDs, since the
+; level loading logic clears them out.
+.proc pre_apply_all_map_overlays
+; R0 - R3 are clobbered regularly
+OverlayListAddr := R4
+Length := R6
+
+OverlayEventId := R26
+OverlayMetadata := R27
+OverlayListTemp := R28
+MetadataMask := R29
+MetadataMatch := R30
+OverlayIndex := R31
+        access_data_bank working_save+SaveFile::CurrentMapBank
+        jsr _global_setup
+
+        lda #%10000000
+        sta MetadataMask
+        lda #%10000000
+        sta MetadataMatch
+
+        ldy #0
+        sty OverlayIndex
+        lda (OverlayListAddr), y
+        sta Length
+        iny
+        sty OverlayListTemp
+loop:
+        ldy OverlayListTemp
+        ; skip past the overlay pointer
+        iny
+        iny
+        ; grab the event ID...
+        lda (OverlayListAddr), y
+        sta OverlayEventId
+        iny
+        lda (OverlayListAddr), y
+        sta OverlayMetadata
+        iny
+        sty OverlayListTemp
+        ; Firstly, if this is not actually an overlay we want to apply, then we're
+        ; already done
+        lda OverlayMetadata
+        and MetadataMask
+        cmp MetadataMatch
+        bne done_with_this_overlay
+        ; This is a SET overlay, so here we check the event ID and see if it is also set
+        lda OverlayEventId
+        jsr check_area_flag
+        beq done_with_this_overlay
+        ; This is a SET overlay, and it is currently SET in the world state, so we will apply it
+        lda OverlayIndex
+        jsr apply_overlay_by_index
+done_with_this_overlay:
+        inc OverlayIndex
+        lda OverlayIndex
+        cmp Length
+        bne loop
+
+        ; We probably just queued up *way* more tiles than actually fit in the buffer and, due
+        ; to timing, also don't actually need to draw any of them. Clear out the tilebuffer
+        ; queue now.
+        jsr tilebuffer_init
+
+        restore_previous_bank
+        rts
+.endproc

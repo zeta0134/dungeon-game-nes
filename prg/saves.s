@@ -20,7 +20,7 @@ backup_save_slots:
 	.tag SaveFile
 	.endrepeat
 current_save_slot: .res 1
-working_events: .res 64
+working_events: .res 32
 current_area: .res 1
 
 	.segment "UTILITIES_A000"
@@ -405,18 +405,18 @@ valid:
 .proc FAR_initialize_area_flags
 	; generally we should call this right after loading a new save file
 	lda #0
-	ldx #64
+	ldx #32
 clear_loop:
 	dex
 	sta working_events, x
 	bne clear_loop
 
 	; load in the global event flags from the currently selected save
-	ldx #32
+	ldx #16
 global_event_loop:
 	dex
 	lda working_save + SaveFile::GlobalEventFlags, x
-	sta working_events + 32, x
+	sta working_events + 16, x
 	cpx #0
 	bne global_event_loop
 
@@ -436,11 +436,13 @@ Length := R0
 	; event state from one room to another. In theory the extra bytes
 	; aren't used by anything, but when Zeta is lacking in coffee, this
 	; is not a guarantee :P
-	ldx #14
+
+	; Extra: also clear out the 2 temporary bytes here
+	ldx #16
 	lda #0
 clear_loop:
 	dex
-	sta working_events + 2, x
+	sta working_events, x
 	bne clear_loop
 
 	; Now, from the working save, load the bytes that correspond to the current
@@ -493,10 +495,10 @@ save_loop:
 	bne save_loop
 	; while we're here, also write out the global event flags
 	; (we have to do this at *some* point, and this is as good an opportunity as any)
-	ldx #32
+	ldx #16
 global_event_loop:
 	dex
-	lda working_events + 32, x
+	lda working_events + 16, x
 	sta working_save + SaveFile::GlobalEventFlags, x
 	cpx #0
 	bne global_event_loop

@@ -1,3 +1,4 @@
 .global apply_overlay_by_index
 .global find_overlay_to_set
 .global find_overlay_to_unset
+.global pre_apply_all_map_overlays
