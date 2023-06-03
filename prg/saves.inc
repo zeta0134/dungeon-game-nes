@@ -52,3 +52,10 @@ AREA_DUNGEON_4 = 7
 ; current_area, then call these
 .global FAR_load_area_flags
 .global FAR_save_area_flags
+
+; Note: all of these clobber A, X and Y due to the whole bitmask thing
+.global check_area_flag
+.global set_area_flag
+.global clear_area_flag
+.global toggle_area_flag
+

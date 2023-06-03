@@ -34,6 +34,7 @@ MetatileCount := R8
 TilesetChrBank := R9
         ; Save the original map's area flags, since we are about to update current_area
         far_call FAR_save_area_flags
+
         ; Now do just that
         ldy #MapHeader::area_id
         lda (MapAddr), y

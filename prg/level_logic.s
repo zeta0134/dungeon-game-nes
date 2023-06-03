@@ -10,6 +10,7 @@
         .include "map.inc"
         .include "nes.inc"
         .include "overlays.inc"
+        .include "saves.inc"
         .include "sound.inc"
         .include "text.inc"
         .include "tilebuffer.inc"
@@ -71,9 +72,96 @@ no_debug:
         rts
 .endproc
 
+.proc _preserve_old_event_state
+PreviousEventState := R30
+NewEventState := R31
+        ; First, preserve the current state of the event flag, we'll need it to compare with
+        ; in a moment
+        ldx event_current
+        lda events_id, x
+        jsr check_area_flag ; result in Z, technically, but usefully the masked result is in A
+        sta PreviousEventState
+        rts
+.endproc
+
+.proc _react_to_new_event_state
+PreviousEventState := R30
+NewEventState := R31
+        ; If the new state is DIFFERENT, we need to apply an overlay, otherwise we're done
+        ldx event_current
+        lda events_id, x
+        jsr check_area_flag ; masked result in A
+        sta NewEventState
+        eor PreviousEventState
+        bne find_matching_overlay
+        rts
+find_matching_overlay:
+        lda NewEventState
+        beq unset_overlay
+set_overlay:
+        ldx event_current
+        lda events_id, x
+        jsr find_overlay_to_set ; result in A, which will be $FF on error
+        cmp #0
+        bmi unrecognized_overlay
+        jmp apply_overlay
+unset_overlay:
+        ldx event_current
+        lda events_id, x
+        jsr find_overlay_to_unset ; result in A, which will be $FF on error
+        cmp #0
+        bmi unrecognized_overlay
+apply_overlay:
+        jsr apply_overlay_by_index
+        rts
+
+        ; For now, consider any overlay we cannot find to be an audible error
+        ; (oh no!) But since we set the overlay, we should only do this once.
+unrecognized_overlay:
+        ; how did we get here? yay! play an error and panic
+        st16 R0, sfx_error_buzz
+        jsr play_sfx_noise
+        rts        
+.endproc
+
+.proc _set_event_and_apply_overlay
+        jsr _preserve_old_event_state
+
+        ldx event_current
+        lda events_id, x
+        jsr set_area_flag
+
+        jsr _react_to_new_event_state
+        rts
+.endproc
+
+.proc _unset_event_and_apply_overlay
+        jsr _preserve_old_event_state
+
+        ldx event_current
+        lda events_id, x
+        jsr clear_area_flag
+
+        jsr _react_to_new_event_state
+        rts
+.endproc
+
+.proc _toggle_event_and_apply_overlay
+        jsr _preserve_old_event_state
+
+        ldx event_current
+        lda events_id, x
+        jsr toggle_area_flag
+
+        jsr _react_to_new_event_state
+        rts
+.endproc
+
 .proc maplogic_default
 TilePosX := R0
 TilePosY := R1
+PreviousEventState := R30
+NewEventState := R31
         jsr handle_debug_key
         
         ldx event_current
@@ -89,18 +177,10 @@ check_unpressed_switch:
         lda events_data1, x
         beq switch_unset
 switch_set:
-        lda events_id, x
-        jsr find_overlay_to_set ; result in A, which will be $FF on error
-        cmp #0
-        bmi unrecognized_event
-        jmp apply_overlay
+        jsr _set_event_and_apply_overlay
+        jmp done_dispatching_event
 switch_unset:
-        lda events_id, x
-        jsr find_overlay_to_unset ; result in A, which will be $FF on error
-        cmp #0
-        bmi unrecognized_event
-apply_overlay:
-        jsr apply_overlay_by_index
+        jsr _unset_event_and_apply_overlay
         jmp done_dispatching_event
 
 check_interactable:

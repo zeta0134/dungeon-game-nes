@@ -504,6 +504,12 @@ done:
 	rts
 .endproc
 
+.segment "PRGFIXED_E000"
+
+; These are not large functions and they are quite generically useful for puzzles and whatnot,
+; so let's have them live in fixed memory. This makes them much faster and simplifies parameters
+; (we can use A, etc)
+
 bitfield_masks:
 	.byte %00000001
 	.byte %00000010
